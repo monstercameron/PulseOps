@@ -243,4 +243,118 @@ describe("handleExplorerRecordsRequest", () => {
       },
     });
   });
+
+  it("returns validation errors for missing or invalid query parameters", async () => {
+    const rootDirectory = await mkdtemp(
+      path.join(os.tmpdir(), "bizopsaccelerator-explorer-errors-"),
+    );
+    temporaryDirectories.push(rootDirectory);
+
+    const documentRepository = createLocalDocumentRepository({ rootDirectory });
+    const factRepository = createLocalFactRepository({ rootDirectory });
+
+    const missingOrgResponse = await handleExplorerRecordsRequest(
+      new Request("http://localhost/api/explorer/records"),
+      {
+        documentRepository,
+        factRepository,
+      },
+    );
+    const invalidStatusResponse = await handleExplorerRecordsRequest(
+      new Request(
+        "http://localhost/api/explorer/records?orgId=org_123&status=not-a-status",
+      ),
+      {
+        documentRepository,
+        factRepository,
+      },
+    );
+
+    expect(missingOrgResponse.status).toBe(400);
+    await expect(missingOrgResponse.json()).resolves.toMatchObject({
+      error: "Missing orgId query parameter.",
+    });
+    expect(invalidStatusResponse.status).toBe(400);
+    await expect(invalidStatusResponse.json()).resolves.toMatchObject({
+      error: "Invalid explorer query parameters.",
+    });
+  });
+
+  it("falls back to canonical ids and locator types when labels or locator fields are absent", async () => {
+    const rootDirectory = await mkdtemp(
+      path.join(os.tmpdir(), "bizopsaccelerator-explorer-fallbacks-"),
+    );
+    temporaryDirectories.push(rootDirectory);
+
+    const documentRepository = createLocalDocumentRepository({ rootDirectory });
+    const factRepository = createLocalFactRepository({ rootDirectory });
+
+    await documentRepository.put(
+      documentSchema.parse({
+        ...attachDocumentClassification(
+          createUploadedDocument(
+            {
+              fileName: "api-summary.csv",
+              id: "doc_api",
+              orgId: "org_123",
+              source: "api",
+            },
+            "2026-04-10T01:00:00.000Z",
+          ),
+          "generic-business-document",
+          0.81,
+          "2026-04-10T01:05:00.000Z",
+        ),
+        status: "extracted",
+      }),
+    );
+    await factRepository.put(
+      createCanonicalFactRecord({
+        canonicalFactTypeId: "document.observation.number",
+        citations: [
+          createCitation({
+            confidenceScore: 0.84,
+            documentFamily: "generic-business-document",
+            documentId: "doc_api",
+            locator: {},
+            locatorType: "field",
+            sourceHash: "sha256:api-summary",
+          }),
+        ],
+        confidenceScore: 0.84,
+        documentFamily: "generic-business-document",
+        documentId: "doc_api",
+        entityId: "entity_api",
+        entityType: "document",
+        orgId: "org_123",
+        sourceFieldKey: "observed_value",
+        value: 42,
+      }),
+    );
+
+    const response = await handleExplorerRecordsRequest(
+      new Request("http://localhost/api/explorer/records?orgId=org_123"),
+      {
+        documentRepository,
+        factRepository,
+      },
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      records: [
+        expect.objectContaining({
+          detailCitations: ["api-summary.csv - field"],
+          detailFacts: [
+            expect.objectContaining({
+              key: "document.observation.number",
+            }),
+          ],
+          documentMeta: "Connected API - size unavailable",
+          sourceLabel: "Connected API",
+          typeLabel: "Generic business document",
+        }),
+      ],
+    });
+  });
 });
