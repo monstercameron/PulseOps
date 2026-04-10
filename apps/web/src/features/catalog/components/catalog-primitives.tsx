@@ -36,7 +36,7 @@ export function CatalogButton({
   return (
     <button
       className={cx(
-        "inline-flex items-center justify-center rounded-[7px] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100",
+        "inline-flex cursor-pointer items-center justify-center rounded-[7px] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100",
         buttonClasses[variant],
         className,
       )}
@@ -233,6 +233,7 @@ export function CatalogTable<Row extends { id: string }>({
   return (
     <div className="overflow-x-auto">
       <table aria-label={ariaLabel} className="min-w-full border-collapse text-sm">
+        <caption className="sr-only">{ariaLabel}</caption>
         <thead>
           <tr className="border-b border-border bg-surface-subtle">
             {columns.map((column) => (
@@ -242,6 +243,7 @@ export function CatalogTable<Row extends { id: string }>({
                   "px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted",
                   tableAlignmentClasses[column.align ?? "left"],
                 )}
+                scope="col"
               >
                 {column.header}
               </th>

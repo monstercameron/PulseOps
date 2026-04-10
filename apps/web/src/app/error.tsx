@@ -19,7 +19,7 @@ export default function AppError({
   }, [error]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#f5f7fb] px-6">
+    <main className="flex min-h-screen items-center justify-center bg-[#f5f7fb] px-6">
       <div className="w-full max-w-lg rounded-3xl border border-[rgba(20,34,53,0.08)] bg-white p-8 shadow-[0_20px_60px_rgba(20,34,53,0.12)]">
         <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-muted">
           Application error
@@ -47,6 +47,6 @@ export default function AppError({
           </button>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

@@ -169,7 +169,7 @@ export function DashboardPage({ initialData, orgId }: DashboardPageProps) {
                 </p>
               </div>
               <button
-                className="rounded-[7px] border border-border-strong bg-surface-subtle px-3 py-[6px] text-[12px] font-semibold text-foreground transition hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                className="cursor-pointer rounded-[7px] border border-border-strong bg-surface-subtle px-3 py-[6px] text-[12px] font-semibold text-foreground transition hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                 onClick={() => router.push("/explorer")}
                 type="button"
               >
@@ -220,7 +220,7 @@ export function DashboardPage({ initialData, orgId }: DashboardPageProps) {
               <button
                 key={view}
                 className={[
-                  "rounded-[6px] px-4 py-[6px] text-[12.5px] font-semibold transition-colors",
+                  "cursor-pointer rounded-[6px] px-4 py-[6px] text-[12.5px] font-semibold transition-colors",
                   activeView === view
                     ? "bg-white text-[#142235] shadow-[0_1px_3px_rgba(20,34,53,.1)] dark:bg-card dark:text-foreground"
                     : "text-[#8898aa] hover:text-foreground dark:text-muted",
@@ -270,7 +270,13 @@ export function DashboardPage({ initialData, orgId }: DashboardPageProps) {
               </div>
               <div className="border-t border-border px-5 py-3">
                 <button
-                  className="text-[12px] font-bold text-accent transition hover:text-accent/70"
+                  className="cursor-pointer text-[12px] font-bold text-accent transition hover:text-accent/70"
+                  onClick={() =>
+                    openPlaceholderAction(
+                      "View full activity log",
+                      "A dedicated full activity log surface is not implemented yet.",
+                    )
+                  }
                   type="button"
                 >
                   View full activity log →
@@ -326,7 +332,7 @@ export function DashboardPage({ initialData, orgId }: DashboardPageProps) {
                 </p>
               </div>
               <button
-                className="shrink-0 rounded-[9px] bg-accent px-[18px] py-[9px] text-[13px] font-bold text-[#0d1b2a] transition hover:opacity-90 active:scale-[.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                className="cursor-pointer shrink-0 rounded-[9px] bg-accent px-[18px] py-[9px] text-[13px] font-bold text-[#0d1b2a] transition hover:opacity-90 active:scale-[.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                 onClick={() =>
                   handleActivityAction(
                     initialData.businessSummary.actionLabel,

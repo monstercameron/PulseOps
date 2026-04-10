@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 
+import { DEFAULT_UI_LOCALE } from "@/features/i18n/lib/locale";
 import { reportClientErrorBoundary } from "@/features/observability/lib/client-error-boundary-report";
 
 export default function GlobalError({
@@ -19,9 +20,9 @@ export default function GlobalError({
   }, [error]);
 
   return (
-    <html lang="en">
+    <html lang={DEFAULT_UI_LOCALE}>
       <body className="min-h-screen bg-[#f5f7fb]">
-        <div className="flex min-h-screen items-center justify-center px-6">
+        <main className="flex min-h-screen items-center justify-center px-6">
           <div className="w-full max-w-lg rounded-3xl border border-[rgba(20,34,53,0.08)] bg-white p-8 shadow-[0_20px_60px_rgba(20,34,53,0.12)]">
             <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-muted">
               Global error
@@ -49,7 +50,7 @@ export default function GlobalError({
               </button>
             </div>
           </div>
-        </div>
+        </main>
       </body>
     </html>
   );

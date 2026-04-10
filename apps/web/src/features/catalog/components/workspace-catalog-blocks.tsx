@@ -44,7 +44,7 @@ export function WorkspaceHeader({
           {actions.map((action) => (
             <button
               key={action.label}
-              className="inline-flex items-center gap-[7px] rounded-[7px] border border-border-strong bg-surface-subtle px-[11px] py-[6px] text-[12px] font-semibold text-muted transition hover:bg-surface-muted hover:text-foreground active:scale-[.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              className="inline-flex cursor-pointer items-center gap-[7px] rounded-[7px] border border-border-strong bg-surface-subtle px-[11px] py-[6px] text-[12px] font-semibold text-muted transition hover:bg-surface-muted hover:text-foreground active:scale-[.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
               onClick={action.onClick}
               type="button"
             >
@@ -72,6 +72,7 @@ export function FilterChip({
     <button
       className={cx(
         "inline-flex items-center gap-1.5 rounded-[8px] border px-3 py-1.5 text-[12.5px] font-medium transition active:scale-[.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1 focus-visible:ring-offset-background",
+        "cursor-pointer",
         active
           ? "border-accent bg-accent/10 text-accent"
           : "border-border bg-card text-muted hover:border-foreground/15 hover:bg-surface-subtle hover:text-foreground dark:hover:bg-surface-muted",
@@ -192,7 +193,7 @@ export function WorkspaceAlertBanner({
         <p className="mt-1 text-sm leading-7 text-current/80">{description}</p>
         {actionLabel ? (
           <button
-            className={cx("mt-3 rounded text-sm font-semibold transition hover:opacity-80 active:scale-[.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current", alertActionClasses[tone])}
+            className={cx("mt-3 cursor-pointer rounded text-sm font-semibold transition hover:opacity-80 active:scale-[.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current", alertActionClasses[tone])}
             onClick={onAction}
             type="button"
           >
@@ -251,7 +252,7 @@ export function ActivityFeedItem({
         <div className="mt-2 flex items-center gap-3">
           <span className="text-[11px] text-muted/75">{time}</span>
           {action ? (
-            <button className="rounded-[5px] px-1 text-[11px] font-bold text-accent transition hover:text-accent/70 active:scale-[.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent" onClick={onAction} type="button">
+            <button className="cursor-pointer rounded-[5px] px-1 text-[11px] font-bold text-accent transition hover:text-accent/70 active:scale-[.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent" onClick={onAction} type="button">
               {action}
             </button>
           ) : null}
@@ -310,7 +311,7 @@ export function DecisionQueueCard({
           <button
             key={action}
             className={cx(
-              "rounded-[7px] px-3 py-[6px] text-[12px] font-semibold transition active:scale-[.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
+              "cursor-pointer rounded-[7px] px-3 py-[6px] text-[12px] font-semibold transition active:scale-[.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
               index === 0
                 ? "bg-[#142235] text-white dark:bg-surface-muted dark:text-foreground"
                 : "border border-[rgba(20,34,53,.12)] bg-white text-[#142235] dark:border-border-strong dark:bg-surface-subtle dark:text-foreground",
@@ -500,7 +501,7 @@ export function PackSidebarItem({
   return (
     <button
       className={cx(
-        "flex w-full items-start gap-4 border-b border-[rgba(20,34,53,.05)] px-5 py-[18px] text-left transition-colors last:border-b-0 dark:border-border",
+        "flex w-full cursor-pointer items-start gap-4 border-b border-[rgba(20,34,53,.05)] px-5 py-[18px] text-left transition-colors last:border-b-0 dark:border-border",
         active
           ? "border-l-[3px] border-l-accent bg-[rgba(0,201,167,.05)] pl-[17px] dark:bg-accent-dim"
           : "hover:bg-[rgba(20,34,53,.015)] dark:hover:bg-surface-muted",

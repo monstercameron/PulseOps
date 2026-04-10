@@ -5,15 +5,18 @@ import { useRouter } from "next/navigation";
 
 import { PlaceholderActionDialog } from "@/features/catalog/components/catalog-dialogs";
 import {
+  CatalogButton,
   CatalogTable,
   ConfidenceMeter,
   StatusBadge,
+  cx,
 } from "@/features/catalog/components/catalog-primitives";
 import {
   CitationList,
   FilterChip,
   WorkspaceHeader,
 } from "@/features/catalog/components/workspace-catalog-blocks";
+import { resolveSelectedExplorerRecord } from "@/features/explorer/lib/explorer-selection";
 import {
   type ExplorerPageData,
   type ExplorerRecord,
@@ -30,13 +33,15 @@ type ExplorerExportError = Readonly<{
 
 export function ExplorerPage({ initialData, orgId }: ExplorerPageProps) {
   const router = useRouter();
-  const [activeFilter, setActiveFilter] = useState(initialData.filters[0] ?? "All records");
+  const [activeFilter, setActiveFilter] = useState(
+    initialData.filters[0] ?? "All records",
+  );
   const [placeholderAction, setPlaceholderAction] = useState<{
     description?: string;
     title: string;
   } | null>(null);
   const [search, setSearch] = useState("");
-  const [selectedRecordId, setSelectedRecordId] = useState(
+  const [selectedRecordId, setSelectedRecordId] = useState<string | null>(
     initialData.records[0]?.id ?? null,
   );
   const [isExporting, setIsExporting] = useState(false);
@@ -57,10 +62,11 @@ export function ExplorerPage({ initialData, orgId }: ExplorerPageProps) {
         .includes(normalizedQuery)
     );
   });
-  const selectedRecord =
-    visibleRecords.find((record) => record.id === selectedRecordId) ??
-    visibleRecords[0] ??
-    null;
+  const selectedRecord = resolveSelectedExplorerRecord(
+    visibleRecords,
+    selectedRecordId,
+  );
+  const isDetailPaneOpen = selectedRecord !== null;
   const summary = buildVisibleSummary(visibleRecords);
 
   function openActionDialog(title: string, description?: string) {
@@ -87,7 +93,9 @@ export function ExplorerPage({ initialData, orgId }: ExplorerPageProps) {
         searchParams.set("query", deferredSearch.trim());
       }
 
-      const response = await fetch(`/api/explorer/records/export?${searchParams.toString()}`);
+      const response = await fetch(
+        `/api/explorer/records/export?${searchParams.toString()}`,
+      );
 
       if (!response.ok) {
         const payload = (await response.json()) as ExplorerExportError;
@@ -98,7 +106,9 @@ export function ExplorerPage({ initialData, orgId }: ExplorerPageProps) {
     } catch (error) {
       openActionDialog(
         "Could not export records",
-        error instanceof Error ? error.message : "The request could not be completed.",
+        error instanceof Error
+          ? error.message
+          : "The request could not be completed.",
       );
     } finally {
       setIsExporting(false);
@@ -199,11 +209,22 @@ export function ExplorerPage({ initialData, orgId }: ExplorerPageProps) {
           />
         ))}
         <div className="ml-auto flex items-center gap-[6px] rounded-[8px] border border-border bg-card px-3 py-[6px]">
-          <svg fill="none" height="13" stroke="#8898aa" strokeLinecap="round" strokeWidth="1.5" viewBox="0 0 16 16" width="13"><circle cx="7" cy="7" r="5" /><path d="M11 11l2.5 2.5" /></svg>
+          <svg
+            fill="none"
+            height="13"
+            stroke="#8898aa"
+            strokeLinecap="round"
+            strokeWidth="1.5"
+            viewBox="0 0 16 16"
+            width="13"
+          >
+            <circle cx="7" cy="7" r="5" />
+            <path d="M11 11l2.5 2.5" />
+          </svg>
           <input
             className="w-[160px] border-none bg-transparent text-[13px] text-foreground outline-none placeholder:text-muted"
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search records…"
+            placeholder="Search records..."
             value={search}
           />
         </div>
@@ -211,24 +232,52 @@ export function ExplorerPage({ initialData, orgId }: ExplorerPageProps) {
 
       <div className="flex shrink-0 border-b border-border bg-card">
         <div className="flex-1 border-r border-border px-6 py-3">
-          <p className="text-[10.5px] font-semibold uppercase tracking-[0.07em] text-muted">Total records</p>
-          <p className="mt-[3px] text-[20px] font-extrabold tracking-[-0.02em] text-foreground">{summary.totalRecords}</p>
-          <p className="mt-[2px] text-[11px] text-muted">across all sources and types</p>
+          <p className="text-[10.5px] font-semibold uppercase tracking-[0.07em] text-muted">
+            Total records
+          </p>
+          <p className="mt-[3px] text-[20px] font-extrabold tracking-[-0.02em] text-foreground">
+            {summary.totalRecords}
+          </p>
+          <p className="mt-[2px] text-[11px] text-muted">
+            across all sources and types
+          </p>
         </div>
         <div className="flex-1 border-r border-border px-6 py-3">
-          <p className="text-[10.5px] font-semibold uppercase tracking-[0.07em] text-muted">Avg confidence</p>
-          <p className="mt-[3px] text-[20px] font-extrabold tracking-[-0.02em] text-foreground">{summary.averageConfidence}</p>
-          <p className="mt-[2px] text-[11px] text-muted">above 0.85 brief threshold</p>
+          <p className="text-[10.5px] font-semibold uppercase tracking-[0.07em] text-muted">
+            Avg confidence
+          </p>
+          <p className="mt-[3px] text-[20px] font-extrabold tracking-[-0.02em] text-foreground">
+            {summary.averageConfidence}
+          </p>
+          <p className="mt-[2px] text-[11px] text-muted">
+            above 0.85 brief threshold
+          </p>
         </div>
         <div className="flex-1 px-6 py-3">
-          <p className="text-[10.5px] font-semibold uppercase tracking-[0.07em] text-muted">Needs review</p>
-          <p className="mt-[3px] text-[20px] font-extrabold tracking-[-0.02em] text-amber-600 dark:text-amber-300">{summary.needsReviewCount}</p>
-          <p className="mt-[2px] text-[11px] text-muted">held — not yet downstream</p>
+          <p className="text-[10.5px] font-semibold uppercase tracking-[0.07em] text-muted">
+            Needs review
+          </p>
+          <p className="mt-[3px] text-[20px] font-extrabold tracking-[-0.02em] text-amber-600 dark:text-amber-300">
+            {summary.needsReviewCount}
+          </p>
+          <p className="mt-[2px] text-[11px] text-muted">
+            held - not yet downstream
+          </p>
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 overflow-hidden">
-        <div className="min-w-0 flex-1 overflow-auto">
+      <div
+        className={cx(
+          "flex min-h-0 flex-1 overflow-hidden",
+          isDetailPaneOpen ? "flex-col lg:flex-row" : "flex-col",
+        )}
+      >
+        <div
+          className={cx(
+            "min-w-0 overflow-auto",
+            isDetailPaneOpen ? "lg:w-1/2 lg:flex-[0_0_50%]" : "flex-1",
+          )}
+        >
           <CatalogTable
             ariaLabel="Explorer records"
             columns={columns}
@@ -241,33 +290,51 @@ export function ExplorerPage({ initialData, orgId }: ExplorerPageProps) {
           />
         </div>
 
-        <div className="w-[320px] shrink-0 overflow-y-auto border-l border-border bg-card p-5">
-          {selectedRecord === null ? (
-            <div>
-              <h2 className="text-base font-semibold text-foreground">No record selected</h2>
-              <p className="mt-2 text-sm leading-7 text-muted">
-                Adjust the current filters or search query to bring a record into view.
-              </p>
-            </div>
-          ) : (
+        {selectedRecord !== null ? (
+          <div className="shrink-0 overflow-y-auto border-t border-border bg-card p-5 lg:w-1/2 lg:flex-[0_0_50%] lg:border-l lg:border-t-0">
             <div className="space-y-5">
               <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <StatusBadge label={selectedRecord.typeLabel} tone={selectedRecord.typeTone} />
-                  <StatusBadge label={selectedRecord.statusLabel} tone={selectedRecord.statusTone} />
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <StatusBadge
+                        label={selectedRecord.typeLabel}
+                        tone={selectedRecord.typeTone}
+                      />
+                      <StatusBadge
+                        label={selectedRecord.statusLabel}
+                        tone={selectedRecord.statusTone}
+                      />
+                    </div>
+                    <h2 className="mt-3 text-[15px] font-semibold tracking-tight text-foreground">
+                      {selectedRecord.documentName}
+                    </h2>
+                    <p className="mt-2 text-[13px] leading-[1.6] text-muted">
+                      {selectedRecord.documentMeta}
+                    </p>
+                    <p className="text-[13px] leading-[1.6] text-muted">
+                      {selectedRecord.dateLabel}
+                    </p>
+                  </div>
+                  <CatalogButton
+                    className="shrink-0"
+                    onClick={() => setSelectedRecordId(null)}
+                    variant="ghost"
+                  >
+                    Close
+                  </CatalogButton>
                 </div>
-                <h2 className="mt-3 text-[15px] font-semibold tracking-tight text-foreground">
-                  {selectedRecord.documentName}
-                </h2>
-                <p className="mt-2 text-[13px] leading-[1.6] text-muted">{selectedRecord.documentMeta}</p>
-                <p className="text-[13px] leading-[1.6] text-muted">{selectedRecord.dateLabel}</p>
               </div>
 
               <div>
-                <p className="text-[10.5px] font-bold uppercase tracking-[0.08em] text-muted">Facts preview</p>
+                <p className="text-[10.5px] font-bold uppercase tracking-[0.08em] text-muted">
+                  Facts preview
+                </p>
                 <div className="mt-3 space-y-2">
                   {selectedRecord.detailFacts.length === 0 ? (
-                    <p className="text-[13px] text-muted">No extracted facts attached yet.</p>
+                    <p className="text-[13px] text-muted">
+                      No extracted facts attached yet.
+                    </p>
                   ) : (
                     selectedRecord.detailFacts.map((fact) => (
                       <div
@@ -275,10 +342,14 @@ export function ExplorerPage({ initialData, orgId }: ExplorerPageProps) {
                         className="rounded-[10px] border border-border bg-surface-subtle p-3"
                       >
                         <div className="flex items-center justify-between gap-3">
-                          <span className="text-[10px] font-bold uppercase tracking-[0.06em] text-muted">{fact.key}</span>
+                          <span className="text-[10px] font-bold uppercase tracking-[0.06em] text-muted">
+                            {fact.key}
+                          </span>
                           <ConfidenceMeter value={fact.confidenceScore} />
                         </div>
-                        <p className="mt-2 text-[13px] font-medium text-foreground">{fact.value}</p>
+                        <p className="mt-2 text-[13px] font-medium text-foreground">
+                          {fact.value}
+                        </p>
                       </div>
                     ))
                   )}
@@ -286,18 +357,22 @@ export function ExplorerPage({ initialData, orgId }: ExplorerPageProps) {
               </div>
 
               <div>
-                <p className="text-[10.5px] font-bold uppercase tracking-[0.08em] text-muted">Citations</p>
+                <p className="text-[10.5px] font-bold uppercase tracking-[0.08em] text-muted">
+                  Citations
+                </p>
                 <div className="mt-3">
                   {selectedRecord.detailCitations.length === 0 ? (
-                    <p className="text-[13px] text-muted">No citations attached yet.</p>
+                    <p className="text-[13px] text-muted">
+                      No citations attached yet.
+                    </p>
                   ) : (
                     <CitationList items={selectedRecord.detailCitations} />
                   )}
                 </div>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        ) : null}
       </div>
 
       {placeholderAction ? (
