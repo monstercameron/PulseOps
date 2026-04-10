@@ -5,6 +5,8 @@ const mocks = vi.hoisted(() => {
     documentRepository: { name: "documents" },
     entityRepository: { name: "entities" },
     factRepository: { name: "facts" },
+    parserArtifactRepository: { name: "parser-artifacts" },
+    textParserArtifactRepository: { name: "text-parser-artifacts" },
     storage: { name: "storage" },
   };
 
@@ -67,11 +69,15 @@ describe("/api/explorer/records route", () => {
       entityRepository: mocks.runtime.entityRepository,
       factRepository: mocks.runtime.factRepository,
       orgId: "org_123",
+      parserArtifactRepository: mocks.runtime.parserArtifactRepository,
       storage: mocks.runtime.storage,
     });
     expect(mocks.handleExplorerRecordsRequest).toHaveBeenCalledWith(request, {
       documentRepository: mocks.runtime.documentRepository,
       factRepository: mocks.runtime.factRepository,
+      parserArtifactRepository: mocks.runtime.parserArtifactRepository,
+      textParserArtifactRepository:
+        mocks.runtime.textParserArtifactRepository,
     });
   });
 
@@ -87,6 +93,9 @@ describe("/api/explorer/records route", () => {
     expect(mocks.handleExplorerRecordsRequest).toHaveBeenCalledWith(request, {
       documentRepository: mocks.runtime.documentRepository,
       factRepository: mocks.runtime.factRepository,
+      parserArtifactRepository: mocks.runtime.parserArtifactRepository,
+      textParserArtifactRepository:
+        mocks.runtime.textParserArtifactRepository,
     });
   });
 });

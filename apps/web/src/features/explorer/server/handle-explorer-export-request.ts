@@ -4,6 +4,8 @@ import { type DocumentStatus } from "@/features/documents/domain/document";
 import { type DocumentRepository } from "@/features/documents/repositories/document-repository";
 import { readDocumentStatusListSearchParam } from "@/features/documents/server/document-query-filters";
 import { type FactRepository } from "@/features/facts/repositories/fact-repository";
+import { type ParserArtifactRepository } from "@/features/parsing/repositories/parser-artifact-repository";
+import { type TextParserArtifactRepository } from "@/features/parsing/repositories/text-parser-artifact-repository";
 import { getExplorerPageData } from "@/features/explorer/server/handle-explorer-records-request";
 
 const explorerExportSearchParamsSchema = z.object({
@@ -17,6 +19,8 @@ const explorerExportSearchParamsSchema = z.object({
 type ExplorerExportDependencies = Readonly<{
   documentRepository: DocumentRepository;
   factRepository: FactRepository;
+  parserArtifactRepository: ParserArtifactRepository;
+  textParserArtifactRepository: TextParserArtifactRepository;
 }>;
 
 export async function handleExplorerExportRequest(
@@ -49,7 +53,9 @@ export async function handleExplorerExportRequest(
     documentRepository: dependencies.documentRepository,
     factRepository: dependencies.factRepository,
     orgId: parsedSearchParams.data.orgId,
+    parserArtifactRepository: dependencies.parserArtifactRepository,
     statuses,
+    textParserArtifactRepository: dependencies.textParserArtifactRepository,
   });
   const filteredRecords = filterExplorerExportRecords(data.records, {
     query: parsedSearchParams.data.query,

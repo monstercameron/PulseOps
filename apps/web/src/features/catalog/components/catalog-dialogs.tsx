@@ -1,7 +1,10 @@
+"use client";
+
 import type { ReactNode } from "react";
 
 import { CatalogButton, CatalogCard } from "@/features/catalog/components/catalog-primitives";
 import { DialogFrame } from "@/features/catalog/components/settings-catalog-blocks";
+import { useUiI18n } from "@/features/i18n/components/ui-i18n-provider";
 
 type CatalogModalOverlayProps = Readonly<{
   children: ReactNode;
@@ -28,13 +31,15 @@ export function PlaceholderActionDialog({
   onClose,
   title,
 }: PlaceholderActionDialogProps) {
+  const { t } = useUiI18n();
+
   return (
     <CatalogModalOverlay>
       <DialogFrame
         description={description}
         footer={
           <CatalogButton onClick={onClose} variant="primary">
-            Close
+            {t("common.close", "Close")}
           </CatalogButton>
         }
         onClose={onClose}
@@ -43,7 +48,10 @@ export function PlaceholderActionDialog({
         {children ?? (
           <CatalogCard className="border-dashed bg-surface-subtle p-5 shadow-none">
             <p className="text-sm leading-7 text-muted">
-              The UI path is live so the control is no longer dead, but the backend behavior for this action has not been planned or implemented yet.
+              {t(
+                "common.placeholderActionDescription",
+                "The UI path is live so the control is no longer dead, but the backend behavior for this action has not been planned or implemented yet.",
+              )}
             </p>
           </CatalogCard>
         )}

@@ -19,6 +19,7 @@ import { pipelinePageLabels } from "@/features/pipeline/constants/pipeline-page-
 import { settingsPageLabels } from "@/features/settings/constants/settings-page-content";
 import {
   supportedUiLocales,
+  resolveUiLocale,
   type SupportedUiLocale,
 } from "@/features/i18n/lib/locale";
 
@@ -27,6 +28,10 @@ const defaultUiMessagesEnUs = {
     localeLabel: "Locale",
     mobileNavigationAriaLabel: "Mobile navigation",
     navItems: {
+      blog: {
+        label: "Blog",
+        mobileLabel: "Blog",
+      },
       ask: {
         label: "Ask",
         mobileLabel: "Ask",
@@ -106,22 +111,155 @@ const defaultUiMessagesEnUs = {
     submitLabel: "Ask",
     submitting: "Running...",
     threadDeleteLabel: "Delete thread",
-    threadHistoryDescription:
-      "Questions are saved to thread history when submitted from this input.",
     threadsHeading: "Threads",
     title: "Ask",
   },
   common: {
+    close: "Close",
     closeDialog: "Close dialog",
     localeLabel: "Locale",
+    resetDashboardFilters: "Reset dashboard filters",
     skipToMainContent: "Skip to main content",
   },
+  dataLabels: {
+    documentFamilies: {
+      all: {
+        description: "All supported document families.",
+        label: "All document types",
+      },
+      "accounts-receivable-aging-report": {
+        description:
+          "Aging snapshots used to prioritize collection actions and identify slow-paying customers.",
+        label: "Accounts receivable aging report",
+      },
+      "bank-transaction-export": {
+        description:
+          "Transaction-level cash movement used to reconcile inflows, outflows, and anomalies.",
+        label: "Bank transaction export",
+      },
+      "chart-of-accounts-export": {
+        description:
+          "Ledger account reference data used for financial normalization and rollups.",
+        label: "Chart of accounts export",
+      },
+      "customer-invoice": {
+        description:
+          "Issued invoices used for receivables, payment timing, and collection recommendations.",
+        label: "Customer invoice",
+      },
+      "estimate-or-quote": {
+        description:
+          "Quoted pricing used to compare promised job value against realized cost and margin.",
+        label: "Estimate or quote",
+      },
+      "generic-business-document": {
+        description:
+          "A fallback family for parseable business files that do not cleanly map to a narrower supported document family.",
+        label: "Generic business document",
+      },
+      "job-cost-report": {
+        description:
+          "Job-level revenue and cost breakdown used for underpricing and margin analysis.",
+        label: "Job cost report",
+      },
+      "payroll-or-timecard-export": {
+        description:
+          "Labor hour and labor cost data used for crew-level cost and utilization analysis.",
+        label: "Payroll or timecard export",
+      },
+      "profit-and-loss-statement": {
+        description:
+          "Period financial summary used to validate margin and operating trend calculations.",
+        label: "Profit and loss statement",
+      },
+      "schedule-or-work-order-export": {
+        description:
+          "Operational schedule data used for workload timing and service-delivery context.",
+        label: "Schedule or work order export",
+      },
+      "vendor-bill": {
+        description:
+          "Payables documents used for cash timing and margin leakage analysis.",
+        label: "Vendor bill",
+      },
+    },
+    generic: {
+      document: "Document",
+      noParserArtifact: "No parser artifact captured yet.",
+      notUsed: "Not used",
+      sizeUnavailable: "Size unavailable",
+      unavailable: "Unavailable",
+      used: "Used",
+    },
+    sources: {
+      all: "All sources",
+      api: "Connected API",
+      email: "Gmail / AP inbox",
+      upload: "Manual uploads",
+    },
+    statuses: {
+      all: "All statuses",
+      extracted: "Extracted",
+      failed: "Failed",
+      "needs-review": "Needs review",
+      uploaded: "Uploaded",
+    },
+  },
+  appError: {
+    badge: "Application error",
+    description:
+      "The failure has been logged with request and trace metadata when available.",
+    goToDashboard: "Go to dashboard",
+    title: "Something broke in this view.",
+    tryAgain: "Try again",
+  },
   dashboardPage: {
+    actionLabels: {
+      approve: "Approve",
+      dismiss: "Dismiss",
+      discard: "Discard",
+      fix: "Fix",
+      inspect: "Inspect",
+      inspectFiles: "Inspect files",
+      invoiceDate: "Invoice date",
+      keepSeparate: "Keep separate",
+      merge: "Merge",
+      openAsk: "Open Ask",
+      openBrief: "Open brief",
+      openExplorer: "Open explorer",
+      review: "Review",
+      serviceDate: "Service date",
+      skip: "Skip",
+    },
     activityLiveLabel: "Live - auto-refreshes",
     activityTitle: "Pipeline activity",
     emptyQueueDescription:
       "Broaden the filters or wait for new document activity.",
     emptyQueueTitle: "No operator actions in the current scope.",
+    filters: {
+      dateRanges: {
+        "7d": "Last 7 days",
+        "30d": "Last 30 days",
+        all: "All time",
+      },
+    },
+    labels: {
+      actions: {
+        primary: "Upload files",
+        secondary: "Open weekly brief",
+      },
+      breadcrumbs: ["App", "Dashboard"],
+      description:
+        "Track document flow, operator review, and the business signals that should shape this week's decisions.",
+      queueTitle: "Operator queue",
+      signalsTitle: "Business signals",
+      title: "Dashboard",
+      views: {
+        business: "Business view",
+        operations: "Operations view",
+      },
+    },
+    openExplorer: "Open explorer",
     queueItemsLabel: "{{count}} items",
     viewFullActivityLog: "View full activity log ->",
   },
@@ -131,10 +269,16 @@ const defaultUiMessagesEnUs = {
       exporting: "Exporting...",
       upload: "Upload file",
     },
+    allRecords: "All records",
+    backToList: "Back to list",
     breadcrumbs: ["Dashboard", "Explorer"],
+    close: "Close",
     description:
       "Browse parsed artifacts, extracted facts, and review-state records in one workspace table.",
+    documentMetadataHeading: "Document metadata",
     factsPreview: "Facts preview",
+    extractedFactsHeading: "Extracted facts",
+    parserMetadataHeading: "Parser metadata",
     noCitations: "No citations attached yet.",
     noFacts: "No extracted facts attached yet.",
     noRecordSelectedDescription:
@@ -759,6 +903,12 @@ const defaultUiMessagesEnUs = {
   pipelinePage: {
     dismissAction: "Dismiss alert",
     labels: pipelinePageLabels,
+    sourceActions: {
+      configure: "Configure",
+      investigate: "Investigate",
+      upload: "Upload",
+      viewFailedRecords: "View failed records",
+    },
     stageHeaders: {
       brief: "Brief",
       depth: "Pipeline depth",
@@ -864,6 +1014,7 @@ const defaultUiMessagesEnUs = {
   uploadModal: {
     acceptsDescription: "Accepts CSV and XLSX files up to 20 MB.",
     cancel: "Cancel",
+    documentIdLabel: "Document ID",
     done: "Done",
     duplicateDescription:
       "This file was already uploaded. The existing record has been refreshed.",
@@ -876,6 +1027,7 @@ const defaultUiMessagesEnUs = {
     uploadPrompt: "Drop a file here or click to browse",
     uploading: "Uploading...",
     uploadTypes: "CSV - XLSX - up to 20 MB",
+    uploadedBadge: "OK",
   },
 } as const;
 
@@ -900,6 +1052,10 @@ const defaultUiMessagesEs: UiMessages = {
       ask: {
         label: "Preguntar",
         mobileLabel: "Preguntar",
+      },
+      blog: {
+        label: "Blog",
+        mobileLabel: "Blog",
       },
       dashboard: {
         label: "Panel",
@@ -976,22 +1132,155 @@ const defaultUiMessagesEs: UiMessages = {
     submitLabel: "Preguntar",
     submitting: "Ejecutando...",
     threadDeleteLabel: "Eliminar hilo",
-    threadHistoryDescription:
-      "Las preguntas se guardan en el historial de hilos al enviarse desde esta entrada.",
     threadsHeading: "Hilos",
     title: "Preguntar",
   },
   common: {
+    close: "Cerrar",
     closeDialog: "Cerrar dialogo",
     localeLabel: "Idioma",
+    resetDashboardFilters: "Restablecer filtros del panel",
     skipToMainContent: "Saltar al contenido principal",
   },
+  dataLabels: {
+    documentFamilies: {
+      all: {
+        description: "Todas las familias de documentos compatibles.",
+        label: "Todos los tipos de documento",
+      },
+      "accounts-receivable-aging-report": {
+        description:
+          "Cortes de antiguedad usados para priorizar cobranza e identificar clientes lentos para pagar.",
+        label: "Reporte de antiguedad de cuentas por cobrar",
+      },
+      "bank-transaction-export": {
+        description:
+          "Movimientos de efectivo a nivel transaccion para reconciliar entradas, salidas y anomalias.",
+        label: "Exportacion de transacciones bancarias",
+      },
+      "chart-of-accounts-export": {
+        description:
+          "Datos de referencia del catalogo contable para normalizacion financiera y agrupaciones.",
+        label: "Exportacion del catalogo de cuentas",
+      },
+      "customer-invoice": {
+        description:
+          "Facturas emitidas usadas para cuentas por cobrar, tiempos de pago y recomendaciones de cobranza.",
+        label: "Factura de cliente",
+      },
+      "estimate-or-quote": {
+        description:
+          "Cotizaciones usadas para comparar el valor prometido del trabajo contra el costo y margen reales.",
+        label: "Estimado o cotizacion",
+      },
+      "generic-business-document": {
+        description:
+          "Familia de respaldo para archivos de negocio parseables que no encajan claramente en una familia mas especifica.",
+        label: "Documento de negocio generico",
+      },
+      "job-cost-report": {
+        description:
+          "Desglose de ingresos y costos por trabajo usado para detectar subcotizacion y analizar margen.",
+        label: "Reporte de costo por trabajo",
+      },
+      "payroll-or-timecard-export": {
+        description:
+          "Horas y costos de mano de obra para analizar utilizacion y costo por cuadrilla.",
+        label: "Exportacion de nomina o tarjetas de tiempo",
+      },
+      "profit-and-loss-statement": {
+        description:
+          "Resumen financiero de periodo usado para validar calculos de margen y tendencias operativas.",
+        label: "Estado de resultados",
+      },
+      "schedule-or-work-order-export": {
+        description:
+          "Datos operativos de agenda usados para contexto de carga de trabajo y entrega del servicio.",
+        label: "Exportacion de agenda u orden de trabajo",
+      },
+      "vendor-bill": {
+        description:
+          "Documentos por pagar usados para analizar el calendario de caja y fugas de margen.",
+        label: "Factura de proveedor",
+      },
+    },
+    generic: {
+      document: "Documento",
+      noParserArtifact: "Todavia no se ha capturado un artefacto del parser.",
+      notUsed: "No usado",
+      sizeUnavailable: "Tamano no disponible",
+      unavailable: "No disponible",
+      used: "Usado",
+    },
+    sources: {
+      all: "Todas las fuentes",
+      api: "API conectada",
+      email: "Gmail / bandeja AP",
+      upload: "Cargas manuales",
+    },
+    statuses: {
+      all: "Todos los estados",
+      extracted: "Extraido",
+      failed: "Fallido",
+      "needs-review": "Necesita revision",
+      uploaded: "Subido",
+    },
+  },
+  appError: {
+    badge: "Error de aplicacion",
+    description:
+      "La falla fue registrada con metadatos de solicitud y trazabilidad cuando estuvieron disponibles.",
+    goToDashboard: "Ir al panel",
+    title: "Algo fallo en esta vista.",
+    tryAgain: "Intentar de nuevo",
+  },
   dashboardPage: {
+    actionLabels: {
+      approve: "Aprobar",
+      dismiss: "Descartar",
+      discard: "Descartar",
+      fix: "Corregir",
+      inspect: "Inspeccionar",
+      inspectFiles: "Inspeccionar archivos",
+      invoiceDate: "Fecha de factura",
+      keepSeparate: "Mantener separado",
+      merge: "Fusionar",
+      openAsk: "Abrir Preguntar",
+      openBrief: "Abrir brief",
+      openExplorer: "Abrir explorador",
+      review: "Revisar",
+      serviceDate: "Fecha de servicio",
+      skip: "Omitir",
+    },
     activityLiveLabel: "En vivo - se actualiza automaticamente",
     activityTitle: "Actividad del pipeline",
     emptyQueueDescription:
       "Amplia los filtros o espera nueva actividad de documentos.",
     emptyQueueTitle: "No hay acciones de operador en el alcance actual.",
+    filters: {
+      dateRanges: {
+        "7d": "Ultimos 7 dias",
+        "30d": "Ultimos 30 dias",
+        all: "Todo el tiempo",
+      },
+    },
+    labels: {
+      actions: {
+        primary: "Subir archivos",
+        secondary: "Abrir brief semanal",
+      },
+      breadcrumbs: ["Aplicacion", "Panel"],
+      description:
+        "Sigue el flujo de documentos, la revision operativa y las senales de negocio que deben guiar las decisiones de esta semana.",
+      queueTitle: "Cola operativa",
+      signalsTitle: "Senales del negocio",
+      title: "Panel",
+      views: {
+        business: "Vista de negocio",
+        operations: "Vista operativa",
+      },
+    },
+    openExplorer: "Abrir explorador",
     queueItemsLabel: "{{count}} elementos",
     viewFullActivityLog: "Ver registro completo de actividad ->",
   },
@@ -1001,10 +1290,16 @@ const defaultUiMessagesEs: UiMessages = {
       exporting: "Exportando...",
       upload: "Subir archivo",
     },
+    allRecords: "Todos los registros",
+    backToList: "Volver a la lista",
     breadcrumbs: ["Panel", "Explorador"],
+    close: "Cerrar",
     description:
       "Explora artefactos parseados, hechos extraidos y registros en revision en una sola tabla del espacio de trabajo.",
+    documentMetadataHeading: "Metadatos del documento",
     factsPreview: "Vista previa de hechos",
+    extractedFactsHeading: "Hechos extraidos",
+    parserMetadataHeading: "Metadatos del parser",
     noCitations: "Todavia no hay citas adjuntas.",
     noFacts: "Todavia no hay hechos extraidos adjuntos.",
     noRecordSelectedDescription:
@@ -1957,6 +2252,12 @@ const defaultUiMessagesEs: UiMessages = {
       },
       title: "Pipeline de datos",
     },
+    sourceActions: {
+      configure: "Configurar",
+      investigate: "Investigar",
+      upload: "Subir",
+      viewFailedRecords: "Ver registros fallidos",
+    },
     stageHeaders: {
       brief: "Brief",
       depth: "Profundidad del pipeline",
@@ -2075,6 +2376,7 @@ const defaultUiMessagesEs: UiMessages = {
   uploadModal: {
     acceptsDescription: "Acepta archivos CSV y XLSX de hasta 20 MB.",
     cancel: "Cancelar",
+    documentIdLabel: "ID del documento",
     done: "Listo",
     duplicateDescription:
       "Este archivo ya se habia subido. El registro existente se actualizo.",
@@ -2087,6 +2389,7 @@ const defaultUiMessagesEs: UiMessages = {
     uploadPrompt: "Suelta un archivo aqui o haz clic para buscar",
     uploading: "Subiendo...",
     uploadTypes: "CSV - XLSX - hasta 20 MB",
+    uploadedBadge: "OK",
   },
 };
 
@@ -2103,3 +2406,7 @@ export const defaultUiTranslationBundles = Object.fromEntries(
     defaultUiMessagesByLocale[locale.code],
   ]),
 ) as Record<SupportedUiLocale, UiMessages>;
+
+export function getDefaultUiMessages(locale?: string | null) {
+  return defaultUiTranslationBundles[resolveUiLocale(locale)];
+}

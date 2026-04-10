@@ -14,6 +14,12 @@ import {
 } from "@/features/documents/server/document-query-filters";
 import { DEFAULT_WORKSPACE } from "@/features/foundation/domain/default-workspace";
 import { type IngestionJobRepository } from "@/features/ingestion/repositories/ingestion-job-repository";
+import { getDefaultUiMessages } from "@/features/i18n/constants/default-ui-translation-bundles";
+import {
+  getUiDocumentFamilyLabel,
+  getUiSourceLabel,
+  getUiStatusLabel,
+} from "@/features/i18n/lib/data-labels";
 
 const pipelineSearchParamsSchema = z.object({
   orgId: z.string().min(1),
@@ -82,6 +88,7 @@ export async function getPipelinePageData({
   orgId,
   statuses,
 }: GetPipelinePageDataInput): Promise<PipelinePageData> {
+  const messages = getDefaultUiMessages(locale);
   const [allDocuments, jobs] = await Promise.all([
     documentRepository.listByOrgId(orgId),
     ingestionJobRepository.listByOrgId(orgId),
@@ -113,13 +120,16 @@ export async function getPipelinePageData({
           relatedDocument?.classificationConfidenceScore !== undefined
             ? relatedDocument.classificationConfidenceScore.toFixed(2)
             : "--",
-        documentType: relatedDocument?.suggestedDocumentFamily ?? "Document",
+        documentType: getUiDocumentFamilyLabel(
+          messages,
+          relatedDocument?.suggestedDocumentFamily,
+        ),
         durationLabel: getDurationLabel(job.createdAt, job.completedAt ?? job.lastUpdatedAt),
         id: job.id,
         outcomeLabel: buildJobOutcomeLabel(job.status),
         outcomeTone: buildJobOutcomeTone(job.status),
         recordsLabel: "1",
-        sourceLabel: relatedDocument?.source ?? "upload",
+        sourceLabel: getUiSourceLabel(messages, relatedDocument?.source ?? "upload"),
         timeLabel: new Intl.DateTimeFormat(locale, {
           hour: "numeric",
           minute: "2-digit",
@@ -131,9 +141,9 @@ export async function getPipelinePageData({
     alert:
       failedDocuments.length > 0
         ? {
-            actionLabel: "View failed records",
+            actionLabel: messages.pipelinePage.sourceActions.viewFailedRecords,
             description: `${failedDocuments.map((document) => document.fileName).join(", ")} require review before they can move downstream.`,
-            dismissLabel: "Dismiss",
+            dismissLabel: messages.pipelinePage.dismissAction,
             title: `${DEFAULT_WORKSPACE.name} has failed document intake.`,
             tone: "warning",
           }
@@ -170,6 +180,7 @@ function groupSources(
   documents: Awaited<ReturnType<DocumentRepository["listByOrgId"]>>,
   locale: string,
 ): readonly PipelineSource[] {
+  const messages = getDefaultUiMessages(locale);
   const sourceOrder = ["api", "email", "upload"] as const;
   const sources: PipelineSource[] = [];
 
@@ -187,7 +198,9 @@ function groupSources(
     const typeChips = Array.from(
       new Set(
         matchingDocuments
-          .map((document) => document.suggestedDocumentFamily ?? "Document")
+          .map((document) =>
+            getUiDocumentFamilyLabel(messages, document.suggestedDocumentFamily),
+          )
           .slice(0, 4),
       ),
     );
@@ -195,10 +208,10 @@ function groupSources(
     sources.push({
       actionLabel:
         source === "email" && failedCount > 0
-          ? "Investigate"
+          ? messages.pipelinePage.sourceActions.investigate
           : source === "upload"
-            ? "Upload"
-            : "Configure",
+            ? messages.pipelinePage.sourceActions.upload
+            : messages.pipelinePage.sourceActions.configure,
       detailRows: [
         {
           label: "Last sync",
@@ -215,11 +228,15 @@ function groupSources(
         },
       ],
       healthLabel:
-        failedCount > 0 ? "Needs review" : source === "upload" ? "Manual review" : "Connected",
+        failedCount > 0
+          ? getUiStatusLabel(messages, "needs-review")
+          : source === "upload"
+            ? "Manual review"
+            : "Connected",
       healthTone: failedCount > 0 ? "warning" : "success",
       id: `source_${source}`,
       subtitle: buildSourceSubtitle(source),
-      title: buildSourceTitle(source),
+      title: buildSourceTitle(source, locale),
       typeChips,
     });
   });
@@ -227,16 +244,18 @@ function groupSources(
   return sources;
 }
 
-function buildSourceTitle(source: "api" | "email" | "upload") {
+function buildSourceTitle(source: "api" | "email" | "upload", locale: string) {
+  const messages = getDefaultUiMessages(locale);
+
   if (source === "api") {
     return "Connected API sources";
   }
 
   if (source === "email") {
-    return "Gmail / AP inbox";
+    return getUiSourceLabel(messages, "email");
   }
 
-  return "Manual uploads";
+  return getUiSourceLabel(messages, "upload");
 }
 
 function buildSourceSubtitle(source: "api" | "email" | "upload") {

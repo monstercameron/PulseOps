@@ -6,18 +6,22 @@ export const supportedUiLocales = [
   {
     code: "en-US",
     label: "English (US)",
+    shortLabel: "ENG",
   },
   {
     code: "en-GB",
     label: "English (UK)",
+    shortLabel: "ENG",
   },
   {
     code: "es-MX",
     label: "Espanol (Mexico)",
+    shortLabel: "ESP",
   },
   {
     code: "es-ES",
     label: "Espanol (Espana)",
+    shortLabel: "ESP",
   },
 ] as const;
 

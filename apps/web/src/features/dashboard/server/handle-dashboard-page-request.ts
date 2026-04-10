@@ -37,6 +37,7 @@ import { type SettingsRepository } from "@/features/settings/repositories/settin
 import { getSettingsRecord } from "@/features/settings/server/settings-record-service";
 
 const dashboardSearchParamsSchema = z.object({
+  locale: z.string().min(2).optional(),
   orgId: z.string().min(1),
 });
 
@@ -56,6 +57,7 @@ export async function handleDashboardPageRequest(
 ) {
   const url = new URL(request.url);
   const parsedSearchParams = dashboardSearchParamsSchema.safeParse({
+    locale: url.searchParams.get("locale") ?? undefined,
     orgId: url.searchParams.get("orgId"),
   });
 
@@ -76,6 +78,7 @@ export async function handleDashboardPageRequest(
       source: url.searchParams.get("source"),
       status: url.searchParams.get("status"),
     }),
+    locale: parsedSearchParams.data.locale,
     orgId: parsedSearchParams.data.orgId,
   });
 
@@ -88,6 +91,7 @@ export async function handleDashboardPageRequest(
 type GetDashboardPageDataInput = DashboardDependencies &
   Readonly<{
     filters?: DashboardFilterValues;
+    locale?: string;
     now?: Date;
     orgId: string;
   }>;
@@ -97,6 +101,7 @@ export async function getDashboardPageData({
   documentRepository,
   factRepository,
   filters = dashboardDefaultFilterValues,
+  locale = "en-US",
   now = new Date(),
   orgId,
   packRepository,
@@ -131,6 +136,7 @@ export async function getDashboardPageData({
   const resolvedQueueItemIds = new Set(queueEvents.map((queueEvent) => queueEvent.itemId));
   const dashboardFilters = buildDashboardFilters({
     documents,
+    locale,
     organizationName,
     values: filters,
   });
@@ -191,6 +197,7 @@ export async function getDashboardPageData({
     }),
     filterSummary: buildFilterSummary({
       filters,
+      locale,
       organizationName,
       visibleDocumentCount: filteredDocuments.length,
     }),
@@ -202,6 +209,7 @@ export async function getDashboardPageData({
     scopedContent: buildScopedContentPreview({
       documents: filteredDocuments,
       filters,
+      locale,
     }),
     signals: buildSignalsFromWorkspaceData({
       documents: filteredDocuments,
@@ -508,10 +516,11 @@ function buildBusinessSummary(input: Readonly<{
 
 function buildFilterSummary(input: Readonly<{
   filters: DashboardFilterValues;
+  locale: string;
   organizationName: string;
   visibleDocumentCount: number;
 }>): DashboardPageData["filterSummary"] {
-  const globalScopeLabel = `KPI strip covers ${input.organizationName} over ${getDashboardDateRangeScopeLabel(input.filters.dateRange)}.`;
+  const globalScopeLabel = `KPI strip covers ${input.organizationName} over ${getDashboardDateRangeScopeLabel(input.filters.dateRange, input.locale)}.`;
 
   if (!hasScopedDashboardFilters(input.filters)) {
     return {
@@ -523,20 +532,20 @@ function buildFilterSummary(input: Readonly<{
 
   return {
     globalScopeLabel,
-    scopedResultsLabel: `Activity, queue, and signals are narrowed to ${buildScopedFilterLabel(input.filters)}. ${input.visibleDocumentCount} matching document${input.visibleDocumentCount === 1 ? "" : "s"} in scope.`,
+    scopedResultsLabel: `Activity, queue, and signals are narrowed to ${buildScopedFilterLabel(input.filters, input.locale)}. ${input.visibleDocumentCount} matching document${input.visibleDocumentCount === 1 ? "" : "s"} in scope.`,
   };
 }
 
-function buildScopedFilterLabel(filters: DashboardFilterValues) {
+function buildScopedFilterLabel(filters: DashboardFilterValues, locale: string) {
   const scopeLabels = [
     filters.source !== dashboardDefaultFilterValues.source
-      ? getDashboardSourceLabel(filters.source)
+      ? getDashboardSourceLabel(filters.source, locale)
       : null,
     filters.documentType !== dashboardDefaultFilterValues.documentType
-      ? getDashboardDocumentTypeLabel(filters.documentType).toLowerCase()
+      ? getDashboardDocumentTypeLabel(filters.documentType, locale).toLowerCase()
       : null,
     filters.status !== dashboardDefaultFilterValues.status
-      ? getDashboardStatusLabel(filters.status).toLowerCase()
+      ? getDashboardStatusLabel(filters.status, locale).toLowerCase()
       : null,
   ].filter((value): value is string => value !== null);
 
@@ -558,6 +567,7 @@ function buildScopedFilterLabel(filters: DashboardFilterValues) {
 function buildScopedContentPreview(input: Readonly<{
   documents: readonly DocumentRecord[];
   filters: DashboardFilterValues;
+  locale: string;
 }>): DashboardPageData["scopedContent"] {
   if (!hasScopedDashboardFilters(input.filters)) {
     return null;
@@ -582,9 +592,12 @@ function buildScopedContentPreview(input: Readonly<{
       .map((document) => ({
         id: document.id,
         meta: [
-          getDashboardSourceLabel(document.source),
-          getDocumentTypeDisplayLabel(document),
-          getDashboardStatusLabel(mapDocumentStatusToDashboardStatus(document.status)),
+          getDashboardSourceLabel(document.source, input.locale),
+          getDocumentTypeDisplayLabel(document, input.locale),
+          getDashboardStatusLabel(
+            mapDocumentStatusToDashboardStatus(document.status),
+            input.locale,
+          ),
           formatTimestampLabel(document.updatedAt),
         ].join(" | "),
         title: document.fileName,
@@ -607,22 +620,23 @@ function mapDocumentStatusToDashboardStatus(
   return status;
 }
 
-function getDocumentTypeDisplayLabel(document: DocumentRecord) {
+function getDocumentTypeDisplayLabel(document: DocumentRecord, locale: string) {
   if (document.suggestedDocumentFamily === undefined) {
     return "Document";
   }
 
-  return getDashboardDocumentTypeLabel(document.suggestedDocumentFamily);
+  return getDashboardDocumentTypeLabel(document.suggestedDocumentFamily, locale);
 }
 
 function getDashboardDateRangeScopeLabel(
   dateRange: DashboardFilterValues["dateRange"],
+  locale: string,
 ) {
   if (dateRange === "all") {
     return "all time";
   }
 
-  return `the ${getDashboardDateRangeLabel(dateRange).toLowerCase()}`;
+  return `the ${getDashboardDateRangeLabel(dateRange, locale).toLowerCase()}`;
 }
 
 function buildActivityItem(document: DocumentRecord): DashboardActivityItem {

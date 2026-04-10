@@ -14,6 +14,12 @@ import {
   type SupportedDocumentFamilyId,
 } from "@/features/foundation/domain/document-families";
 import { type CanonicalFactRecord } from "@/features/facts/domain/canonical-fact-record";
+import { getDefaultUiMessages } from "@/features/i18n/constants/default-ui-translation-bundles";
+import {
+  getUiDocumentFamilyLabel,
+  getUiSourceLabel,
+  getUiStatusLabel,
+} from "@/features/i18n/lib/data-labels";
 
 export const dashboardDateRangeSchema = z.enum(["7d", "30d", "all"]);
 export const dashboardStatusFilterSchema = z.enum([
@@ -79,37 +85,44 @@ export function hasScopedDashboardFilters(values: DashboardFilterValues) {
 
 export function buildDashboardFilters(input: Readonly<{
   documents: readonly DocumentRecord[];
+  locale?: string;
   organizationName: string;
   values: DashboardFilterValues;
 }>): DashboardFilters {
+  const messages = getDefaultUiMessages(input.locale);
+
   return {
     controls: [
       {
         id: "dateRange",
-        label: getDashboardDateRangeLabel(input.values.dateRange),
+        label: getDashboardDateRangeLabel(input.values.dateRange, input.locale),
         options: [
-          { label: "Last 7 days", value: "7d" },
-          { label: "Last 30 days", value: "30d" },
-          { label: "All time", value: "all" },
+          { label: messages.dashboardPage.filters.dateRanges["7d"], value: "7d" },
+          { label: messages.dashboardPage.filters.dateRanges["30d"], value: "30d" },
+          { label: messages.dashboardPage.filters.dateRanges.all, value: "all" },
         ],
         selectedValue: input.values.dateRange,
       },
       {
         id: "source",
-        label: getDashboardSourceLabel(input.values.source),
-        options: buildSourceOptions(input.documents, input.values.source),
+        label: getDashboardSourceLabel(input.values.source, input.locale),
+        options: buildSourceOptions(input.documents, input.values.source, input.locale),
         selectedValue: input.values.source,
       },
       {
         id: "documentType",
-        label: getDashboardDocumentTypeLabel(input.values.documentType),
-        options: buildDocumentTypeOptions(input.documents, input.values.documentType),
+        label: getDashboardDocumentTypeLabel(input.values.documentType, input.locale),
+        options: buildDocumentTypeOptions(
+          input.documents,
+          input.values.documentType,
+          input.locale,
+        ),
         selectedValue: input.values.documentType,
       },
       {
         id: "status",
-        label: getDashboardStatusLabel(input.values.status),
-        options: buildStatusOptions(input.documents, input.values.status),
+        label: getDashboardStatusLabel(input.values.status, input.locale),
+        options: buildStatusOptions(input.documents, input.values.status, input.locale),
         selectedValue: input.values.status,
       },
     ] satisfies readonly DashboardFilterControl[],
@@ -153,75 +166,48 @@ export function filterDashboardFacts(
 
 export function getDashboardDateRangeLabel(
   value: DashboardFilterValues["dateRange"],
+  locale?: string,
 ) {
+  const messages = getDefaultUiMessages(locale);
+
   if (value === "30d") {
-    return "Last 30 days";
+    return messages.dashboardPage.filters.dateRanges["30d"];
   }
 
   if (value === "all") {
-    return "All time";
+    return messages.dashboardPage.filters.dateRanges.all;
   }
 
-  return "Last 7 days";
+  return messages.dashboardPage.filters.dateRanges["7d"];
 }
 
 export function getDashboardSourceLabel(
   value: DashboardFilterValues["source"],
+  locale?: string,
 ) {
-  if (value === "email") {
-    return "Gmail / AP inbox";
-  }
-
-  if (value === "api") {
-    return "Connected API";
-  }
-
-  if (value === "upload") {
-    return "Manual uploads";
-  }
-
-  return "All sources";
+  return getUiSourceLabel(getDefaultUiMessages(locale), value);
 }
 
 export function getDashboardDocumentTypeLabel(
   value: DashboardFilterValues["documentType"],
+  locale?: string,
 ) {
-  if (value === "all") {
-    return "All document types";
-  }
-
-  return (
-    supportedDocumentFamilies.find((family) => family.id === value)?.label ??
-    "All document types"
-  );
+  return getUiDocumentFamilyLabel(getDefaultUiMessages(locale), value);
 }
 
 export function getDashboardStatusLabel(
   value: DashboardFilterValues["status"],
+  locale?: string,
 ) {
-  if (value === "needs-review") {
-    return "Needs review";
-  }
-
-  if (value === "uploaded") {
-    return "Uploaded";
-  }
-
-  if (value === "extracted") {
-    return "Extracted";
-  }
-
-  if (value === "failed") {
-    return "Failed";
-  }
-
-  return "All statuses";
+  return getUiStatusLabel(getDefaultUiMessages(locale), value);
 }
 
 function buildDocumentTypeOptions(
   documents: readonly DocumentRecord[],
   selectedValue: DashboardFilterValues["documentType"],
+  locale?: string,
 ) {
+  const messages = getDefaultUiMessages(locale);
   const availableFamilies = new Set<SupportedDocumentFamilyId>();
 
   documents.forEach((document) => {
@@ -235,11 +221,11 @@ function buildDocumentTypeOptions(
   }
 
   return [
-    { label: "All document types", value: "all" },
+    { label: messages.dataLabels.documentFamilies.all.label, value: "all" },
     ...supportedDocumentFamilies
       .filter((family) => availableFamilies.has(family.id))
       .map((family) => ({
-        label: family.label,
+        label: getUiDocumentFamilyLabel(messages, family.id),
         value: family.id,
       })),
   ];
@@ -248,7 +234,9 @@ function buildDocumentTypeOptions(
 function buildSourceOptions(
   documents: readonly DocumentRecord[],
   selectedValue: DashboardFilterValues["source"],
+  locale?: string,
 ) {
+  const messages = getDefaultUiMessages(locale);
   const availableSources = new Set<
     Exclude<DashboardFilterValues["source"], "all">
   >();
@@ -264,11 +252,11 @@ function buildSourceOptions(
   const sourceOrder = ["email", "api", "upload"] as const;
 
   return [
-    { label: "All sources", value: "all" },
+    { label: messages.dataLabels.sources.all, value: "all" },
     ...sourceOrder
       .filter((source) => availableSources.has(source))
       .map((source) => ({
-        label: getDashboardSourceLabel(source),
+        label: getDashboardSourceLabel(source, locale),
         value: source,
       })),
   ];
@@ -277,7 +265,9 @@ function buildSourceOptions(
 function buildStatusOptions(
   documents: readonly DocumentRecord[],
   selectedValue: DashboardFilterValues["status"],
+  locale?: string,
 ) {
+  const messages = getDefaultUiMessages(locale);
   const availableStatuses = new Set<
     Exclude<DashboardFilterValues["status"], "all">
   >();
@@ -315,11 +305,11 @@ function buildStatusOptions(
   ] as const;
 
   return [
-    { label: "All statuses", value: "all" },
+    { label: messages.dataLabels.statuses.all, value: "all" },
     ...statusOrder
       .filter((status) => availableStatuses.has(status))
       .map((status) => ({
-        label: getDashboardStatusLabel(status),
+        label: getDashboardStatusLabel(status, locale),
         value: status,
       })),
   ];

@@ -11,10 +11,10 @@ import {
   WorkspaceStatStrip,
 } from "@/features/catalog/components/workspace-catalog-blocks";
 import {
-  pipelinePageLabels,
   type PipelinePageData,
   type PipelineRun,
 } from "@/features/pipeline/constants/pipeline-page-content";
+import { useUiI18n } from "@/features/i18n/components/ui-i18n-provider";
 import { UploadFilesModal } from "@/features/uploads/components/upload-files-modal";
 
 type PipelinePageProps = Readonly<{
@@ -37,6 +37,8 @@ const outcomeToneClasses = {
 } as const;
 
 export function PipelinePage({ initialData, orgId }: PipelinePageProps) {
+  const { messages, t } = useUiI18n();
+  const labels = messages.pipelinePage.labels;
   const [placeholderAction, setPlaceholderAction] = useState<PlaceholderAction>(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
 
@@ -50,23 +52,23 @@ export function PipelinePage({ initialData, orgId }: PipelinePageProps) {
       <WorkspaceHeader
         actions={[
           {
-            label: pipelinePageLabels.actions.secondary,
+            label: labels.actions.secondary,
             onClick: () => setShowUploadModal(true),
             variant: "secondary",
           },
           {
-            label: pipelinePageLabels.actions.primary,
+            label: labels.actions.primary,
             onClick: () =>
               openPlaceholderAction(
-                pipelinePageLabels.actions.primary,
-                "Pipeline diagnostics are planned, but the test-run orchestration is not implemented yet.",
+                labels.actions.primary,
+                messages.pipelinePage.testPipelineDescription,
               ),
             variant: "primary",
           },
         ]}
-        breadcrumbs={pipelinePageLabels.breadcrumbs}
-        description={pipelinePageLabels.description}
-        title={pipelinePageLabels.title}
+        breadcrumbs={labels.breadcrumbs}
+        description={labels.description}
+        title={labels.title}
       />
 
       <div className="flex-1 px-6 py-5">
@@ -81,7 +83,9 @@ export function PipelinePage({ initialData, orgId }: PipelinePageProps) {
                   initialData.alert?.title,
                 )
               }
-              onDismiss={() => openPlaceholderAction("Dismiss alert", initialData.alert?.title)}
+              onDismiss={() =>
+                openPlaceholderAction(messages.pipelinePage.dismissAction, initialData.alert?.title)
+              }
               title={initialData.alert.title}
               tone={initialData.alert.tone}
             />
@@ -94,10 +98,10 @@ export function PipelinePage({ initialData, orgId }: PipelinePageProps) {
         <section className="mt-7">
           <div className="mb-3">
             <h2 className="text-[12px] font-bold uppercase tracking-[0.1em] text-muted">
-              {pipelinePageLabels.sectionTitles.sources}
+              {labels.sectionTitles.sources}
             </h2>
             <p className="mt-[3px] text-[12px] text-muted">
-              {pipelinePageLabels.sectionDescriptions.sources}
+              {labels.sectionDescriptions.sources}
             </p>
           </div>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -106,6 +110,10 @@ export function PipelinePage({ initialData, orgId }: PipelinePageProps) {
                 key={source.id}
                 actionLabel={source.actionLabel}
                 detailRows={source.detailRows}
+                documentTypesLabel={t(
+                  "pipelinePage.documentTypesLabel",
+                  "Document types",
+                )}
                 healthLabel={source.healthLabel}
                 healthTone={source.healthTone}
                 onAction={() => openPlaceholderAction(source.actionLabel, source.title)}
@@ -120,21 +128,21 @@ export function PipelinePage({ initialData, orgId }: PipelinePageProps) {
         <section className="mt-7">
           <div className="mb-3">
             <h2 className="text-[12px] font-bold uppercase tracking-[0.1em] text-muted">
-              {pipelinePageLabels.sectionTitles.rules}
+              {labels.sectionTitles.rules}
             </h2>
             <p className="mt-[3px] text-[12px] text-muted">
-              {pipelinePageLabels.sectionDescriptions.rules}
+              {labels.sectionDescriptions.rules}
             </p>
           </div>
           <CatalogCard className="overflow-hidden">
             <div className="grid grid-cols-[120px_160px_minmax(220px,1fr)_52px_52px_52px_52px] gap-3 border-b border-border bg-surface-subtle px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">
-              <span>Source</span>
-              <span>Doc type</span>
-              <span>Pipeline depth</span>
-              <span className="text-center">LLM</span>
-              <span className="text-center">SQL</span>
-              <span className="text-center">Vector</span>
-              <span className="text-center">Brief</span>
+              <span>{messages.pipelinePage.stageHeaders.source}</span>
+              <span>{messages.pipelinePage.stageHeaders.documentType}</span>
+              <span>{messages.pipelinePage.stageHeaders.depth}</span>
+              <span className="text-center">{messages.pipelinePage.stageHeaders.llm}</span>
+              <span className="text-center">{messages.pipelinePage.stageHeaders.sql}</span>
+              <span className="text-center">{messages.pipelinePage.stageHeaders.vector}</span>
+              <span className="text-center">{messages.pipelinePage.stageHeaders.brief}</span>
             </div>
             <div className="overflow-x-auto">
               <div className="min-w-[760px]">
@@ -169,10 +177,10 @@ export function PipelinePage({ initialData, orgId }: PipelinePageProps) {
         <section className="mt-7">
           <div className="mb-3">
             <h2 className="text-[12px] font-bold uppercase tracking-[0.1em] text-muted">
-              {pipelinePageLabels.sectionTitles.runs}
+              {labels.sectionTitles.runs}
             </h2>
             <p className="mt-[3px] text-[12px] text-muted">
-              {pipelinePageLabels.sectionDescriptions.runs}
+              {labels.sectionDescriptions.runs}
             </p>
           </div>
           <CatalogCard className="overflow-hidden">
@@ -180,7 +188,7 @@ export function PipelinePage({ initialData, orgId }: PipelinePageProps) {
               <table className="min-w-full border-collapse text-[12.5px]">
                 <thead>
                   <tr className="border-b border-border bg-surface-subtle">
-                    {["Time", "Source", "Document type", "Records", "Outcome", "Confidence", "Duration"].map((header) => (
+                    {messages.pipelinePage.tableHeaders.map((header) => (
                       <th
                         key={header}
                         className="whitespace-nowrap px-[18px] py-[9px] text-left text-[10px] font-bold uppercase tracking-[0.07em] text-muted"
@@ -220,6 +228,8 @@ export function PipelinePage({ initialData, orgId }: PipelinePageProps) {
 }
 
 function StageIndicator({ enabled }: Readonly<{ enabled: boolean }>) {
+  const { t } = useUiI18n();
+
   return (
     <span className="flex justify-center">
       <span
@@ -228,7 +238,7 @@ function StageIndicator({ enabled }: Readonly<{ enabled: boolean }>) {
           enabled ? stageEnabledClasses : stageDisabledClasses,
         )}
       >
-        {enabled ? "OK" : "-"}
+        {enabled ? t("pipelinePage.okLabel", "OK") : "-"}
       </span>
     </span>
   );

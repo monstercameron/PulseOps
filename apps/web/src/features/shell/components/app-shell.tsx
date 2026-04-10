@@ -6,7 +6,6 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 
 import { cx } from "@/features/catalog/components/catalog-primitives";
-import { LocaleSwitcher } from "@/features/i18n/components/locale-switcher";
 import { useUiI18n } from "@/features/i18n/components/ui-i18n-provider";
 
 const sidebarStorageKey = "sidebar-collapsed";
@@ -70,6 +69,12 @@ export function AppShell({
       label: messages.appShell.navItems.ask.label,
       mobileLabel: messages.appShell.navItems.ask.mobileLabel,
       Icon: IconAsk,
+    },
+    {
+      href: "/content",
+      label: messages.appShell.navItems.blog.label,
+      mobileLabel: messages.appShell.navItems.blog.mobileLabel,
+      Icon: IconBlog,
     },
   ];
 
@@ -198,14 +203,6 @@ export function AppShell({
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden bg-background max-[900px]:pb-14">
-        <div
-          aria-label={messages.appShell.topBarAriaLabel}
-          className="border-b border-border bg-background px-4 py-2"
-        >
-          <div className="flex justify-end">
-            <LocaleSwitcher />
-          </div>
-        </div>
         <main
           className="main-area flex min-w-0 flex-1 flex-col overflow-y-auto bg-background"
           id="main-content"
@@ -324,6 +321,19 @@ function IconAsk() {
         d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z"
         fillRule="evenodd"
       />
+    </svg>
+  );
+}
+
+function IconBlog() {
+  return (
+    <svg fill="currentColor" height="15" viewBox="0 0 20 20" width="15">
+      <path
+        clipRule="evenodd"
+        d="M2 5a2 2 0 012-2h8a2 2 0 012 2v10a2 2 0 002 2H4a2 2 0 01-2-2V5zm3 1h6v1H5V6zm6 3H5v1h6V9zm-6 3h4v1H5v-1z"
+        fillRule="evenodd"
+      />
+      <path d="M15 7h2a1 1 0 011 1v7.5a1.5 1.5 0 01-3 0V7z" />
     </svg>
   );
 }

@@ -15,6 +15,7 @@ export const GET = createLoggedRouteHandler({
         entityRepository: localIngestionRuntime.entityRepository,
         factRepository: localIngestionRuntime.factRepository,
         orgId,
+        parserArtifactRepository: localIngestionRuntime.parserArtifactRepository,
         storage: localIngestionRuntime.storage,
       });
     }
@@ -22,6 +23,9 @@ export const GET = createLoggedRouteHandler({
     return handleExplorerRecordsRequest(request, {
       documentRepository: localIngestionRuntime.documentRepository,
       factRepository: localIngestionRuntime.factRepository,
+      parserArtifactRepository: localIngestionRuntime.parserArtifactRepository,
+      textParserArtifactRepository:
+        localIngestionRuntime.textParserArtifactRepository,
     });
   },
   route: "/api/explorer/records",

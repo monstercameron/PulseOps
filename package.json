@@ -24,6 +24,7 @@
     "db:init": "powershell -ExecutionPolicy Bypass -File scripts/setup-local-postgres.ps1",
     "db:install:vector": "powershell -ExecutionPolicy Bypass -File scripts/install-local-pgvector.ps1",
     "db:check": "powershell -ExecutionPolicy Bypass -File scripts/check-local-postgres.ps1",
+    "db:seed:ui-translations": "tsx scripts/seed-ui-translations.ts",
     "db:test": "powershell -ExecutionPolicy Bypass -File scripts/test-local-postgres.ps1",
     "db:test:import": "powershell -ExecutionPolicy Bypass -File scripts/test-local-postgres-import.ps1",
     "db:seed:test-users": "tsx scripts/seed-test-users.ts",

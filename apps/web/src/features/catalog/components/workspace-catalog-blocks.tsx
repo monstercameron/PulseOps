@@ -7,6 +7,7 @@ import {
   StatusBadge,
   cx,
 } from "@/features/catalog/components/catalog-primitives";
+import { TopBarControls } from "@/features/shell/components/top-bar-controls";
 
 type WorkspaceHeaderProps = Readonly<{
   actions?: readonly { label: string; onClick?: () => void; variant?: "primary" | "secondary" }[];
@@ -22,25 +23,20 @@ export function WorkspaceHeader({
   title,
 }: WorkspaceHeaderProps) {
   return (
-    <header className="border-b border-border bg-background px-[22px] pb-[14px] pt-[13px]">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <div className="flex flex-wrap items-center gap-1 text-[11.5px] text-muted">
-            {breadcrumbs.map((crumb, index) => (
-              <span key={crumb} className="inline-flex items-center gap-1">
-                {index > 0 ? <span>/</span> : null}
-                <span className={index === breadcrumbs.length - 1 ? "font-medium text-foreground" : undefined}>
-                  {crumb}
-                </span>
-              </span>
-            ))}
-          </div>
-          <h1 className="mb-[3px] mt-1 text-[18px] font-bold tracking-[-0.02em] text-foreground">
-            {title}
-          </h1>
-          <p className="m-0 max-w-[520px] text-[13px] leading-[1.4] text-muted">{description}</p>
+    <header className="border-b border-border bg-background px-[22px] py-[9px]">
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex min-w-0 items-center gap-0 text-[12px]">
+          {breadcrumbs.slice(0, -1).map((crumb) => (
+            <span key={crumb} className="flex items-center gap-0 text-muted">
+              <span>{crumb}</span>
+              <span className="mx-[6px] opacity-40">/</span>
+            </span>
+          ))}
+          <h1 className="text-[13px] font-semibold text-foreground">{title}</h1>
+          <span className="mx-[8px] text-border-strong opacity-60">·</span>
+          <p className="hidden truncate text-[12px] text-muted min-[600px]:block">{description}</p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           {actions.map((action) => (
             <button
               key={action.label}
@@ -51,6 +47,9 @@ export function WorkspaceHeader({
               {action.label}
             </button>
           ))}
+          <div className="ml-1 border-l border-border pl-3">
+            <TopBarControls />
+          </div>
         </div>
       </div>
     </header>
@@ -333,6 +332,7 @@ type SourceConnectionCardProps = Readonly<{
     label: string;
     value: string;
   }[];
+  documentTypesLabel?: string;
   healthLabel: string;
   healthTone: "danger" | "success" | "warning";
   onAction?: () => void;
@@ -344,6 +344,7 @@ type SourceConnectionCardProps = Readonly<{
 export function SourceConnectionCard({
   actionLabel,
   detailRows,
+  documentTypesLabel = "Document types",
   healthLabel,
   healthTone,
   onAction,
@@ -377,7 +378,7 @@ export function SourceConnectionCard({
       </div>
       <div className="border-t border-border px-5 py-4">
         <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">
-          Document types
+          {documentTypesLabel}
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           {typeChips.map((typeChip) => (
@@ -550,9 +551,9 @@ type CitationListProps = Readonly<{
 export function CitationList({ items }: CitationListProps) {
   return (
     <div className="flex flex-wrap gap-2">
-      {items.map((item) => (
+      {items.map((item, index) => (
         <span
-          key={item}
+          key={`${item}-${index}`}
           className="rounded-lg border border-border bg-surface-subtle px-2.5 py-1 text-[11px] font-medium text-muted"
         >
           {item}

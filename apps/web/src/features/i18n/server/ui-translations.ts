@@ -16,6 +16,7 @@ import {
   translateMessage,
 } from "@/features/i18n/lib/messages";
 import { localIngestionRuntime } from "@/features/runtime/local-ingestion-runtime";
+import { seedUiTranslationBundles } from "@/features/i18n/server/seed-ui-translation-bundles";
 
 const serverUiMessagesCache = new Map<SupportedUiLocale, UiMessages>();
 let seedGlobalUiTranslationsPromise: Promise<void> | null = null;
@@ -26,36 +27,9 @@ async function seedGlobalUiTranslations() {
   }
 
   seedGlobalUiTranslationsPromise = (async () => {
-  const repository = localIngestionRuntime.uiTranslationBundleRepository;
-
-  if (repository === undefined) {
-    return;
-  }
-
-  const timestamp = new Date().toISOString();
-
-  for (const [locale, messages] of Object.entries(defaultUiTranslationBundles)) {
-    const existingBundle = await repository.getByLocaleAndNamespace({
-      locale,
-      namespace: UI_TRANSLATION_NAMESPACE,
-      orgId: null,
+    await seedUiTranslationBundles({
+      repository: localIngestionRuntime.uiTranslationBundleRepository,
     });
-
-    if (existingBundle !== null) {
-      continue;
-    }
-
-    await repository.put({
-      createdAt: timestamp,
-      id: `global:${locale}:${UI_TRANSLATION_NAMESPACE}`,
-      locale,
-      messages,
-      namespace: UI_TRANSLATION_NAMESPACE,
-      orgId: null,
-      updatedAt: timestamp,
-      version: "ui-translation-bundle.v1",
-    });
-  }
   })();
 
   return seedGlobalUiTranslationsPromise;

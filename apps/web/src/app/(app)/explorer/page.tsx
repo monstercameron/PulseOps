@@ -22,6 +22,7 @@ export default async function Explorer({ searchParams }: ExplorerPageProps) {
     entityRepository: localIngestionRuntime.entityRepository,
     factRepository: localIngestionRuntime.factRepository,
     orgId: DEFAULT_WORKSPACE.orgId,
+    parserArtifactRepository: localIngestionRuntime.parserArtifactRepository,
     storage: localIngestionRuntime.storage,
   });
 
@@ -31,7 +32,10 @@ export default async function Explorer({ searchParams }: ExplorerPageProps) {
     factRepository: localIngestionRuntime.factRepository,
     locale,
     orgId: DEFAULT_WORKSPACE.orgId,
+    parserArtifactRepository: localIngestionRuntime.parserArtifactRepository,
     statuses: readDocumentStatusListSearchParam(params?.status),
+    textParserArtifactRepository:
+      localIngestionRuntime.textParserArtifactRepository,
   });
 
   return <ExplorerPage initialData={initialData} orgId={DEFAULT_WORKSPACE.orgId} />;

@@ -13,6 +13,9 @@ import { createLocalDocumentRepository } from "@/features/documents/repositories
 import { createCanonicalFactRecord } from "@/features/facts/domain/canonical-fact-record";
 import { createLocalFactRepository } from "@/features/facts/repositories/local-fact-repository";
 import { handleExplorerRecordsRequest } from "@/features/explorer/server/handle-explorer-records-request";
+import { createParserArtifact } from "@/features/parsing/domain/parser-artifact";
+import { createLocalParserArtifactRepository } from "@/features/parsing/repositories/local-parser-artifact-repository";
+import { createLocalTextParserArtifactRepository } from "@/features/parsing/repositories/local-text-parser-artifact-repository";
 import { createCitation } from "@/features/trust/domain/citation";
 
 const temporaryDirectories: string[] = [];
@@ -37,6 +40,12 @@ describe("handleExplorerRecordsRequest", () => {
       {
         documentRepository: createLocalDocumentRepository({ rootDirectory }),
         factRepository: createLocalFactRepository({ rootDirectory }),
+        parserArtifactRepository: createLocalParserArtifactRepository({
+          rootDirectory,
+        }),
+        textParserArtifactRepository: createLocalTextParserArtifactRepository({
+          rootDirectory,
+        }),
       },
     );
 
@@ -61,6 +70,12 @@ describe("handleExplorerRecordsRequest", () => {
 
     const documentRepository = createLocalDocumentRepository({ rootDirectory });
     const factRepository = createLocalFactRepository({ rootDirectory });
+    const parserArtifactRepository = createLocalParserArtifactRepository({
+      rootDirectory,
+    });
+    const textParserArtifactRepository = createLocalTextParserArtifactRepository({
+      rootDirectory,
+    });
 
     const uploadedDocument = createUploadedDocument(
       {
@@ -80,9 +95,31 @@ describe("handleExplorerRecordsRequest", () => {
     await documentRepository.put(
       documentSchema.parse({
         ...classifiedDocument,
+        parserArtifactId: "parser_123",
         sizeBytes: 1024,
         source: "upload",
         status: "extracted",
+      }),
+    );
+    await parserArtifactRepository.put(
+      createParserArtifact({
+        createdAt: "2026-04-10T01:02:00.000Z",
+        documentId: "doc_123",
+        id: "parser_123",
+        parserKind: "csv",
+        sheets: [
+          {
+            columnCount: 4,
+            headers: [
+              "invoice_number",
+              "customer_name",
+              "due_date",
+              "amount_outstanding",
+            ],
+            name: "Sheet1",
+            rowCount: 2,
+          },
+        ],
       }),
     );
     await factRepository.put(
@@ -115,6 +152,8 @@ describe("handleExplorerRecordsRequest", () => {
       {
         documentRepository,
         factRepository,
+        parserArtifactRepository,
+        textParserArtifactRepository,
       },
     );
 
@@ -126,13 +165,37 @@ describe("handleExplorerRecordsRequest", () => {
         {
           confidenceScore: 0.92,
           detailCitations: ["invoice-001.csv - row 2"],
+          detailDocumentFields: expect.arrayContaining([
+            {
+              label: "Title",
+              value: "invoice-001.csv",
+            },
+            {
+              label: "Heading",
+              value: "Sheet1",
+            },
+          ]),
           detailFacts: [
             {
+              canonicalFactTypeId: "invoice.amount.outstanding",
               key: "Outstanding balance",
+              sourceFieldKey: "amount_outstanding",
               value: "2100",
             },
           ],
-          documentMeta: "Manual upload - 1 KB",
+          detailParserFields: expect.arrayContaining([
+            {
+              label: "Primary heading",
+              value: "Sheet1",
+            },
+            {
+              label: "Column headings",
+              value:
+                "invoice_number, customer_name, due_date, amount_outstanding",
+            },
+          ]),
+          downloadAvailable: false,
+          documentMeta: "Manual uploads - 1 KB",
           documentName: "invoice-001.csv",
           factsSummary: "1 extracted fact",
           statusLabel: "Extracted",
@@ -154,6 +217,12 @@ describe("handleExplorerRecordsRequest", () => {
 
     const documentRepository = createLocalDocumentRepository({ rootDirectory });
     const factRepository = createLocalFactRepository({ rootDirectory });
+    const parserArtifactRepository = createLocalParserArtifactRepository({
+      rootDirectory,
+    });
+    const textParserArtifactRepository = createLocalTextParserArtifactRepository({
+      rootDirectory,
+    });
     const uploadedDocument = createUploadedDocument(
       {
         fileName: "invoice-001.csv",
@@ -222,6 +291,8 @@ describe("handleExplorerRecordsRequest", () => {
       {
         documentRepository,
         factRepository,
+        parserArtifactRepository,
+        textParserArtifactRepository,
       },
     );
 
@@ -252,12 +323,20 @@ describe("handleExplorerRecordsRequest", () => {
 
     const documentRepository = createLocalDocumentRepository({ rootDirectory });
     const factRepository = createLocalFactRepository({ rootDirectory });
+    const parserArtifactRepository = createLocalParserArtifactRepository({
+      rootDirectory,
+    });
+    const textParserArtifactRepository = createLocalTextParserArtifactRepository({
+      rootDirectory,
+    });
 
     const missingOrgResponse = await handleExplorerRecordsRequest(
       new Request("http://localhost/api/explorer/records"),
       {
         documentRepository,
         factRepository,
+        parserArtifactRepository,
+        textParserArtifactRepository,
       },
     );
     const invalidStatusResponse = await handleExplorerRecordsRequest(
@@ -267,6 +346,8 @@ describe("handleExplorerRecordsRequest", () => {
       {
         documentRepository,
         factRepository,
+        parserArtifactRepository,
+        textParserArtifactRepository,
       },
     );
 
@@ -288,6 +369,12 @@ describe("handleExplorerRecordsRequest", () => {
 
     const documentRepository = createLocalDocumentRepository({ rootDirectory });
     const factRepository = createLocalFactRepository({ rootDirectory });
+    const parserArtifactRepository = createLocalParserArtifactRepository({
+      rootDirectory,
+    });
+    const textParserArtifactRepository = createLocalTextParserArtifactRepository({
+      rootDirectory,
+    });
 
     await documentRepository.put(
       documentSchema.parse({
@@ -337,6 +424,8 @@ describe("handleExplorerRecordsRequest", () => {
       {
         documentRepository,
         factRepository,
+        parserArtifactRepository,
+        textParserArtifactRepository,
       },
     );
 
@@ -350,7 +439,8 @@ describe("handleExplorerRecordsRequest", () => {
               key: "document.observation.number",
             }),
           ],
-          documentMeta: "Connected API - size unavailable",
+          downloadAvailable: false,
+          documentMeta: "Connected API - Size unavailable",
           sourceLabel: "Connected API",
           typeLabel: "Generic business document",
         }),

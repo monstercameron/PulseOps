@@ -11,6 +11,8 @@ import {
 } from "@/features/documents/domain/document";
 import { createLocalDocumentRepository } from "@/features/documents/repositories/local-document-repository";
 import { createLocalFactRepository } from "@/features/facts/repositories/local-fact-repository";
+import { createLocalParserArtifactRepository } from "@/features/parsing/repositories/local-parser-artifact-repository";
+import { createLocalTextParserArtifactRepository } from "@/features/parsing/repositories/local-text-parser-artifact-repository";
 import { handleExplorerExportRequest } from "@/features/explorer/server/handle-explorer-export-request";
 
 const temporaryDirectories: string[] = [];
@@ -32,6 +34,12 @@ describe("handleExplorerExportRequest", () => {
 
     const documentRepository = createLocalDocumentRepository({ rootDirectory });
     const factRepository = createLocalFactRepository({ rootDirectory });
+    const parserArtifactRepository = createLocalParserArtifactRepository({
+      rootDirectory,
+    });
+    const textParserArtifactRepository = createLocalTextParserArtifactRepository({
+      rootDirectory,
+    });
     const uploadedInvoice = attachDocumentClassification(
       createUploadedDocument(
         {
@@ -83,6 +91,8 @@ describe("handleExplorerExportRequest", () => {
       {
         documentRepository,
         factRepository,
+        parserArtifactRepository,
+        textParserArtifactRepository,
       },
     );
 

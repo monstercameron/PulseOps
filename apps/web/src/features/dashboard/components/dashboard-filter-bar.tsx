@@ -17,12 +17,14 @@ import {
   applyDashboardFilterControlChange,
   buildDashboardFilterUrl,
 } from "@/features/dashboard/lib/dashboard-filter-navigation";
+import { useUiI18n } from "@/features/i18n/components/ui-i18n-provider";
 
 type DashboardFilterBarProps = Readonly<{
   filters: DashboardFilters;
 }>;
 
 export function DashboardFilterBar({ filters }: DashboardFilterBarProps) {
+  const { t } = useUiI18n();
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -66,7 +68,7 @@ export function DashboardFilterBar({ filters }: DashboardFilterBarProps) {
   return (
     <div className="flex flex-wrap items-center gap-2">
       <button
-        aria-label="Reset dashboard filters"
+        aria-label={t("common.resetDashboardFilters", "Reset dashboard filters")}
         className={getChipClasses(!hasActiveFilters, isPending)}
         onClick={() => commitFilterChange(dashboardDefaultFilterValues)}
         type="button"

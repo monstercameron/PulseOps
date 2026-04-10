@@ -70,7 +70,7 @@ export function LocaleSwitcher({
       <span className="sr-only">{t("common.localeLabel", "Locale")}</span>
       <select
         className={cx(
-          "min-h-[34px] rounded-[8px] border px-3 py-1.5 text-[12.5px] font-medium transition focus-visible:outline-none focus-visible:ring-2",
+          "min-h-[26px] rounded-[6px] border px-2 py-[3px] text-[11.5px] font-medium transition focus-visible:outline-none focus-visible:ring-2",
           toneClasses[tone],
           isPending ? "cursor-wait opacity-70" : "cursor-pointer",
         )}
@@ -82,7 +82,7 @@ export function LocaleSwitcher({
       >
         {supportedUiLocales.map((supportedLocale) => (
           <option key={supportedLocale.code} value={supportedLocale.code}>
-            {supportedLocale.label}
+            {supportedLocale.shortLabel}
           </option>
         ))}
       </select>

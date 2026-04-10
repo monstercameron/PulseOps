@@ -1,3 +1,5 @@
+"use client";
+
 import { useId, type ReactNode } from "react";
 
 import {
@@ -6,6 +8,7 @@ import {
   StatusBadge,
   cx,
 } from "@/features/catalog/components/catalog-primitives";
+import { useUiI18n } from "@/features/i18n/components/ui-i18n-provider";
 
 type FieldGroupProps = Readonly<{
   children: ReactNode;
@@ -212,6 +215,8 @@ export function ToggleRow({
   onToggle,
   title,
 }: ToggleRowProps) {
+  const { t } = useUiI18n();
+
   return (
     <div className="flex items-center gap-4 border-b border-border py-3 last:border-b-0">
       <div className="min-w-0 flex-1">
@@ -219,7 +224,7 @@ export function ToggleRow({
         <p className="mt-[3px] text-[11.5px] leading-[1.5] text-muted">{description}</p>
       </div>
       <button
-        aria-label={`Toggle ${title}`}
+        aria-label={t("settingsPage.actions.toggle", `Toggle ${title}`, { title })}
         disabled={disabled}
         aria-pressed={enabled}
         className={cx(
@@ -233,8 +238,8 @@ export function ToggleRow({
       >
         <span
           className={cx(
-            "absolute top-[2px] h-3 w-3 rounded-full shadow transition-transform",
-            enabled ? "translate-x-[14px] bg-white" : "translate-x-[2px] bg-white/45",
+            "absolute top-[3px] h-3 w-3 rounded-full shadow transition-transform",
+            enabled ? "translate-x-[18px] bg-white" : "translate-x-[2px] bg-white/45",
           )}
         />
       </button>
@@ -280,6 +285,8 @@ export function DialogFrame({
   stepLabel,
   title,
 }: DialogFrameProps & Readonly<{ onClose?: () => void }>) {
+  const { t } = useUiI18n();
+
   return (
     <div className="w-full max-w-[440px] overflow-hidden rounded-[12px] border border-border-strong bg-card shadow-[0_24px_60px_rgba(0,0,0,0.45)]">
       <div className="flex items-start justify-between gap-3 border-b border-border px-5 pb-[14px] pt-4">
@@ -291,7 +298,7 @@ export function DialogFrame({
           <p className="mt-[2px] text-[12px] leading-[1.4] text-muted">{description}</p>
         </div>
         <button
-          aria-label="Close dialog"
+          aria-label={t("common.closeDialog", "Close dialog")}
           className="-mt-[2px] shrink-0 cursor-pointer rounded-[5px] p-[2px] text-lg leading-none text-muted transition hover:bg-surface-subtle hover:text-foreground active:scale-[.93] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           onClick={onClose}
           type="button"
@@ -330,6 +337,8 @@ export function TeamMemberRow({
   status,
   statusLabel,
 }: TeamMemberRowProps) {
+  const { t } = useUiI18n();
+
   return (
     <div className="flex items-center gap-[10px] border-b border-border py-[11px] px-[18px] text-[13px] last:border-b-0 transition-colors hover:bg-white/[0.025]">
       <div className="flex min-w-0 flex-1 items-center gap-[10px]">
@@ -343,7 +352,7 @@ export function TeamMemberRow({
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <p className="text-[13px] font-semibold text-foreground">{name}</p>
-            {isCurrentUser ? <StatusBadge label="You" tone="info" /> : null}
+            {isCurrentUser ? <StatusBadge label={t("settingsPage.team.youBadge", "You")} tone="info" /> : null}
           </div>
           <p className="text-[11px] text-muted">{email}</p>
           <p className="mt-[2px] text-[10.5px] uppercase tracking-[0.08em] text-muted/80">
@@ -456,12 +465,14 @@ export function SessionRow({
   onAction,
   title,
 }: SessionRowProps) {
+  const { t } = useUiI18n();
+
   return (
     <div className="flex flex-col gap-3 border-b border-border px-5 py-4 last:border-b-0 md:flex-row md:items-center md:justify-between">
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <p className="text-sm font-medium text-foreground">{title}</p>
-          {isCurrent ? <StatusBadge label="Current" tone="success" /> : null}
+          {isCurrent ? <StatusBadge label={t("settingsPage.security.currentBadge", "Current")} tone="success" /> : null}
         </div>
         <p className="mt-1 text-xs leading-6 text-muted">{detail}</p>
       </div>
