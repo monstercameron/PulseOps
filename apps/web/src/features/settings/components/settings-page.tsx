@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { z } from "zod";
 
 import { type OrganizationAccountRole } from "@/features/accounts/domain/organization-account";
 import {
@@ -24,6 +25,8 @@ import {
   ToggleRow,
 } from "@/features/catalog/components/settings-catalog-blocks";
 import { WorkspaceHeader } from "@/features/catalog/components/workspace-catalog-blocks";
+import { supportedDocumentFamilies } from "@/features/foundation/domain/document-families";
+import { LocaleSwitcher } from "@/features/i18n/components/locale-switcher";
 import {
   type SettingsPageData,
   type SettingsTabId,
@@ -33,6 +36,7 @@ import {
   mergeSettingsMutationResponse,
   type SettingsMutationResponse,
 } from "@/features/settings/lib/settings-page-state";
+import { getSettingsSecurityAuthRowKind } from "@/features/settings/lib/settings-security";
 import { useUiI18n } from "@/features/i18n/components/ui-i18n-provider";
 import {
   persistAppTheme,
@@ -86,6 +90,38 @@ type SelectOption = Readonly<{
   label: string;
   value: string;
 }>;
+type ImportRuleDraft = SettingsPageData["importRules"][number];
+type DeliverySettingsDraft = Readonly<{
+  confidenceDropAlertEnabled: boolean;
+  confidenceDropRecipientEmails: string;
+  confidenceDropThreshold: string;
+  parseFailureAlertEnabled: boolean;
+  parseFailureCountThreshold: string;
+  parseFailureRecipientEmails: string;
+  queueDigestEnabled: boolean;
+  queueDigestRecipientEmails: string;
+  queueDigestSendTimeLocal: string;
+  sourceDisconnectedAlertEnabled: boolean;
+  sourceDisconnectedRecipientEmails: string;
+  weeklyBriefEnabled: boolean;
+  weeklyBriefRecipientEmails: string;
+  weeklyBriefSendDay: SettingsPageData["deliverySettings"]["weeklyBrief"]["sendDay"];
+  weeklyBriefSendTimeLocal: string;
+}>;
+type DataPolicyDraft = Readonly<{
+  acceptanceRateDriftThreshold: string;
+  apiRetentionDays: string;
+  briefHighConfidenceFloor: string;
+  classificationConfidenceFloor: string;
+  emailRetentionDays: string;
+  embeddingsEnabled: boolean;
+  extractionEnabled: boolean;
+  fieldConfidenceFloor: string;
+  humanReviewRequired: boolean;
+  outcomeRateDriftThreshold: string;
+  parserConfidenceFloor: string;
+  uploadRetentionDays: string;
+}>;
 type SettingsMessages = ReturnType<typeof useUiI18n>["messages"];
 type TranslateMessage = ReturnType<typeof useUiI18n>["t"];
 
@@ -117,6 +153,16 @@ const ALL_GOALS = [
   "Cut time spent on reporting",
   "Reduce cost per job",
 ] as const;
+const DELIVERY_DAY_OPTIONS = [
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+] as const;
+const IMPORT_RULE_SOURCE_OPTIONS = ["upload", "email", "api"] as const;
+const IMPORT_RULE_STATUS_OPTIONS = ["draft", "active", "archived"] as const;
+const PARSER_ROUTE_OPTIONS = ["tabular", "text"] as const;
 const INVITE_ROLE_OPTIONS = ["Admin", "Operator", "Analyst", "Viewer"] as const;
 const ACCOUNT_STATUS_OPTIONS = ["Active", "Invited"] as const;
 
@@ -131,13 +177,11 @@ function toSelectOptions(
 }
 
 const settingsTabIcons: Record<SettingsTabId, React.ReactNode> = {
-  organization: <svg fill="currentColor" height="14" viewBox="0 0 18 18" width="14"><path clipRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" fillRule="evenodd" /></svg>,
-  team: <svg fill="currentColor" height="14" viewBox="0 0 18 18" width="14"><path d="M9 6a3 3 0 100-6 3 3 0 000 6zM17 6a3 3 0 10-6 0 3 3 0 006 0zM12.93 17H4.07c.08-3.08 2.44-5 4.93-5s4.85 1.92 4.93 5zM14.5 11a3 3 0 10-3 2.83A4.97 4.97 0 0114.5 17H17a3 3 0 000-6z" /></svg>,
-  integrations: <svg fill="currentColor" height="14" viewBox="0 0 18 18" width="14"><path clipRule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z" fillRule="evenodd" /></svg>,
-  notifications: <svg fill="currentColor" height="14" viewBox="0 0 18 18" width="14"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zm0 16a2 2 0 01-2-2h4a2 2 0 01-2 2z" /></svg>,
-  security: <svg fill="currentColor" height="14" viewBox="0 0 18 18" width="14"><path clipRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" fillRule="evenodd" /></svg>,
+  myAccount: <svg fill="currentColor" height="14" viewBox="0 0 18 18" width="14"><path d="M9 2a4 4 0 110 8 4 4 0 010-8zm0 10c3.314 0 6 1.79 6 4v1H3v-1c0-2.21 2.686-4 6-4z" /></svg>,
+  workspace: <svg fill="currentColor" height="14" viewBox="0 0 18 18" width="14"><path clipRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" fillRule="evenodd" /></svg>,
+  sourcesOperations: <svg fill="currentColor" height="14" viewBox="0 0 18 18" width="14"><path clipRule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z" fillRule="evenodd" /></svg>,
+  peopleAccess: <svg fill="currentColor" height="14" viewBox="0 0 18 18" width="14"><path d="M9 6a3 3 0 100-6 3 3 0 000 6zM17 6a3 3 0 10-6 0 3 3 0 006 0zM12.93 17H4.07c.08-3.08 2.44-5 4.93-5s4.85 1.92 4.93 5zM14.5 11a3 3 0 10-3 2.83A4.97 4.97 0 0114.5 17H17a3 3 0 000-6z" /></svg>,
   billing: <svg fill="currentColor" height="14" viewBox="0 0 18 18" width="14"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" /><path clipRule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" fillRule="evenodd" /></svg>,
-  preferences: <svg fill="currentColor" height="14" viewBox="0 0 18 18" width="14"><path d="M3 5a1 1 0 011-1h10a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h6a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h4a1 1 0 110 2H4a1 1 0 01-1-1z" /></svg>,
 };
 
 type SettingsRequestError = Readonly<{
@@ -177,7 +221,29 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
     ALL_GOALS,
     messages.settingsPage.options.goals as readonly string[],
   );
-  const [activeTab, setActiveTab] = useState<SettingsTabId>("organization");
+  const deliveryDayOptions = DELIVERY_DAY_OPTIONS.map((day) => ({
+    label: translateDeliveryDayLabel(day, t),
+    value: day,
+  }));
+  const importRuleSourceOptions = IMPORT_RULE_SOURCE_OPTIONS.map((sourceKind) => ({
+    label: translateImportRuleSourceLabel(sourceKind, t),
+    value: sourceKind,
+  }));
+  const importRuleStatusOptions = IMPORT_RULE_STATUS_OPTIONS.map((status) => ({
+    label: translateImportRuleStatusLabel(status, t),
+    value: status,
+  }));
+  const parserRouteOptions = PARSER_ROUTE_OPTIONS.map((parserRoute) => ({
+    label: translateParserRouteLabel(parserRoute, t),
+    value: parserRoute,
+  }));
+  const documentFamilyOptions = supportedDocumentFamilies.map((family) => ({
+    label: family.label,
+    value: family.id,
+  }));
+  const [activeTab, setActiveTab] = useState<SettingsTabId>(
+    initialData.tabs[0]?.id ?? "myAccount",
+  );
   const [activeDialog, setActiveDialog] = useState<DialogId>(null);
   const [placeholderAction, setPlaceholderAction] = useState<PlaceholderAction>(null);
   const [theme, setTheme] = useState<AppTheme>(() => {
@@ -207,6 +273,15 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
   const [websiteDetailsDraft, setWebsiteDetailsDraft] = useState(
     initialData.websiteDetails,
   );
+  const [deliverySettingsDraft, setDeliverySettingsDraft] = useState(() =>
+    createDeliverySettingsDraft(initialData.deliverySettings),
+  );
+  const [dataPolicyDraft, setDataPolicyDraft] = useState(() =>
+    createDataPolicyDraft(initialData.dataPolicy),
+  );
+  const [importRuleDrafts, setImportRuleDrafts] = useState<readonly ImportRuleDraft[]>(
+    initialData.importRules,
+  );
   const [notificationGroups, setNotificationGroups] = useState(initialData.notifications);
   const [preferenceItems, setPreferenceItems] = useState(initialData.preferences);
   const [inviteDraft, setInviteDraft] = useState({
@@ -216,6 +291,9 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
   });
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isSavingWebsiteDetails, setIsSavingWebsiteDetails] = useState(false);
+  const [isSavingDeliverySettings, setIsSavingDeliverySettings] = useState(false);
+  const [isSavingDataPolicy, setIsSavingDataPolicy] = useState(false);
+  const [isSavingImportRules, setIsSavingImportRules] = useState(false);
   const [isSavingNotifications, setIsSavingNotifications] = useState(false);
   const [isSavingBilling, setIsSavingBilling] = useState(false);
   const [isSavingPreferences, setIsSavingPreferences] = useState(false);
@@ -269,6 +347,16 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
     accountDraft === null
       ? null
       : pageData.team.members.find((member) => member.id === accountDraft.id) ?? null;
+  const currentTeamMember =
+    pageData.team.members.find((member) => member.isCurrentUser) ?? null;
+  const selfServiceSecurityRows = pageData.security.authRows.filter((row) => {
+    const rowKind = getSettingsSecurityAuthRowKind(row.title);
+
+    return rowKind === "emailPassword" || rowKind === "twoFactor";
+  });
+  const workspaceSecurityRows = pageData.security.authRows.filter(
+    (row) => getSettingsSecurityAuthRowKind(row.title) === "singleSignOn",
+  );
 
   function closeAccountDialog() {
     setAccountDraft(null);
@@ -285,6 +373,11 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
     setPageData(nextPageData);
 
     if ("tabs" in response) {
+      setActiveTab((currentTab) =>
+        nextPageData.tabs.some((tab) => tab.id === currentTab)
+          ? currentTab
+          : (nextPageData.tabs[0]?.id ?? currentTab),
+      );
       setBillingCapDraft(formatBillingCapInput(nextPageData.billing.usageCapCents));
       setPrimaryPaymentMethodDraft(
         createPaymentMethodDraft(
@@ -296,6 +389,11 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
           findBillingPaymentMethod(nextPageData.billing.paymentMethods, "backup"),
         ),
       );
+      setDeliverySettingsDraft(
+        createDeliverySettingsDraft(nextPageData.deliverySettings),
+      );
+      setDataPolicyDraft(createDataPolicyDraft(nextPageData.dataPolicy));
+      setImportRuleDrafts(nextPageData.importRules);
       setOrganizationDraft(nextPageData.organization);
       setWebsiteDetailsDraft(nextPageData.websiteDetails);
       setNotificationGroups(nextPageData.notifications);
@@ -558,6 +656,166 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
   function handleResetWebsiteDetails() {
     setWebsiteDetailsDraft(pageData.websiteDetails);
     console.info("[PulseOps] Reset website details: public contact values restored to the current workspace defaults.");
+  }
+
+  function updateDeliverySettingsDraftField(
+    field: keyof DeliverySettingsDraft,
+    value: boolean | string,
+  ) {
+    setDeliverySettingsDraft((current) => ({
+      ...current,
+      [field]: value,
+    }));
+  }
+
+  async function handleSaveDeliverySettings() {
+    if (isSavingDeliverySettings) {
+      return;
+    }
+
+    let parsedDeliverySettings: SettingsPageData["deliverySettings"];
+
+    try {
+      parsedDeliverySettings = parseDeliverySettingsDraft(
+        deliverySettingsDraft,
+        messages,
+      );
+    } catch (error) {
+      openPlaceholderAction(
+        t("settingsPage.errors.deliverySettingsSaveFailed", "Could not save delivery rules"),
+        getSettingsErrorMessage(error, messages.settingsPage.errors.requestFailed),
+      );
+      return;
+    }
+
+    setIsSavingDeliverySettings(true);
+
+    try {
+      const payload = await requestSettingsMutation({
+        body: {
+          deliverySettings: parsedDeliverySettings,
+          orgId,
+        },
+        method: "PATCH",
+        url: "/api/settings",
+      });
+
+      applyMutationResponse(payload);
+    } catch (error) {
+      openPlaceholderAction(
+        t("settingsPage.errors.deliverySettingsSaveFailed", "Could not save delivery rules"),
+        getSettingsErrorMessage(error, messages.settingsPage.errors.requestFailed),
+      );
+    } finally {
+      setIsSavingDeliverySettings(false);
+    }
+  }
+
+  function handleResetDeliverySettings() {
+    setDeliverySettingsDraft(createDeliverySettingsDraft(pageData.deliverySettings));
+  }
+
+  function updateDataPolicyDraftField(
+    field: keyof DataPolicyDraft,
+    value: boolean | string,
+  ) {
+    setDataPolicyDraft((current) => ({
+      ...current,
+      [field]: value,
+    }));
+  }
+
+  async function handleSaveDataPolicy() {
+    if (isSavingDataPolicy) {
+      return;
+    }
+
+    let parsedDataPolicy: SettingsPageData["dataPolicy"];
+
+    try {
+      parsedDataPolicy = parseDataPolicyDraft(dataPolicyDraft);
+    } catch (error) {
+      openPlaceholderAction(
+        t("settingsPage.errors.dataPolicySaveFailed", "Could not save data policy"),
+        getSettingsErrorMessage(error, messages.settingsPage.errors.requestFailed),
+      );
+      return;
+    }
+
+    setIsSavingDataPolicy(true);
+
+    try {
+      const payload = await requestSettingsMutation({
+        body: {
+          dataPolicy: parsedDataPolicy,
+          orgId,
+        },
+        method: "PATCH",
+        url: "/api/settings",
+      });
+
+      applyMutationResponse(payload);
+    } catch (error) {
+      openPlaceholderAction(
+        t("settingsPage.errors.dataPolicySaveFailed", "Could not save data policy"),
+        getSettingsErrorMessage(error, messages.settingsPage.errors.requestFailed),
+      );
+    } finally {
+      setIsSavingDataPolicy(false);
+    }
+  }
+
+  function handleResetDataPolicy() {
+    setDataPolicyDraft(createDataPolicyDraft(pageData.dataPolicy));
+  }
+
+  function updateImportRuleDraftField(
+    ruleId: string,
+    field: keyof ImportRuleDraft,
+    value: string,
+  ) {
+    setImportRuleDrafts((currentRules) =>
+      currentRules.map((rule) =>
+        rule.id === ruleId
+          ? {
+              ...rule,
+              [field]: value,
+            }
+          : rule,
+      ),
+    );
+  }
+
+  async function handleSaveImportRules() {
+    if (isSavingImportRules) {
+      return;
+    }
+
+    setIsSavingImportRules(true);
+
+    try {
+      const payload = await requestSettingsMutation({
+        body: {
+          importRules: importRuleDrafts,
+          orgId,
+        },
+        method: "PATCH",
+        url: "/api/settings",
+      });
+
+      applyMutationResponse(payload);
+    } catch (error) {
+      openPlaceholderAction(
+        t("settingsPage.errors.importRulesSaveFailed", "Could not save import rules"),
+        getSettingsErrorMessage(error, messages.settingsPage.errors.requestFailed),
+      );
+    } finally {
+      setIsSavingImportRules(false);
+    }
+  }
+
+  function handleResetImportRules() {
+    setImportRuleDrafts(pageData.importRules);
   }
 
   async function handleSaveNotifications() {
@@ -930,7 +1188,7 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
         </aside>
 
         <div className="min-w-0 flex-1">
-          {activeTab === "organization" ? (
+          {activeTab === "workspace" ? (
             <div className="space-y-5">
             <PreferencePanel
               description={messages.settingsPage.actionDescriptions.businessProfile}
@@ -1073,10 +1331,45 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
                   secondaryLabel={messages.settingsPage.actions.reset}
                 />
               </PreferencePanel>
+
+              <PreferencePanel
+                description={messages.settingsPage.actionDescriptions.preferences}
+                title={messages.settingsPage.actionTitles.preferences}
+              >
+                {preferenceItems.map((preference) => (
+                  <ToggleRow
+                    key={preference.id}
+                    description={translatePreferenceDescription(
+                      preference.id,
+                      preference.description,
+                      messages,
+                    )}
+                    enabled={preference.enabled}
+                    onToggle={() => togglePreference(preference.id)}
+                    title={translatePreferenceTitle(
+                      preference.id,
+                      preference.title,
+                      messages,
+                    )}
+                  />
+                ))}
+                <div className="pt-4">
+                  <CatalogButton
+                    onClick={() => {
+                      void handleSavePreferences();
+                    }}
+                    variant="primary"
+                  >
+                    {isSavingPreferences
+                      ? messages.settingsPage.actions.saving
+                      : messages.settingsPage.actions.savePreferences}
+                  </CatalogButton>
+                </div>
+              </PreferencePanel>
             </div>
           ) : null}
 
-          {activeTab === "team" ? (
+          {activeTab === "peopleAccess" ? (
             <div className="space-y-[16px]">
               <CatalogCard className="overflow-hidden">
                 <div className="flex items-center justify-between gap-3 border-b border-border px-[18px] py-[13px]">
@@ -1104,9 +1397,7 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
                     name: pageData.currentUser.name,
                     role: translateRoleLabel(pageData.currentUser.role, messages),
                   })}{" "}
-                  {pageData.currentUser.canManageAccounts
-                    ? messages.settingsPage.actionDescriptions.manageAccounts
-                    : messages.settingsPage.actionDescriptions.manageOwnProfile}
+                  {messages.settingsPage.actionDescriptions.manageAccounts}
                   {pageData.currentUser.isFallbackSession
                     ? ` ${messages.settingsPage.actionDescriptions.fallbackSessionNotice}`
                     : null}
@@ -1206,61 +1497,726 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
             </div>
           ) : null}
 
-          {activeTab === "integrations" ? (
-            <CatalogCard className="overflow-hidden">
-              <div className="border-b border-border px-[18px] py-[13px]">
-                  <h3 className="text-[13px] font-semibold tracking-[-0.015em] text-foreground">
-                    {messages.settingsPage.actionTitles.connectedSources}
-                  </h3>
-                  <p className="mt-[2px] text-[11.5px] leading-[1.4] text-muted">
-                    {messages.settingsPage.actionDescriptions.connectedSources}
-                  </p>
-              </div>
-              {pageData.integrations.map((integration) => (
-                <IntegrationListItem
-                  key={integration.title}
-                  actionLabel={translateIntegrationActionLabel(
-                    integration.actionLabel,
-                    messages,
-                  )}
-                  description={translateIntegrationDescription(
-                    integration.title,
-                    integration.description,
-                    messages,
-                  )}
-                  onAction={() => void handleIntegrationAction(integration)}
-                  onSecondaryAction={() =>
-                    openPlaceholderAction(
-                      translateIntegrationActionLabel(
-                        integration.secondaryActionLabel ??
-                          messages.settingsPage.actions.configure,
-                        messages,
-                      ),
-                      integration.title,
-                    )
-                  }
-                  secondaryActionLabel={
-                    integration.secondaryActionLabel
-                      ? translateIntegrationActionLabel(
-                          integration.secondaryActionLabel,
-                          messages,
-                        )
-                      : undefined
-                  }
-                  statusLabel={translateIntegrationStatusLabel(
-                    integration.statusLabel,
-                    messages,
-                    t,
-                  )}
-                  statusTone={integration.statusTone}
-                  title={integration.title}
-                />
-              ))}
-            </CatalogCard>
-          ) : null}
-
-          {activeTab === "notifications" ? (
+          {activeTab === "sourcesOperations" ? (
             <div className="space-y-5">
+              {pageData.currentUser.canManageWorkspaceSettings ? (
+                <CatalogCard className="overflow-hidden">
+                  <div className="border-b border-border px-[18px] py-[13px]">
+                    <h3 className="text-[13px] font-semibold tracking-[-0.015em] text-foreground">
+                      {messages.settingsPage.actionTitles.connectedSources}
+                    </h3>
+                    <p className="mt-[2px] text-[11.5px] leading-[1.4] text-muted">
+                      {messages.settingsPage.actionDescriptions.connectedSources}
+                    </p>
+                  </div>
+                  {pageData.integrations.map((integration) => (
+                    <IntegrationListItem
+                      key={integration.title}
+                      actionLabel={translateIntegrationActionLabel(
+                        integration.actionLabel,
+                        messages,
+                      )}
+                      description={translateIntegrationDescription(
+                        integration.title,
+                        integration.description,
+                        messages,
+                      )}
+                      onAction={() => void handleIntegrationAction(integration)}
+                      onSecondaryAction={() =>
+                        openPlaceholderAction(
+                          translateIntegrationActionLabel(
+                            integration.secondaryActionLabel ??
+                              messages.settingsPage.actions.configure,
+                            messages,
+                          ),
+                          integration.title,
+                        )
+                      }
+                      secondaryActionLabel={
+                        integration.secondaryActionLabel
+                          ? translateIntegrationActionLabel(
+                              integration.secondaryActionLabel,
+                              messages,
+                            )
+                          : undefined
+                      }
+                      statusLabel={translateIntegrationStatusLabel(
+                        integration.statusLabel,
+                        messages,
+                        t,
+                      )}
+                      statusTone={integration.statusTone}
+                      title={integration.title}
+                    />
+                  ))}
+                </CatalogCard>
+              ) : null}
+
+              {pageData.currentUser.canManageWorkspaceSettings ? (
+                <PreferencePanel
+                  description={t(
+                    "settingsPage.actionDescriptions.dataPolicy",
+                    "Set the review, retention, and processing rules that govern how files move through the workspace.",
+                  )}
+                  title={t(
+                    "settingsPage.actionTitles.dataPolicy",
+                    "Data policy",
+                  )}
+                >
+                  <div className="grid gap-4 lg:grid-cols-3">
+                    <ToggleRow
+                      description={t(
+                        "settingsPage.dataPolicy.extractionEnabledDescription",
+                        "Allow canonical fact extraction during ingestion.",
+                      )}
+                      enabled={dataPolicyDraft.extractionEnabled}
+                      onToggle={() =>
+                        updateDataPolicyDraftField(
+                          "extractionEnabled",
+                          !dataPolicyDraft.extractionEnabled,
+                        )
+                      }
+                      title={t(
+                        "settingsPage.dataPolicy.extractionEnabledTitle",
+                        "Extraction enabled",
+                      )}
+                    />
+                    <ToggleRow
+                      description={t(
+                        "settingsPage.dataPolicy.embeddingsEnabledDescription",
+                        "Allow retrieval chunks and embeddings after normalization completes.",
+                      )}
+                      enabled={dataPolicyDraft.embeddingsEnabled}
+                      onToggle={() =>
+                        updateDataPolicyDraftField(
+                          "embeddingsEnabled",
+                          !dataPolicyDraft.embeddingsEnabled,
+                        )
+                      }
+                      title={t(
+                        "settingsPage.dataPolicy.embeddingsEnabledTitle",
+                        "Embeddings enabled",
+                      )}
+                    />
+                    <ToggleRow
+                      description={t(
+                        "settingsPage.dataPolicy.humanReviewRequiredDescription",
+                        "Require an operator review handoff before files are treated as ready downstream.",
+                      )}
+                      enabled={dataPolicyDraft.humanReviewRequired}
+                      onToggle={() =>
+                        updateDataPolicyDraftField(
+                          "humanReviewRequired",
+                          !dataPolicyDraft.humanReviewRequired,
+                        )
+                      }
+                      title={t(
+                        "settingsPage.dataPolicy.humanReviewRequiredTitle",
+                        "Human review required",
+                      )}
+                    />
+                  </div>
+
+                  <div className="mt-5 grid gap-4 md:grid-cols-3">
+                    <FieldGroup
+                      hint={t(
+                        "settingsPage.dataPolicy.uploadRetentionHint",
+                        "Applied to files added through manual upload.",
+                      )}
+                      label={t(
+                        "settingsPage.dataPolicy.uploadRetentionLabel",
+                        "Manual upload retention (days)",
+                      )}
+                    >
+                      <TextField
+                        onChange={(value) =>
+                          updateDataPolicyDraftField("uploadRetentionDays", value)
+                        }
+                        value={dataPolicyDraft.uploadRetentionDays}
+                      />
+                    </FieldGroup>
+                    <FieldGroup
+                      hint={t(
+                        "settingsPage.dataPolicy.emailRetentionHint",
+                        "Applied to files accepted from email forwarding.",
+                      )}
+                      label={t(
+                        "settingsPage.dataPolicy.emailRetentionLabel",
+                        "Email retention (days)",
+                      )}
+                    >
+                      <TextField
+                        onChange={(value) =>
+                          updateDataPolicyDraftField("emailRetentionDays", value)
+                        }
+                        value={dataPolicyDraft.emailRetentionDays}
+                      />
+                    </FieldGroup>
+                    <FieldGroup
+                      hint={t(
+                        "settingsPage.dataPolicy.apiRetentionHint",
+                        "Applied to files accepted from API and connected sources.",
+                      )}
+                      label={t(
+                        "settingsPage.dataPolicy.apiRetentionLabel",
+                        "API retention (days)",
+                      )}
+                    >
+                      <TextField
+                        onChange={(value) =>
+                          updateDataPolicyDraftField("apiRetentionDays", value)
+                        }
+                        value={dataPolicyDraft.apiRetentionDays}
+                      />
+                    </FieldGroup>
+                  </div>
+
+                  <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    <FieldGroup
+                      label={t(
+                        "settingsPage.dataPolicy.parserConfidenceLabel",
+                        "Parser confidence floor",
+                      )}
+                    >
+                      <TextField
+                        onChange={(value) =>
+                          updateDataPolicyDraftField("parserConfidenceFloor", value)
+                        }
+                        value={dataPolicyDraft.parserConfidenceFloor}
+                      />
+                    </FieldGroup>
+                    <FieldGroup
+                      label={t(
+                        "settingsPage.dataPolicy.classificationConfidenceLabel",
+                        "Classification confidence floor",
+                      )}
+                    >
+                      <TextField
+                        onChange={(value) =>
+                          updateDataPolicyDraftField(
+                            "classificationConfidenceFloor",
+                            value,
+                          )
+                        }
+                        value={dataPolicyDraft.classificationConfidenceFloor}
+                      />
+                    </FieldGroup>
+                    <FieldGroup
+                      label={t(
+                        "settingsPage.dataPolicy.fieldConfidenceLabel",
+                        "Field confidence floor",
+                      )}
+                    >
+                      <TextField
+                        onChange={(value) =>
+                          updateDataPolicyDraftField("fieldConfidenceFloor", value)
+                        }
+                        value={dataPolicyDraft.fieldConfidenceFloor}
+                      />
+                    </FieldGroup>
+                    <FieldGroup
+                      label={t(
+                        "settingsPage.dataPolicy.briefConfidenceLabel",
+                        "Brief high-confidence floor",
+                      )}
+                    >
+                      <TextField
+                        onChange={(value) =>
+                          updateDataPolicyDraftField("briefHighConfidenceFloor", value)
+                        }
+                        value={dataPolicyDraft.briefHighConfidenceFloor}
+                      />
+                    </FieldGroup>
+                    <FieldGroup
+                      label={t(
+                        "settingsPage.dataPolicy.acceptanceDriftLabel",
+                        "Acceptance-rate drift alert",
+                      )}
+                    >
+                      <TextField
+                        onChange={(value) =>
+                          updateDataPolicyDraftField(
+                            "acceptanceRateDriftThreshold",
+                            value,
+                          )
+                        }
+                        value={dataPolicyDraft.acceptanceRateDriftThreshold}
+                      />
+                    </FieldGroup>
+                    <FieldGroup
+                      label={t(
+                        "settingsPage.dataPolicy.outcomeDriftLabel",
+                        "Outcome-rate drift alert",
+                      )}
+                    >
+                      <TextField
+                        onChange={(value) =>
+                          updateDataPolicyDraftField(
+                            "outcomeRateDriftThreshold",
+                            value,
+                          )
+                        }
+                        value={dataPolicyDraft.outcomeRateDriftThreshold}
+                      />
+                    </FieldGroup>
+                  </div>
+
+                  <div className="mt-5">
+                    <SettingsActionRow
+                      onPrimaryAction={() => {
+                        void handleSaveDataPolicy();
+                      }}
+                      onSecondaryAction={handleResetDataPolicy}
+                      primaryLabel={
+                        isSavingDataPolicy
+                          ? messages.settingsPage.actions.saving
+                          : t(
+                              "settingsPage.actions.saveDataPolicy",
+                              "Save data policy",
+                            )
+                      }
+                      secondaryLabel={messages.settingsPage.actions.reset}
+                    />
+                  </div>
+                </PreferencePanel>
+              ) : null}
+
+              {pageData.currentUser.canManageOperationalSettings ? (
+                <PreferencePanel
+                  description={t(
+                    "settingsPage.actionDescriptions.deliveryRules",
+                    "Define who gets the weekly brief and operational alerts, and when those notices go out.",
+                  )}
+                  title={t(
+                    "settingsPage.actionTitles.deliveryRules",
+                    "Delivery rules",
+                  )}
+                >
+                  <div className="grid gap-4 xl:grid-cols-2">
+                    <div className="rounded-[10px] border border-border bg-surface-subtle p-4">
+                      <ToggleRow
+                        description={t(
+                          "settingsPage.delivery.weeklyBriefDescription",
+                          "Email the weekly cash and margin brief on a regular schedule.",
+                        )}
+                        enabled={deliverySettingsDraft.weeklyBriefEnabled}
+                        onToggle={() =>
+                          updateDeliverySettingsDraftField(
+                            "weeklyBriefEnabled",
+                            !deliverySettingsDraft.weeklyBriefEnabled,
+                          )
+                        }
+                        title={t(
+                          "settingsPage.delivery.weeklyBriefTitle",
+                          "Weekly brief email",
+                        )}
+                      />
+                      <div className="mt-4 grid gap-4 md:grid-cols-2">
+                        <FieldGroup
+                          label={t(
+                            "settingsPage.delivery.weeklyBriefDayLabel",
+                            "Send day",
+                          )}
+                        >
+                          <SelectField
+                            onChange={(value) =>
+                              updateDeliverySettingsDraftField(
+                                "weeklyBriefSendDay",
+                                value,
+                              )
+                            }
+                            options={deliveryDayOptions}
+                            value={deliverySettingsDraft.weeklyBriefSendDay}
+                          />
+                        </FieldGroup>
+                        <FieldGroup
+                          label={t(
+                            "settingsPage.delivery.weeklyBriefTimeLabel",
+                            "Send time",
+                          )}
+                        >
+                          <TextField
+                            onChange={(value) =>
+                              updateDeliverySettingsDraftField(
+                                "weeklyBriefSendTimeLocal",
+                                value,
+                              )
+                            }
+                            value={deliverySettingsDraft.weeklyBriefSendTimeLocal}
+                          />
+                        </FieldGroup>
+                      </div>
+                      <div className="mt-4">
+                        <FieldGroup
+                          hint={t(
+                            "settingsPage.delivery.recipientHint",
+                            "Enter one or more email addresses, separated by commas.",
+                          )}
+                          label={t(
+                            "settingsPage.delivery.weeklyBriefRecipientsLabel",
+                            "Recipients",
+                          )}
+                        >
+                          <TextField
+                            onChange={(value) =>
+                              updateDeliverySettingsDraftField(
+                                "weeklyBriefRecipientEmails",
+                                value,
+                              )
+                            }
+                            value={deliverySettingsDraft.weeklyBriefRecipientEmails}
+                          />
+                        </FieldGroup>
+                      </div>
+                    </div>
+
+                    <div className="rounded-[10px] border border-border bg-surface-subtle p-4">
+                      <ToggleRow
+                        description={t(
+                          "settingsPage.delivery.queueDigestDescription",
+                          "Send a digest of queue work that still needs attention.",
+                        )}
+                        enabled={deliverySettingsDraft.queueDigestEnabled}
+                        onToggle={() =>
+                          updateDeliverySettingsDraftField(
+                            "queueDigestEnabled",
+                            !deliverySettingsDraft.queueDigestEnabled,
+                          )
+                        }
+                        title={t(
+                          "settingsPage.delivery.queueDigestTitle",
+                          "Daily queue digest",
+                        )}
+                      />
+                      <div className="mt-4 grid gap-4 md:grid-cols-2">
+                        <FieldGroup
+                          label={t(
+                            "settingsPage.delivery.queueDigestTimeLabel",
+                            "Send time",
+                          )}
+                        >
+                          <TextField
+                            onChange={(value) =>
+                              updateDeliverySettingsDraftField(
+                                "queueDigestSendTimeLocal",
+                                value,
+                              )
+                            }
+                            value={deliverySettingsDraft.queueDigestSendTimeLocal}
+                          />
+                        </FieldGroup>
+                        <FieldGroup
+                          label={t(
+                            "settingsPage.delivery.queueDigestRecipientsLabel",
+                            "Recipients",
+                          )}
+                        >
+                          <TextField
+                            onChange={(value) =>
+                              updateDeliverySettingsDraftField(
+                                "queueDigestRecipientEmails",
+                                value,
+                              )
+                            }
+                            value={deliverySettingsDraft.queueDigestRecipientEmails}
+                          />
+                        </FieldGroup>
+                      </div>
+                    </div>
+
+                    <div className="rounded-[10px] border border-border bg-surface-subtle p-4">
+                      <ToggleRow
+                        description={t(
+                          "settingsPage.delivery.parseFailureDescription",
+                          "Escalate when enough files fail in one sync to need operator attention.",
+                        )}
+                        enabled={deliverySettingsDraft.parseFailureAlertEnabled}
+                        onToggle={() =>
+                          updateDeliverySettingsDraftField(
+                            "parseFailureAlertEnabled",
+                            !deliverySettingsDraft.parseFailureAlertEnabled,
+                          )
+                        }
+                        title={t(
+                          "settingsPage.delivery.parseFailureTitle",
+                          "Parse failure alert",
+                        )}
+                      />
+                      <div className="mt-4 grid gap-4 md:grid-cols-2">
+                        <FieldGroup
+                          label={t(
+                            "settingsPage.delivery.parseFailureThresholdLabel",
+                            "Failure count threshold",
+                          )}
+                        >
+                          <TextField
+                            onChange={(value) =>
+                              updateDeliverySettingsDraftField(
+                                "parseFailureCountThreshold",
+                                value,
+                              )
+                            }
+                            value={deliverySettingsDraft.parseFailureCountThreshold}
+                          />
+                        </FieldGroup>
+                        <FieldGroup
+                          label={t(
+                            "settingsPage.delivery.parseFailureRecipientsLabel",
+                            "Recipients",
+                          )}
+                        >
+                          <TextField
+                            onChange={(value) =>
+                              updateDeliverySettingsDraftField(
+                                "parseFailureRecipientEmails",
+                                value,
+                              )
+                            }
+                            value={deliverySettingsDraft.parseFailureRecipientEmails}
+                          />
+                        </FieldGroup>
+                      </div>
+                    </div>
+
+                    <div className="rounded-[10px] border border-border bg-surface-subtle p-4">
+                      <ToggleRow
+                        description={t(
+                          "settingsPage.delivery.confidenceDropDescription",
+                          "Alert the team when extraction confidence slips below the workspace floor.",
+                        )}
+                        enabled={deliverySettingsDraft.confidenceDropAlertEnabled}
+                        onToggle={() =>
+                          updateDeliverySettingsDraftField(
+                            "confidenceDropAlertEnabled",
+                            !deliverySettingsDraft.confidenceDropAlertEnabled,
+                          )
+                        }
+                        title={t(
+                          "settingsPage.delivery.confidenceDropTitle",
+                          "Confidence drop alert",
+                        )}
+                      />
+                      <div className="mt-4 grid gap-4 md:grid-cols-2">
+                        <FieldGroup
+                          label={t(
+                            "settingsPage.delivery.confidenceDropThresholdLabel",
+                            "Confidence threshold",
+                          )}
+                        >
+                          <TextField
+                            onChange={(value) =>
+                              updateDeliverySettingsDraftField(
+                                "confidenceDropThreshold",
+                                value,
+                              )
+                            }
+                            value={deliverySettingsDraft.confidenceDropThreshold}
+                          />
+                        </FieldGroup>
+                        <FieldGroup
+                          label={t(
+                            "settingsPage.delivery.confidenceDropRecipientsLabel",
+                            "Recipients",
+                          )}
+                        >
+                          <TextField
+                            onChange={(value) =>
+                              updateDeliverySettingsDraftField(
+                                "confidenceDropRecipientEmails",
+                                value,
+                              )
+                            }
+                            value={deliverySettingsDraft.confidenceDropRecipientEmails}
+                          />
+                        </FieldGroup>
+                      </div>
+                    </div>
+
+                    <div className="rounded-[10px] border border-border bg-surface-subtle p-4 xl:col-span-2">
+                      <ToggleRow
+                        description={t(
+                          "settingsPage.delivery.sourceDisconnectedDescription",
+                          "Send an immediate alert when a connected source stops syncing.",
+                        )}
+                        enabled={deliverySettingsDraft.sourceDisconnectedAlertEnabled}
+                        onToggle={() =>
+                          updateDeliverySettingsDraftField(
+                            "sourceDisconnectedAlertEnabled",
+                            !deliverySettingsDraft.sourceDisconnectedAlertEnabled,
+                          )
+                        }
+                        title={t(
+                          "settingsPage.delivery.sourceDisconnectedTitle",
+                          "Source disconnected alert",
+                        )}
+                      />
+                      <div className="mt-4">
+                        <FieldGroup
+                          label={t(
+                            "settingsPage.delivery.sourceDisconnectedRecipientsLabel",
+                            "Recipients",
+                          )}
+                        >
+                          <TextField
+                            onChange={(value) =>
+                              updateDeliverySettingsDraftField(
+                                "sourceDisconnectedRecipientEmails",
+                                value,
+                              )
+                            }
+                            value={
+                              deliverySettingsDraft.sourceDisconnectedRecipientEmails
+                            }
+                          />
+                        </FieldGroup>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-5">
+                    <SettingsActionRow
+                      onPrimaryAction={() => {
+                        void handleSaveDeliverySettings();
+                      }}
+                      onSecondaryAction={handleResetDeliverySettings}
+                      primaryLabel={
+                        isSavingDeliverySettings
+                          ? messages.settingsPage.actions.saving
+                          : t(
+                              "settingsPage.actions.saveDeliveryRules",
+                              "Save delivery rules",
+                            )
+                      }
+                      secondaryLabel={messages.settingsPage.actions.reset}
+                    />
+                  </div>
+                </PreferencePanel>
+              ) : null}
+
+              {pageData.currentUser.canManageWorkspaceSettings ? (
+                <PreferencePanel
+                  description={t(
+                    "settingsPage.actionDescriptions.importRules",
+                    "Control which source patterns should route into which document families on this workspace.",
+                  )}
+                  title={t(
+                    "settingsPage.actionTitles.importRules",
+                    "Import rules",
+                  )}
+                >
+                  <div className="space-y-4">
+                    {importRuleDrafts.map((rule) => (
+                      <div
+                        key={rule.id}
+                        className="rounded-[10px] border border-border bg-surface-subtle p-4"
+                      >
+                        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_repeat(4,minmax(0,0.8fr))]">
+                          <FieldGroup
+                            label={t(
+                              "settingsPage.importRules.ruleNameLabel",
+                              "Rule name",
+                            )}
+                          >
+                            <TextField
+                              onChange={(value) =>
+                                updateImportRuleDraftField(rule.id, "name", value)
+                              }
+                              value={rule.name}
+                            />
+                          </FieldGroup>
+                          <FieldGroup
+                            label={t(
+                              "settingsPage.importRules.sourceLabel",
+                              "Source",
+                            )}
+                          >
+                            <SelectField
+                              onChange={(value) =>
+                                updateImportRuleDraftField(
+                                  rule.id,
+                                  "sourceKind",
+                                  value,
+                                )
+                              }
+                              options={importRuleSourceOptions}
+                              value={rule.sourceKind}
+                            />
+                          </FieldGroup>
+                          <FieldGroup
+                            label={t(
+                              "settingsPage.importRules.parserRouteLabel",
+                              "Parser route",
+                            )}
+                          >
+                            <SelectField
+                              onChange={(value) =>
+                                updateImportRuleDraftField(
+                                  rule.id,
+                                  "parserRoute",
+                                  value,
+                                )
+                              }
+                              options={parserRouteOptions}
+                              value={rule.parserRoute}
+                            />
+                          </FieldGroup>
+                          <FieldGroup
+                            label={t(
+                              "settingsPage.importRules.familyLabel",
+                              "Target family",
+                            )}
+                          >
+                            <SelectField
+                              onChange={(value) =>
+                                updateImportRuleDraftField(
+                                  rule.id,
+                                  "targetDocumentFamily",
+                                  value,
+                                )
+                              }
+                              options={documentFamilyOptions}
+                              value={rule.targetDocumentFamily}
+                            />
+                          </FieldGroup>
+                          <FieldGroup
+                            label={t(
+                              "settingsPage.importRules.statusLabel",
+                              "Status",
+                            )}
+                          >
+                            <SelectField
+                              onChange={(value) =>
+                                updateImportRuleDraftField(rule.id, "status", value)
+                              }
+                              options={importRuleStatusOptions}
+                              value={rule.status}
+                            />
+                          </FieldGroup>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-5">
+                    <SettingsActionRow
+                      onPrimaryAction={() => {
+                        void handleSaveImportRules();
+                      }}
+                      onSecondaryAction={handleResetImportRules}
+                      primaryLabel={
+                        isSavingImportRules
+                          ? messages.settingsPage.actions.saving
+                          : t(
+                              "settingsPage.actions.saveImportRules",
+                              "Save import rules",
+                            )
+                      }
+                      secondaryLabel={messages.settingsPage.actions.reset}
+                    />
+                  </div>
+                </PreferencePanel>
+              ) : null}
+
               <CatalogCard className="overflow-hidden">
                 <div className="border-b border-border px-[18px] py-[13px]">
                   <h3 className="text-[13px] font-semibold tracking-[-0.015em] text-foreground">
@@ -1304,49 +2260,48 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
             </div>
           ) : null}
 
-          {activeTab === "security" ? (
+          {activeTab === "peopleAccess" ? (
             <div className="space-y-5">
-              <PreferencePanel
-                description={messages.settingsPage.actionDescriptions.authentication}
-                title={messages.settingsPage.actionTitles.authentication}
-              >
-                <div className="space-y-3">
-                  {pageData.security.authRows.map((row) => {
-                    const translatedRow = translateSecurityAuthRow(row, messages);
-                    const rowKind = getSecurityAuthRowKind(row.title);
+              {workspaceSecurityRows.length > 0 ? (
+                <PreferencePanel
+                  description={messages.settingsPage.actionDescriptions.authentication}
+                  title={messages.settingsPage.actionTitles.authentication}
+                >
+                  <div className="space-y-3">
+                    {workspaceSecurityRows.map((row) => {
+                      const translatedRow = translateSecurityAuthRow(row, messages);
 
-                    return (
-                      <div
-                        key={row.title}
-                        className="flex flex-col gap-3 border-b border-border pb-4 last:border-b-0 last:pb-0 md:flex-row md:items-center md:justify-between"
-                      >
-                        <div>
-                          <p className="text-sm font-medium text-foreground">
-                            {translatedRow.title}
-                          </p>
-                          <p className="mt-1 text-xs text-muted">
-                            {translatedRow.description}
-                          </p>
-                        </div>
-                        <button
-                          className="rounded-[7px] border border-border-strong bg-surface-subtle px-4 py-2 text-[12.5px] font-semibold text-foreground transition-[border-color,background] hover:bg-surface-muted hover:border-foreground/20"
-                          onClick={() =>
-                            rowKind === "twoFactor"
-                              ? setActiveDialog("two-factor")
-                              : openPlaceholderAction(
-                                  translatedRow.actionLabel,
-                                  translatedRow.title,
-                                )
-                          }
-                          type="button"
+                      return (
+                        <div
+                          key={row.title}
+                          className="flex flex-col gap-3 border-b border-border pb-4 last:border-b-0 last:pb-0 md:flex-row md:items-center md:justify-between"
                         >
-                          {translatedRow.actionLabel}
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              </PreferencePanel>
+                          <div>
+                            <p className="text-sm font-medium text-foreground">
+                              {translatedRow.title}
+                            </p>
+                            <p className="mt-1 text-xs text-muted">
+                              {translatedRow.description}
+                            </p>
+                          </div>
+                          <button
+                            className="rounded-[7px] border border-border-strong bg-surface-subtle px-4 py-2 text-[12.5px] font-semibold text-foreground transition-[border-color,background] hover:bg-surface-muted hover:border-foreground/20"
+                            onClick={() =>
+                              openPlaceholderAction(
+                                translatedRow.actionLabel,
+                                translatedRow.title,
+                              )
+                            }
+                            type="button"
+                          >
+                            {translatedRow.actionLabel}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </PreferencePanel>
+              ) : null}
 
               <PreferencePanel
                 description={messages.settingsPage.actionDescriptions.activeSessions}
@@ -1586,40 +2541,125 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
             </div>
           ) : null}
 
-          {activeTab === "preferences" ? (
+          {activeTab === "myAccount" ? (
             <div className="space-y-5">
               <PreferencePanel
-                description={messages.settingsPage.actionDescriptions.preferences}
-                title={messages.settingsPage.actionTitles.preferences}
+                description={messages.settingsPage.accountDialog.currentDescription}
+                title={messages.settingsPage.team.manageAccount}
               >
-                {preferenceItems.map((preference) => (
-                  <ToggleRow
-                    key={preference.id}
-                    description={translatePreferenceDescription(
-                      preference.id,
-                      preference.description,
-                      messages,
-                    )}
-                    enabled={preference.enabled}
-                    onToggle={() => togglePreference(preference.id)}
-                    title={translatePreferenceTitle(
-                      preference.id,
-                      preference.title,
-                      messages,
-                    )}
-                  />
-                ))}
+                <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                  <div>
+                    <p className="text-base font-semibold text-foreground">
+                      {pageData.currentUser.name}
+                    </p>
+                    <p className="mt-1 text-sm text-muted">
+                      {pageData.currentUser.email}
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <span className="rounded-full bg-surface-subtle px-2.5 py-1 text-[11px] font-semibold text-foreground">
+                        {translateRoleLabel(pageData.currentUser.role, messages)}
+                      </span>
+                      <span className="rounded-full bg-surface-subtle px-2.5 py-1 text-[11px] font-semibold text-muted">
+                        {translateAccessSummary(pageData.currentUser.accessSummary, messages)}
+                      </span>
+                    </div>
+                    {pageData.currentUser.isFallbackSession ? (
+                      <p className="mt-3 text-xs leading-6 text-muted">
+                        {messages.settingsPage.actionDescriptions.fallbackSessionNotice}
+                      </p>
+                    ) : null}
+                  </div>
+                  {currentTeamMember?.canOpenAccountControls ? (
+                    <CatalogButton
+                      onClick={() => openAccountDialog(currentTeamMember)}
+                      variant="primary"
+                    >
+                      {messages.settingsPage.team.manageAccount}
+                    </CatalogButton>
+                  ) : null}
+                </div>
               </PreferencePanel>
-              <CatalogButton
-                onClick={() => {
-                  void handleSavePreferences();
-                }}
-                variant="primary"
+
+              {selfServiceSecurityRows.length > 0 ? (
+                <PreferencePanel
+                  description={messages.settingsPage.actionDescriptions.authentication}
+                  title={messages.settingsPage.actionTitles.authentication}
+                >
+                  <div className="space-y-3">
+                    {selfServiceSecurityRows.map((row) => {
+                      const translatedRow = translateSecurityAuthRow(row, messages);
+                      const rowKind = getSettingsSecurityAuthRowKind(row.title);
+
+                      return (
+                        <div
+                          key={row.title}
+                          className="flex flex-col gap-3 border-b border-border pb-4 last:border-b-0 last:pb-0 md:flex-row md:items-center md:justify-between"
+                        >
+                          <div>
+                            <p className="text-sm font-medium text-foreground">
+                              {translatedRow.title}
+                            </p>
+                            <p className="mt-1 text-xs text-muted">
+                              {translatedRow.description}
+                            </p>
+                          </div>
+                          <button
+                            className="rounded-[7px] border border-border-strong bg-surface-subtle px-4 py-2 text-[12.5px] font-semibold text-foreground transition-[border-color,background] hover:bg-surface-muted hover:border-foreground/20"
+                            onClick={() => {
+                              if (rowKind === "twoFactor") {
+                                setActiveDialog("two-factor");
+                                return;
+                              }
+
+                              if (
+                                rowKind === "emailPassword" &&
+                                currentTeamMember !== null
+                              ) {
+                                openAccountDialog(currentTeamMember);
+                                return;
+                              }
+
+                              openPlaceholderAction(
+                                translatedRow.actionLabel,
+                                translatedRow.title,
+                              );
+                            }}
+                            type="button"
+                          >
+                            {translatedRow.actionLabel}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </PreferencePanel>
+              ) : null}
+
+              <PreferencePanel
+                description={t(
+                  "settingsPage.actionDescriptions.localePreference",
+                  "Choose the language used across the app for this signed-in session.",
+                )}
+                title={t(
+                  "settingsPage.actionTitles.localePreference",
+                  "Language and locale",
+                )}
               >
-                {isSavingPreferences
-                  ? messages.settingsPage.actions.saving
-                  : messages.settingsPage.actions.savePreferences}
-              </CatalogButton>
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">
+                      {t("settingsPage.locale.label", "Interface language")}
+                    </p>
+                    <p className="mt-1 text-xs leading-6 text-muted">
+                      {t(
+                        "settingsPage.locale.description",
+                        "Changing this updates navigation, workflows, and supporting UI copy.",
+                      )}
+                    </p>
+                  </div>
+                  <LocaleSwitcher />
+                </div>
+              </PreferencePanel>
 
               <PreferencePanel
                 description={messages.settingsPage.actionDescriptions.appearance}
@@ -2380,6 +3420,72 @@ function translateSettingTemplate(
   return template.replaceAll(/\{\{(\w+)\}\}/g, (_, key: string) => values[key] ?? "");
 }
 
+function translateDeliveryDayLabel(
+  day: DeliverySettingsDraft["weeklyBriefSendDay"],
+  t: TranslateMessage,
+) {
+  switch (day) {
+    case "monday":
+      return t("settingsPage.days.monday", "Monday");
+    case "tuesday":
+      return t("settingsPage.days.tuesday", "Tuesday");
+    case "wednesday":
+      return t("settingsPage.days.wednesday", "Wednesday");
+    case "thursday":
+      return t("settingsPage.days.thursday", "Thursday");
+    case "friday":
+      return t("settingsPage.days.friday", "Friday");
+    default:
+      return day;
+  }
+}
+
+function translateImportRuleSourceLabel(
+  sourceKind: ImportRuleDraft["sourceKind"],
+  t: TranslateMessage,
+) {
+  switch (sourceKind) {
+    case "upload":
+      return t("settingsPage.importRules.sources.upload", "Manual upload");
+    case "email":
+      return t("settingsPage.importRules.sources.email", "Forwarded email");
+    case "api":
+      return t("settingsPage.importRules.sources.api", "Connected source");
+    default:
+      return sourceKind;
+  }
+}
+
+function translateImportRuleStatusLabel(
+  status: ImportRuleDraft["status"],
+  t: TranslateMessage,
+) {
+  switch (status) {
+    case "draft":
+      return t("settingsPage.importRules.statuses.draft", "Draft");
+    case "active":
+      return t("settingsPage.importRules.statuses.active", "Active");
+    case "archived":
+      return t("settingsPage.importRules.statuses.archived", "Archived");
+    default:
+      return status;
+  }
+}
+
+function translateParserRouteLabel(
+  parserRoute: ImportRuleDraft["parserRoute"],
+  t: TranslateMessage,
+) {
+  switch (parserRoute) {
+    case "tabular":
+      return t("settingsPage.importRules.parserRoutes.tabular", "Tabular");
+    case "text":
+      return t("settingsPage.importRules.parserRoutes.text", "Text");
+    default:
+      return parserRoute;
+  }
+}
+
 function parseBillingCapInput(
   value: string,
   messages: SettingsMessages,
@@ -2401,6 +3507,266 @@ function parseBillingCapInput(
   }
 
   return usageCapCents;
+}
+
+function createDeliverySettingsDraft(
+  deliverySettings: SettingsPageData["deliverySettings"],
+): DeliverySettingsDraft {
+  return {
+    confidenceDropAlertEnabled: deliverySettings.confidenceDropAlert.enabled,
+    confidenceDropRecipientEmails: deliverySettings.confidenceDropAlert.recipientEmails.join(
+      ", ",
+    ),
+    confidenceDropThreshold: deliverySettings.confidenceDropAlert.threshold.toString(),
+    parseFailureAlertEnabled: deliverySettings.parseFailureAlert.enabled,
+    parseFailureCountThreshold:
+      deliverySettings.parseFailureAlert.failureCountThreshold.toString(),
+    parseFailureRecipientEmails: deliverySettings.parseFailureAlert.recipientEmails.join(
+      ", ",
+    ),
+    queueDigestEnabled: deliverySettings.queueDigest.enabled,
+    queueDigestRecipientEmails: deliverySettings.queueDigest.recipientEmails.join(", "),
+    queueDigestSendTimeLocal: deliverySettings.queueDigest.sendTimeLocal,
+    sourceDisconnectedAlertEnabled:
+      deliverySettings.sourceDisconnectedAlert.enabled,
+    sourceDisconnectedRecipientEmails:
+      deliverySettings.sourceDisconnectedAlert.recipientEmails.join(", "),
+    weeklyBriefEnabled: deliverySettings.weeklyBrief.enabled,
+    weeklyBriefRecipientEmails: deliverySettings.weeklyBrief.recipientEmails.join(", "),
+    weeklyBriefSendDay: deliverySettings.weeklyBrief.sendDay,
+    weeklyBriefSendTimeLocal: deliverySettings.weeklyBrief.sendTimeLocal,
+  };
+}
+
+function parseDeliverySettingsDraft(
+  draft: DeliverySettingsDraft,
+  messages: SettingsMessages,
+): SettingsPageData["deliverySettings"] {
+  return {
+    confidenceDropAlert: {
+      enabled: draft.confidenceDropAlertEnabled,
+      recipientEmails: parseRecipientEmails(
+        draft.confidenceDropRecipientEmails,
+        messages,
+      ),
+      threshold: parseUnitIntervalField(
+        draft.confidenceDropThreshold,
+        tSetting("delivery confidence threshold"),
+      ),
+    },
+    parseFailureAlert: {
+      enabled: draft.parseFailureAlertEnabled,
+      failureCountThreshold: parsePositiveIntegerField(
+        draft.parseFailureCountThreshold,
+        tSetting("parse failure threshold"),
+      ),
+      recipientEmails: parseRecipientEmails(
+        draft.parseFailureRecipientEmails,
+        messages,
+      ),
+    },
+    queueDigest: {
+      enabled: draft.queueDigestEnabled,
+      recipientEmails: parseRecipientEmails(
+        draft.queueDigestRecipientEmails,
+        messages,
+      ),
+      sendTimeLocal: parseTimeField(
+        draft.queueDigestSendTimeLocal,
+        tSetting("queue digest send time"),
+      ),
+    },
+    sourceDisconnectedAlert: {
+      enabled: draft.sourceDisconnectedAlertEnabled,
+      recipientEmails: parseRecipientEmails(
+        draft.sourceDisconnectedRecipientEmails,
+        messages,
+      ),
+    },
+    weeklyBrief: {
+      enabled: draft.weeklyBriefEnabled,
+      recipientEmails: parseRecipientEmails(
+        draft.weeklyBriefRecipientEmails,
+        messages,
+      ),
+      sendDay: draft.weeklyBriefSendDay,
+      sendTimeLocal: parseTimeField(
+        draft.weeklyBriefSendTimeLocal,
+        tSetting("weekly brief send time"),
+      ),
+    },
+  };
+}
+
+function createDataPolicyDraft(
+  dataPolicy: SettingsPageData["dataPolicy"],
+): DataPolicyDraft {
+  return {
+    acceptanceRateDriftThreshold:
+      dataPolicy.reviewThresholds.acceptanceRateDriftThreshold.toString(),
+    apiRetentionDays: dataPolicy.sourceRetentionDays.api.toString(),
+    briefHighConfidenceFloor:
+      dataPolicy.reviewThresholds.briefHighConfidenceFloor.toString(),
+    classificationConfidenceFloor:
+      dataPolicy.reviewThresholds.classificationConfidenceFloor.toString(),
+    emailRetentionDays: dataPolicy.sourceRetentionDays.email.toString(),
+    embeddingsEnabled: dataPolicy.embeddingsEnabled,
+    extractionEnabled: dataPolicy.extractionEnabled,
+    fieldConfidenceFloor:
+      dataPolicy.reviewThresholds.fieldConfidenceFloor.toString(),
+    humanReviewRequired: dataPolicy.humanReviewRequired,
+    outcomeRateDriftThreshold:
+      dataPolicy.reviewThresholds.outcomeRateDriftThreshold.toString(),
+    parserConfidenceFloor:
+      dataPolicy.reviewThresholds.parserConfidenceFloor.toString(),
+    uploadRetentionDays: dataPolicy.sourceRetentionDays.upload.toString(),
+  };
+}
+
+function parseDataPolicyDraft(
+  draft: DataPolicyDraft,
+): SettingsPageData["dataPolicy"] {
+  return {
+    embeddingsEnabled: draft.embeddingsEnabled,
+    extractionEnabled: draft.extractionEnabled,
+    humanReviewRequired: draft.humanReviewRequired,
+    reviewThresholds: {
+      acceptanceRateDriftThreshold: parseUnitIntervalField(
+        draft.acceptanceRateDriftThreshold,
+        tSetting("acceptance drift threshold"),
+      ),
+      briefHighConfidenceFloor: parseUnitIntervalField(
+        draft.briefHighConfidenceFloor,
+        tSetting("brief confidence floor"),
+      ),
+      classificationConfidenceFloor: parseUnitIntervalField(
+        draft.classificationConfidenceFloor,
+        tSetting("classification confidence floor"),
+      ),
+      fieldConfidenceFloor: parseUnitIntervalField(
+        draft.fieldConfidenceFloor,
+        tSetting("field confidence floor"),
+      ),
+      outcomeRateDriftThreshold: parseUnitIntervalField(
+        draft.outcomeRateDriftThreshold,
+        tSetting("outcome drift threshold"),
+      ),
+      parserConfidenceFloor: parseUnitIntervalField(
+        draft.parserConfidenceFloor,
+        tSetting("parser confidence floor"),
+      ),
+    },
+    sourceRetentionDays: {
+      api: parsePositiveIntegerField(
+        draft.apiRetentionDays,
+        tSetting("API retention days"),
+      ),
+      email: parsePositiveIntegerField(
+        draft.emailRetentionDays,
+        tSetting("email retention days"),
+      ),
+      upload: parsePositiveIntegerField(
+        draft.uploadRetentionDays,
+        tSetting("manual upload retention days"),
+      ),
+    },
+  };
+}
+
+function parseRecipientEmails(
+  value: string,
+  messages: SettingsMessages,
+): readonly string[] {
+  const recipients = value
+    .split(/[,\n]/)
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+
+  if (recipients.length === 0) {
+    throw new Error(
+      tSettingWithFallback(
+        messages,
+        "Enter at least one recipient email address.",
+      ),
+    );
+  }
+
+  const emailSchema = z.string().email();
+
+  return recipients.map((recipient) => {
+    const parsedRecipient = emailSchema.safeParse(recipient);
+
+    if (!parsedRecipient.success) {
+      throw new Error(
+        tSettingWithFallback(
+          messages,
+          "Enter valid email addresses separated by commas.",
+        ),
+      );
+    }
+
+    return parsedRecipient.data;
+  });
+}
+
+function parseTimeField(value: string, label: string): string {
+  const normalizedValue = value.trim();
+
+  if (!/^\d{2}:\d{2}$/.test(normalizedValue)) {
+    throw new Error(`Enter ${label} in HH:MM format.`);
+  }
+
+  const [hours, minutes] = normalizedValue.split(":").map(Number);
+
+  if (
+    !Number.isFinite(hours) ||
+    !Number.isFinite(minutes) ||
+    hours < 0 ||
+    hours > 23 ||
+    minutes < 0 ||
+    minutes > 59
+  ) {
+    throw new Error(`Enter a valid ${label}.`);
+  }
+
+  return normalizedValue;
+}
+
+function parsePositiveIntegerField(value: string, label: string): number {
+  const parsedValue = parseIntegerField(value, `Enter ${label}.`);
+
+  if (parsedValue <= 0) {
+    throw new Error(`Enter ${label} greater than zero.`);
+  }
+
+  return parsedValue;
+}
+
+function parseUnitIntervalField(value: string, label: string): number {
+  const normalizedValue = value.trim();
+
+  if (!/^\d+(\.\d+)?$/.test(normalizedValue)) {
+    throw new Error(`Enter ${label} as a number between 0 and 1.`);
+  }
+
+  const parsedValue = Number(normalizedValue);
+
+  if (!Number.isFinite(parsedValue) || parsedValue < 0 || parsedValue > 1) {
+    throw new Error(`Enter ${label} as a number between 0 and 1.`);
+  }
+
+  return Number(parsedValue.toFixed(4));
+}
+
+function tSetting(label: string) {
+  return label;
+}
+
+function tSettingWithFallback(
+  _messages: SettingsMessages,
+  message: string,
+) {
+  return message;
 }
 
 function createPaymentMethodDraft(
@@ -2584,27 +3950,14 @@ function translatePreferenceDescription(
   }
 }
 
-function getSecurityAuthRowKind(title: string) {
-  switch (title) {
-    case "Email and password":
-      return "changePassword" as const;
-    case "Two-factor authentication":
-      return "twoFactor" as const;
-    case "Single sign-on":
-      return "singleSignOn" as const;
-    default:
-      return null;
-  }
-}
-
 function translateSecurityAuthRow(
   row: SettingsPageData["security"]["authRows"][number],
   messages: SettingsMessages,
 ) {
-  const rowKind = getSecurityAuthRowKind(row.title);
+  const rowKind = getSettingsSecurityAuthRowKind(row.title);
 
   switch (rowKind) {
-    case "changePassword":
+    case "emailPassword":
       return {
         actionLabel: messages.settingsPage.securityRows.changePassword.actionLabel,
         description: row.description,

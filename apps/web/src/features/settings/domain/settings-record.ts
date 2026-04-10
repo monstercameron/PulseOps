@@ -3,6 +3,14 @@ import { z } from "zod";
 import { websiteDetailsSchema } from "@/features/marketing/domain/website-details";
 import { fallbackSettingsPageData } from "@/features/settings/constants/settings-page-content";
 import {
+  defaultSettingsDataPolicy,
+  defaultSettingsDeliverySettings,
+  defaultSettingsImportRules,
+  settingsDataPolicySchema,
+  settingsDeliverySettingsSchema,
+  settingsImportRuleSchema,
+} from "@/features/settings/domain/settings-operational-config";
+import {
   mergeSettingsPreferencesWithDefaults,
   normalizeSettingsPreferenceId,
 } from "@/features/settings/domain/settings-preferences";
@@ -72,8 +80,13 @@ const settingsSessionSchema = z.object({
 });
 
 export const settingsRecordSchema = z.object({
+  dataPolicy: settingsDataPolicySchema.default(defaultSettingsDataPolicy),
+  deliverySettings: settingsDeliverySettingsSchema.default(
+    defaultSettingsDeliverySettings,
+  ),
   id: z.string().min(1),
   integrations: z.array(settingsIntegrationSchema).readonly(),
+  importRules: z.array(settingsImportRuleSchema).readonly().default(defaultSettingsImportRules),
   notifications: z.array(settingsNotificationGroupSchema).readonly(),
   organization: settingsOrganizationSchema,
   orgId: z.string().min(1),
@@ -106,8 +119,11 @@ export function createDefaultSettingsRecord(
   updatedAt?: string,
 ): SettingsRecord {
   return createSettingsRecord({
+    dataPolicy: fallbackSettingsPageData.dataPolicy,
+    deliverySettings: fallbackSettingsPageData.deliverySettings,
     id: orgId,
     integrations: fallbackSettingsPageData.integrations,
+    importRules: fallbackSettingsPageData.importRules,
     notifications: fallbackSettingsPageData.notifications,
     organization: fallbackSettingsPageData.organization,
     orgId,

@@ -22,7 +22,7 @@ const teamInviteRequestSchema = z.object({
 
 type TeamInviteDependencies = Readonly<{
   accountRepository?: AccountRepository;
-  currentActor?: CurrentAppActor | null;
+  currentActor: CurrentAppActor | null;
   now?: () => string;
   organizationRepository?: OrganizationRepository;
   settingsRepository?: SettingsRepository;
@@ -43,11 +43,16 @@ export async function handleTeamInviteRequest(
     );
   }
 
-  if (
-    dependencies.currentActor !== undefined &&
-    (dependencies.currentActor === null ||
-      !canInviteTeamMembers(dependencies.currentActor.account))
-  ) {
+  if (dependencies.currentActor === null) {
+    return Response.json(
+      {
+        error: "You must be signed in to invite team members.",
+      },
+      { status: 401 },
+    );
+  }
+
+  if (!canInviteTeamMembers(dependencies.currentActor.account)) {
     return Response.json(
       {
         error: "Only active admins can invite team members.",

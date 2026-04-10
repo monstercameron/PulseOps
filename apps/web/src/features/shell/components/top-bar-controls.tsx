@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useSyncExternalStore } from "react";
 import { LocaleSwitcher } from "@/features/i18n/components/locale-switcher";
 import {
   persistAppTheme,
@@ -8,20 +8,48 @@ import {
   type AppTheme,
 } from "@/features/shell/lib/theme-preference";
 
+function subscribeToThemeChanges(callback: () => void) {
+  if (typeof document === "undefined") {
+    return () => {};
+  }
+
+  const observer = new MutationObserver((records) => {
+    for (const record of records) {
+      if (record.type === "attributes" && record.attributeName === "data-theme") {
+        callback();
+        return;
+      }
+    }
+  });
+
+  observer.observe(document.documentElement, {
+    attributeFilter: ["data-theme"],
+    attributes: true,
+  });
+
+  return () => observer.disconnect();
+}
+
+function getThemeSnapshot(): AppTheme | null {
+  if (typeof document === "undefined") {
+    return null;
+  }
+
+  return document.documentElement.getAttribute("data-theme") === "light"
+    ? "light"
+    : "dark";
+}
+
 export function TopBarControls() {
-  const [themeOverride, setThemeOverride] = useState<AppTheme | null>(null);
-  const theme =
-    themeOverride ??
-    (typeof document === "undefined"
-      ? null
-      : document.documentElement.getAttribute("data-theme") === "light"
-        ? "light"
-        : "dark");
+  const theme = useSyncExternalStore(
+    subscribeToThemeChanges,
+    getThemeSnapshot,
+    () => null,
+  );
 
   function handleThemeToggle() {
     const next = toggleAppTheme(theme ?? "dark");
     persistAppTheme(next);
-    setThemeOverride(next);
   }
 
   const themeToggleLabel =

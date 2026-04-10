@@ -1054,11 +1054,18 @@ const defaultUiMessagesEnUs = {
   packsPage: {
     actions: {
       export: "Export preview",
+      exportPreview: "Export preview",
       exporting: "Exporting...",
+      exportingPreview: "Exporting preview...",
       generate: "Generate latest preview",
+      generatePreview: "Generate latest preview",
       generating: "Generating...",
+      generatingPreview: "Generating latest preview...",
       markReviewed: "Mark ready to share",
+      markReady: "Mark ready to share",
+      stillDrafting: "Still drafting",
       markingReviewed: "Marking ready...",
+      markingReady: "Marking ready to share...",
     },
     bestNextMoveHeading: "Best next move",
     businessSignalsDescription:
@@ -1099,6 +1106,9 @@ const defaultUiMessagesEnUs = {
       draft: "Draft",
       ready: "Ready",
     },
+    evidenceHeading: "Evidence behind this preview",
+    headerDescription:
+      "Preview grouped business analysis before it becomes an operator decision.",
     labels: packsPageLabels,
     previewHealthDescription:
       "These signals show how complete and ready the selected analysis preview is.",
@@ -1111,6 +1121,7 @@ const defaultUiMessagesEnUs = {
       dismiss: "Dismiss",
     },
     searchPlaceholder: "Search packs",
+    previewEyebrow: "Analysis preview",
     selectorDescription:
       "Each preview groups one business concept into a short operator decision surface.",
     selectorEyebrow: "Choose a preview",
@@ -1466,12 +1477,10 @@ const defaultUiMessagesEnUs = {
     },
     tabs: {
       billing: "Billing",
-      integrations: "Integrations",
-      notifications: "Notifications",
-      organization: "Organization",
-      preferences: "Preferences",
-      security: "Security",
-      team: "Team",
+      myAccount: "My account",
+      peopleAccess: "People & access",
+      sourcesOperations: "Sources & operations",
+      workspace: "Workspace",
     },
     team: {
       accessBucketsLabel: "Access buckets",
@@ -3002,11 +3011,18 @@ const defaultUiMessagesEs: UiMessages = {
     ...normalizedDefaultUiMessagesEnUs.packsPage,
     actions: {
       export: "Exportar vista",
+      exportPreview: "Exportar vista",
       exporting: "Exportando...",
+      exportingPreview: "Exportando vista...",
       generate: "Generar vista mas reciente",
+      generatePreview: "Generar vista mas reciente",
       generating: "Generando...",
+      generatingPreview: "Generando vista mas reciente...",
       markReviewed: "Marcar lista para compartir",
+      markReady: "Marcar lista para compartir",
+      stillDrafting: "Sigue en borrador",
       markingReviewed: "Marcando lista...",
+      markingReady: "Marcando lista para compartir...",
     },
     bestNextMoveHeading: "Mejor siguiente paso",
     businessSignalsDescription:
@@ -3047,6 +3063,9 @@ const defaultUiMessagesEs: UiMessages = {
       draft: "Borrador",
       ready: "Listo",
     },
+    evidenceHeading: "Evidencia detras de esta vista",
+    headerDescription:
+      "Previsualiza analisis agrupados del negocio antes de convertirlos en una decision operativa.",
     labels: {
       breadcrumbs: ["Panel", "Paquetes de decision"],
       description:
@@ -3063,6 +3082,7 @@ const defaultUiMessagesEs: UiMessages = {
       accept: "Aceptar",
       dismiss: "Descartar",
     },
+    previewEyebrow: "Vista de analisis",
     searchPlaceholder: "Buscar paquetes",
     selectorDescription:
       "Cada vista agrupa un concepto del negocio en una superficie corta para decisiones operativas.",
@@ -3470,12 +3490,10 @@ const defaultUiMessagesEs: UiMessages = {
     },
     tabs: {
       billing: "Facturacion",
-      integrations: "Integraciones",
-      notifications: "Notificaciones",
-      organization: "Organizacion",
-      preferences: "Preferencias",
-      security: "Seguridad",
-      team: "Equipo",
+      myAccount: "Mi cuenta",
+      peopleAccess: "Personas y acceso",
+      sourcesOperations: "Fuentes y operaciones",
+      workspace: "Espacio de trabajo",
     },
     team: {
       accessBucketsLabel: "Bloques de acceso",

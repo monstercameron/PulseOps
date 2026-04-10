@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { createOrganizationAccount } from "@/features/accounts/domain/organization-account";
 import { createLocalAccountRepository } from "@/features/accounts/repositories/local-account-repository";
+import { buildAuthSessionFromAccount } from "@/features/auth/server/current-app-actor";
 import { createBillingAccount } from "@/features/cost/domain/billing-account";
 import { createBillingPaymentMethod } from "@/features/cost/domain/billing-payment-method";
 import { createLlmUsageEvent } from "@/features/cost/domain/llm-usage-event";
@@ -47,8 +48,8 @@ describe("handleSettingsPageRequest", () => {
         name: "Broward HVAC Co.",
       }),
       tabs: expect.arrayContaining([
-        expect.objectContaining({ label: "Organization" }),
-        expect.objectContaining({ label: "Security" }),
+        expect.objectContaining({ label: "My account" }),
+        expect.objectContaining({ label: "People & access" }),
       ]),
       websiteDetails: expect.objectContaining({
         supportEmail: "support@pulseops.io",
@@ -112,6 +113,26 @@ describe("handleSettingsPageRequest", () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
+      currentUser: expect.objectContaining({
+        canManageBilling: true,
+        canManageOperationalSettings: true,
+        canManageWorkspaceSettings: true,
+      }),
+      dataPolicy: expect.objectContaining({
+        sourceRetentionDays: expect.objectContaining({
+          upload: 30,
+        }),
+      }),
+      deliverySettings: expect.objectContaining({
+        weeklyBrief: expect.objectContaining({
+          sendDay: "monday",
+        }),
+      }),
+      importRules: expect.arrayContaining([
+        expect.objectContaining({
+          sourceKind: "upload",
+        }),
+      ]),
       organization: expect.objectContaining({
         name: "Precision Plumbing Co.",
       }),
@@ -137,6 +158,65 @@ describe("handleSettingsPageRequest", () => {
         salesEmail: "sales@precisionplumbing.com",
         supportEmail: "support@precisionplumbing.com",
         supportPhone: "(561) 555-0198",
+      },
+    });
+  });
+
+  it("limits settings data for non-admin actors", async () => {
+    const rootDirectory = await mkdtemp(
+      path.join(os.tmpdir(), "bizopsaccelerator-settings-page-limited-"),
+    );
+    temporaryDirectories.push(rootDirectory);
+
+    const accountRepository = createLocalAccountRepository({ rootDirectory });
+    const analystAccount = await accountRepository.put(
+      createOrganizationAccount({
+        email: "analyst@example.com",
+        name: "Analyst User",
+        operationsAccess: false,
+        orgId: "org_123",
+        reportAccess: true,
+        role: "analyst",
+        setupAccess: false,
+        status: "active",
+        userId: "user_analyst",
+      }),
+    );
+
+    const response = await handleSettingsPageRequest(
+      new Request("http://localhost/api/settings?orgId=org_123"),
+      {
+        accountRepository,
+        currentActor: {
+          account: analystAccount,
+          session: buildAuthSessionFromAccount(
+            analystAccount,
+            "2026-04-10T00:00:00.000Z",
+          ),
+          source: "token",
+        },
+      },
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      billing: expect.objectContaining({
+        paymentMethods: [],
+        planTitle: "Restricted",
+      }),
+      organization: expect.objectContaining({
+        name: "",
+      }),
+      preferences: [],
+      tabs: [expect.objectContaining({ label: "My account" })],
+      team: {
+        members: [
+          expect.objectContaining({
+            email: "analyst@example.com",
+            isCurrentUser: true,
+          }),
+        ],
+        permissions: [],
       },
     });
   });

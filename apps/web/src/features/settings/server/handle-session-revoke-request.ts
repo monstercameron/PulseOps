@@ -1,6 +1,11 @@
 import { z } from "zod";
 
+import { type CurrentAppActor } from "@/features/auth/server/current-app-actor";
 import { type SettingsRepository } from "@/features/settings/repositories/settings-repository";
+import {
+  canManagePeopleAccessSettings,
+  requireSettingsActor,
+} from "@/features/settings/server/settings-authorization";
 import {
   revokeSession,
   updateSettingsRecord,
@@ -12,6 +17,7 @@ const sessionRevokeRequestSchema = z.object({
 });
 
 type SessionRevokeDependencies = Readonly<{
+  currentActor: CurrentAppActor | null;
   now?: () => string;
   settingsRepository: SettingsRepository;
 }>;
@@ -28,6 +34,21 @@ export async function handleSessionRevokeRequest(
         error: "Invalid session revoke payload.",
       },
       { status: 400 },
+    );
+  }
+
+  const actorResult = requireSettingsActor(dependencies.currentActor);
+
+  if (actorResult.response !== null) {
+    return actorResult.response;
+  }
+
+  if (!canManagePeopleAccessSettings(dependencies.currentActor)) {
+    return Response.json(
+      {
+        error: "Only admins can manage active sessions.",
+      },
+      { status: 403 },
     );
   }
 

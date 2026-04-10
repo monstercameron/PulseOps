@@ -15,7 +15,16 @@ import { createOrganizationRecordFromSettingsRecord } from "@/features/settings/
 import { type OrganizationRepository } from "@/features/settings/repositories/organization-repository";
 import { type SettingsRepository } from "@/features/settings/repositories/settings-repository";
 import {
+  canManageBillingSettings,
+  canManageOperationalSettings,
+  canManageWorkspaceSettings,
+  requireSettingsActor,
+} from "@/features/settings/server/settings-authorization";
+import {
   getSettingsPageDataFromRepository,
+  settingsDataPolicyInputSchema,
+  settingsDeliverySettingsInputSchema,
+  settingsImportRulesInputSchema,
   settingsNotificationGroupsInputSchema,
   settingsOrganizationInputSchema,
   settingsPreferenceItemsInputSchema,
@@ -31,6 +40,9 @@ const settingsBillingInputSchema = z.object({
 
 const settingsUpdateRequestSchema = z.object({
   billing: settingsBillingInputSchema.optional(),
+  dataPolicy: settingsDataPolicyInputSchema.optional(),
+  deliverySettings: settingsDeliverySettingsInputSchema.optional(),
+  importRules: settingsImportRulesInputSchema.optional(),
   notifications: settingsNotificationGroupsInputSchema.optional(),
   organization: settingsOrganizationInputSchema.optional(),
   orgId: z.string().min(1),
@@ -42,7 +54,7 @@ type SettingsUpdateDependencies = Readonly<{
   accountRepository?: AccountRepository;
   billingAccountRepository?: BillingAccountRepository;
   billingPaymentMethodRepository?: BillingPaymentMethodRepository;
-  currentActor?: CurrentAppActor | null;
+  currentActor: CurrentAppActor | null;
   llmUsageEventRepository?: LlmUsageEventRepository;
   now?: () => string;
   organizationRepository?: OrganizationRepository;
@@ -66,6 +78,9 @@ export async function handleSettingsUpdateRequest(
 
   const hasMutableSection =
     parsedBody.data.billing !== undefined ||
+    parsedBody.data.dataPolicy !== undefined ||
+    parsedBody.data.deliverySettings !== undefined ||
+    parsedBody.data.importRules !== undefined ||
     parsedBody.data.organization !== undefined ||
     parsedBody.data.notifications !== undefined ||
     parsedBody.data.preferences !== undefined ||
@@ -107,8 +122,62 @@ export async function handleSettingsUpdateRequest(
     );
   }
 
+  const actorResult = requireSettingsActor(dependencies.currentActor);
+
+  if (actorResult.response !== null) {
+    return actorResult.response;
+  }
+
+  if (
+    (
+      parsedBody.data.dataPolicy !== undefined ||
+      parsedBody.data.importRules !== undefined ||
+      parsedBody.data.organization !== undefined ||
+      parsedBody.data.preferences !== undefined ||
+      parsedBody.data.websiteDetails !== undefined
+    ) &&
+    !canManageWorkspaceSettings(dependencies.currentActor)
+  ) {
+    return Response.json(
+      {
+        error: "Only users with setup access can update workspace settings.",
+      },
+      { status: 403 },
+    );
+  }
+
+  if (
+    (
+      parsedBody.data.deliverySettings !== undefined ||
+      parsedBody.data.notifications !== undefined
+    ) &&
+    !canManageOperationalSettings(dependencies.currentActor)
+  ) {
+    return Response.json(
+      {
+        error: "Only users with setup or operations access can update alerts.",
+      },
+      { status: 403 },
+    );
+  }
+
+  if (
+    parsedBody.data.billing !== undefined &&
+    !canManageBillingSettings(dependencies.currentActor)
+  ) {
+    return Response.json(
+      {
+        error: "Only admins can update billing settings.",
+      },
+      { status: 403 },
+    );
+  }
+
   const nowIso = dependencies.now?.() ?? new Date().toISOString();
   const hasSettingsRecordSection =
+    parsedBody.data.dataPolicy !== undefined ||
+    parsedBody.data.deliverySettings !== undefined ||
+    parsedBody.data.importRules !== undefined ||
     parsedBody.data.organization !== undefined ||
     parsedBody.data.notifications !== undefined ||
     parsedBody.data.preferences !== undefined ||
@@ -120,6 +189,10 @@ export async function handleSettingsUpdateRequest(
         settingsRepository: dependencies.settingsRepository,
         updater: (settingsRecord) => ({
           ...settingsRecord,
+          dataPolicy: parsedBody.data.dataPolicy ?? settingsRecord.dataPolicy,
+          deliverySettings:
+            parsedBody.data.deliverySettings ?? settingsRecord.deliverySettings,
+          importRules: parsedBody.data.importRules ?? settingsRecord.importRules,
           notifications: parsedBody.data.notifications ?? settingsRecord.notifications,
           organization: parsedBody.data.organization
             ? {

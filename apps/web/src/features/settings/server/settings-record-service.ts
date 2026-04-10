@@ -23,7 +23,17 @@ import {
   createSettingsRecord,
   type SettingsRecord,
 } from "@/features/settings/domain/settings-record";
+import {
+  settingsDataPolicySchema,
+  settingsDeliverySettingsSchema,
+  settingsImportRuleSchema,
+} from "@/features/settings/domain/settings-operational-config";
 import { type OrganizationRecord } from "@/features/settings/domain/organization-record";
+import {
+  buildVisibleSettingsTabs,
+  buildSettingsAccess,
+} from "@/features/settings/lib/settings-access";
+import { getSettingsSecurityAuthRowKind } from "@/features/settings/lib/settings-security";
 import {
   fallbackSettingsPageData,
   type SettingsPageData,
@@ -71,6 +81,11 @@ export const settingsPreferenceItemsInputSchema = z.array(
 ).readonly();
 
 export const settingsWebsiteDetailsInputSchema = websiteDetailsSchema;
+export const settingsDeliverySettingsInputSchema = settingsDeliverySettingsSchema;
+export const settingsDataPolicyInputSchema = settingsDataPolicySchema;
+export const settingsImportRulesInputSchema = z
+  .array(settingsImportRuleSchema)
+  .readonly();
 
 export const settingsInviteInputSchema = z.object({
   email: z.string().email(),
@@ -139,13 +154,17 @@ export async function getSettingsPageDataFromRepository(input: Readonly<{
     currentAccount === undefined || currentAccount === null
       ? fallbackSettingsPageData.currentUser
       : {
+          ...buildSettingsAccess(currentAccount),
           accessSummary: getOrganizationAccountAccessSummary(currentAccount),
           canInviteMembers: canInviteTeamMembers(currentAccount),
           canManageAccounts: currentAccount.role === "admin",
           email: currentAccount.email,
           isFallbackSession: input.currentActorWasFallback ?? false,
           name: currentAccount.name,
+          operationsAccess: currentAccount.operationsAccess,
+          reportAccess: currentAccount.reportAccess,
           role: getOrganizationAccountRoleLabel(currentAccount.role),
+          setupAccess: currentAccount.setupAccess,
           userId: currentAccount.userId,
         };
   const primaryEmail =
@@ -153,11 +172,14 @@ export async function getSettingsPageDataFromRepository(input: Readonly<{
     fallbackSettingsPageData.security.authRows[0]?.description ??
     "No primary email configured";
 
-  return {
+  return applySettingsPageAccess({
     ...fallbackSettingsPageData,
     billing: input.billing ?? fallbackSettingsPageData.billing,
     currentUser,
+    dataPolicy: settingsRecord.dataPolicy,
+    deliverySettings: settingsRecord.deliverySettings,
     integrations: settingsRecord.integrations,
+    importRules: settingsRecord.importRules,
     notifications: settingsRecord.notifications,
     organization:
       organizationRecord === undefined || organizationRecord === null
@@ -176,8 +198,9 @@ export async function getSettingsPageDataFromRepository(input: Readonly<{
       ...fallbackSettingsPageData.team,
       members: teamMembers,
     },
+    tabs: buildVisibleSettingsTabs(currentUser),
     websiteDetails: settingsRecord.websiteDetails,
-  };
+  });
 }
 
 export async function updateSettingsRecord(
@@ -315,6 +338,168 @@ function mapOrganizationAccountToSettingsMember(
     status: account.status === "disabled" ? "invited" : account.status,
     statusLabel: getOrganizationAccountStatusLabel(account.status),
     userId: account.userId,
+  };
+}
+
+function applySettingsPageAccess(pageData: SettingsPageData): SettingsPageData {
+  return {
+    ...pageData,
+    billing: pageData.currentUser.canManageBilling
+      ? pageData.billing
+      : createRestrictedBillingData(),
+    dataPolicy: pageData.currentUser.canManageWorkspaceSettings
+      ? pageData.dataPolicy
+      : createRestrictedDataPolicy(),
+    deliverySettings: pageData.currentUser.canManageOperationalSettings
+      ? pageData.deliverySettings
+      : createRestrictedDeliverySettings(),
+    integrations: pageData.currentUser.canManageOperationalSettings
+      ? pageData.integrations
+      : [],
+    importRules: pageData.currentUser.canManageWorkspaceSettings
+      ? pageData.importRules
+      : [],
+    notifications: pageData.currentUser.canManageOperationalSettings
+      ? pageData.notifications
+      : [],
+    organization: pageData.currentUser.canManageWorkspaceSettings
+      ? pageData.organization
+      : createRestrictedOrganizationData(),
+    preferences: pageData.currentUser.canManageWorkspaceSettings
+      ? pageData.preferences
+      : [],
+    security: {
+      authRows: pageData.security.authRows.filter((row) =>
+        pageData.currentUser.canManageAccounts
+          ? true
+          : getSettingsSecurityAuthRowKind(row.title) !== "singleSignOn",
+      ),
+      apiKeys: pageData.currentUser.canManageAccounts
+        ? pageData.security.apiKeys
+        : [],
+      sessions: pageData.currentUser.canManageAccounts
+        ? pageData.security.sessions
+        : [],
+    },
+    team: {
+      members: pageData.currentUser.canManageAccounts
+        ? pageData.team.members
+        : pageData.team.members.filter((member) => member.isCurrentUser),
+      permissions: pageData.currentUser.canManageAccounts
+        ? pageData.team.permissions
+        : [],
+    },
+    websiteDetails: pageData.currentUser.canManageWorkspaceSettings
+      ? pageData.websiteDetails
+      : createRestrictedWebsiteDetails(),
+  };
+}
+
+function createRestrictedDataPolicy(): SettingsPageData["dataPolicy"] {
+  return {
+    embeddingsEnabled: false,
+    extractionEnabled: false,
+    humanReviewRequired: false,
+    reviewThresholds: {
+      acceptanceRateDriftThreshold: 0,
+      briefHighConfidenceFloor: 0,
+      classificationConfidenceFloor: 0,
+      fieldConfidenceFloor: 0,
+      outcomeRateDriftThreshold: 0,
+      parserConfidenceFloor: 0,
+    },
+    sourceRetentionDays: {
+      api: 0,
+      email: 0,
+      upload: 0,
+    },
+  };
+}
+
+function createRestrictedDeliverySettings(): SettingsPageData["deliverySettings"] {
+  return {
+    confidenceDropAlert: {
+      enabled: false,
+      recipientEmails: [],
+      threshold: 0,
+    },
+    parseFailureAlert: {
+      enabled: false,
+      failureCountThreshold: 0,
+      recipientEmails: [],
+    },
+    queueDigest: {
+      enabled: false,
+      recipientEmails: [],
+      sendTimeLocal: "00:00",
+    },
+    sourceDisconnectedAlert: {
+      enabled: false,
+      recipientEmails: [],
+    },
+    weeklyBrief: {
+      enabled: false,
+      recipientEmails: [],
+      sendDay: "monday",
+      sendTimeLocal: "00:00",
+    },
+  };
+}
+
+function createRestrictedBillingData(): SettingsPageData["billing"] {
+  return {
+    graphMetrics: {
+      currentTotalCents: 0,
+      flatFeeCents: 0,
+      usageThisPeriodCents: 0,
+    },
+    paymentMethods: [],
+    planDescription: "Billing details are restricted for this account.",
+    planTitle: "Restricted",
+    usage: [
+      {
+        detail: "Not available for this account.",
+        id: "flat_fee",
+        label: "Platform access",
+        value: "--",
+      },
+      {
+        detail: "Not available for this account.",
+        id: "usage_this_period",
+        label: "Usage this period",
+        value: "--",
+      },
+      {
+        detail: "Not available for this account.",
+        id: "current_total",
+        label: "Current total",
+        value: "--",
+      },
+    ],
+    usageCapCents: null,
+  };
+}
+
+function createRestrictedOrganizationData(): SettingsPageData["organization"] {
+  return {
+    goals: [],
+    industry: "",
+    invoiceCycle: "",
+    location: "",
+    name: "",
+    revenueModel: "",
+    teamSize: "",
+  };
+}
+
+function createRestrictedWebsiteDetails(): SettingsPageData["websiteDetails"] {
+  return {
+    mainPhone: "",
+    partnershipsEmail: "",
+    pressEmail: "",
+    salesEmail: "",
+    supportEmail: "",
+    supportPhone: "",
   };
 }
 

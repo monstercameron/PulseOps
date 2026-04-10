@@ -1,17 +1,40 @@
 import { buildDefaultSettingsPreferences } from "@/features/settings/domain/settings-preferences";
 import {
+  defaultSettingsDataPolicy,
+  defaultSettingsDeliverySettings,
+  defaultSettingsImportRules,
+  type SettingsDataPolicy,
+  type SettingsDeliverySettings,
+  type SettingsImportRule,
+} from "@/features/settings/domain/settings-operational-config";
+import {
   fallbackWebsiteDetails,
   type WebsiteDetails,
 } from "@/features/marketing/domain/website-details";
 
 export type SettingsTabId =
-  | "organization"
-  | "team"
-  | "integrations"
-  | "notifications"
-  | "security"
-  | "billing"
-  | "preferences";
+  | "myAccount"
+  | "workspace"
+  | "sourcesOperations"
+  | "peopleAccess"
+  | "billing";
+
+export const defaultSettingsTabLabels: Record<SettingsTabId, string> = {
+  billing: "Billing",
+  myAccount: "My account",
+  peopleAccess: "People & access",
+  sourcesOperations: "Sources & operations",
+  workspace: "Workspace",
+};
+
+export function buildSettingsTabRecords(
+  tabIds: readonly SettingsTabId[],
+) {
+  return tabIds.map((id) => ({
+    id,
+    label: defaultSettingsTabLabels[id],
+  }));
+}
 
 export type SettingsPageData = Readonly<{
   billing: Readonly<{
@@ -41,6 +64,8 @@ export type SettingsPageData = Readonly<{
       value: string;
     }[];
   }>;
+  dataPolicy: SettingsDataPolicy;
+  deliverySettings: SettingsDeliverySettings;
   integrations: readonly {
     actionLabel: string;
     description: string;
@@ -53,12 +78,19 @@ export type SettingsPageData = Readonly<{
     accessSummary: string;
     canInviteMembers: boolean;
     canManageAccounts: boolean;
+    canManageBilling: boolean;
+    canManageOperationalSettings: boolean;
+    canManageWorkspaceSettings: boolean;
     email: string;
     isFallbackSession: boolean;
     name: string;
+    operationsAccess: boolean;
+    reportAccess: boolean;
     role: string;
+    setupAccess: boolean;
     userId: string;
   }>;
+  importRules: readonly SettingsImportRule[];
   notifications: readonly {
     id: string;
     items: readonly {
@@ -182,6 +214,8 @@ export const fallbackSettingsPageData: SettingsPageData = {
       },
     ],
   },
+  dataPolicy: defaultSettingsDataPolicy,
+  deliverySettings: defaultSettingsDeliverySettings,
   integrations: [
     {
       actionLabel: "Manage",
@@ -217,12 +251,19 @@ export const fallbackSettingsPageData: SettingsPageData = {
     accessSummary: "Setup, Ops, Reports",
     canInviteMembers: true,
     canManageAccounts: true,
+    canManageBilling: true,
+    canManageOperationalSettings: true,
+    canManageWorkspaceSettings: true,
     email: "jamie@browardhvac.com",
     isFallbackSession: true,
     name: "Jamie Reynolds",
+    operationsAccess: true,
+    reportAccess: true,
     role: "Admin",
+    setupAccess: true,
     userId: "user_jamie_reynolds",
   },
+  importRules: defaultSettingsImportRules,
   notifications: [
     {
       id: "briefs",
@@ -330,15 +371,13 @@ export const fallbackSettingsPageData: SettingsPageData = {
       },
     ],
   },
-  tabs: [
-    { id: "organization", label: "Organization" },
-    { id: "team", label: "Team" },
-    { id: "integrations", label: "Integrations" },
-    { id: "notifications", label: "Notifications" },
-    { id: "security", label: "Security" },
-    { id: "billing", label: "Billing" },
-    { id: "preferences", label: "Preferences" },
-  ],
+  tabs: buildSettingsTabRecords([
+    "myAccount",
+    "workspace",
+    "sourcesOperations",
+    "peopleAccess",
+    "billing",
+  ]),
   team: {
     members: [
       {
