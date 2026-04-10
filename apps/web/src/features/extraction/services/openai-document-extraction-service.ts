@@ -8,6 +8,7 @@ import {
 } from "@/features/cost/server/llm-cost-tracker";
 import {
   buildGenericDocumentExtractionPrompt,
+  buildTabularBusinessSummary,
   genericDocumentExtractionPlanSchema,
   getGenericDocumentExtractionInstructions,
   materializeGenericDocumentExtractionContract,
@@ -85,6 +86,7 @@ export function createOpenAiDocumentExtractionService(
               serviceInput.classification?.suggestedDocumentFamily,
             fileName: serviceInput.document.fileName,
             parserRoute: "tabular",
+            tabularBusinessSummary: buildTabularBusinessSummary(sheets),
             tabularPreview: buildTabularPreview(sheets),
           }),
           instructions: getGenericDocumentExtractionInstructions(),

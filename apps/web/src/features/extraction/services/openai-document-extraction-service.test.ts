@@ -10,31 +10,36 @@ describe("openai document extraction service", () => {
     const service = createOpenAiDocumentExtractionService({
       model: "gpt-5-mini",
       now: () => "2026-04-09T21:15:00.000Z",
-      runGenericDocumentExtraction: async () => ({
-        documentFamily: "generic-business-document",
-        observations: [
-          {
-            canonicalFactTypeId: null,
-            confidenceScore: 0.9,
-            excerpt: null,
-            key: "reported_profit",
-            label: "Reported profit",
-            locator: {
-              column: null,
-              fieldPath: null,
-              lineEnd: null,
-              lineStart: null,
-              page: null,
-              reference: null,
-              row: 2,
-              sheet: "Sheet1",
+      runGenericDocumentExtraction: async (input) => {
+        expect(input.input).toContain("Computed business summary:");
+        expect(input.input).toContain("Row count: 1");
+
+        return {
+          documentFamily: "generic-business-document",
+          observations: [
+            {
+              canonicalFactTypeId: null,
+              confidenceScore: 0.9,
+              excerpt: null,
+              key: "reported_profit",
+              label: "Reported profit",
+              locator: {
+                column: null,
+                fieldPath: null,
+                lineEnd: null,
+                lineStart: null,
+                page: null,
+                reference: null,
+                row: 2,
+                sheet: "Sheet1",
+              },
+              locatorType: "cell",
+              value: 44168198.4,
+              valueType: "number",
             },
-            locatorType: "cell",
-            value: 44168198.4,
-            valueType: "number",
-          },
-        ],
-      }),
+          ],
+        };
+      },
       runTabularExtractionPlan: async () => ({
         documentFamily: "customer-invoice",
         fieldMappings: [],
