@@ -27,3 +27,8 @@ Thumbs.db
 .env
 .local-data/
 .tmp/
+.codex-tmp/
+test-results/
+apps/web/test-results/
+apps/web/playwright-report/
+apps/web/e2e/debug-content.spec.ts
