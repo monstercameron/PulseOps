@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 
 import { CatalogButton } from "@/features/catalog/components/catalog-primitives";
 import { CatalogModalOverlay, PlaceholderActionDialog } from "@/features/catalog/components/catalog-dialogs";
@@ -18,6 +18,11 @@ import { type AskHistoryThread } from "@/features/query/server/handle-ask-histor
 import { AskWidgetRenderer } from "@/features/ask/components/ask-widget-renderer";
 import { AskMessageRichText } from "@/features/ask/components/ask-message-rich-text";
 import {
+  clearCachedAskThreadScrollTop,
+  readCachedAskThreadScrollTop,
+  writeCachedAskThreadScrollTop,
+} from "@/features/ask/lib/ask-thread-scroll-cache";
+import {
   getAskMessageActionIds,
   hasAskMessageContext,
 } from "@/features/ask/lib/ask-message-actions";
@@ -33,6 +38,7 @@ import {
   SEED_THREAD_MESSAGES,
   type SeedMessage,
 } from "@/features/ask/lib/ask-seed-threads";
+import { useUiI18n } from "@/features/i18n/components/ui-i18n-provider";
 
 type AskPageProps = Readonly<{
   initialHistory: readonly AskHistoryThread[];
@@ -67,27 +73,29 @@ type AskApiResponse = Readonly<{
   widget: AskWidget | null;
 }>;
 
-const starterPrompts = [
-  "Which invoices are overdue as of today?",
-  "Which jobs are underpriced?",
-  "What deserves attention first this week?",
-] as const;
+const ASK_COMPOSER_MIN_HEIGHT = 36;
+const ASK_COMPOSER_MAX_HEIGHT = 120;
 
 export function AskPage({ initialHistory, orgId }: AskPageProps) {
+  const { locale, messages: uiMessages, t } = useUiI18n();
+  const showSeedThreads = locale.toLowerCase().startsWith("en");
+  const starterPrompts = uiMessages.askPage.starterPrompts;
   const [draft, setDraft] = useState("");
   // Seed threads are prepended so they always appear at the top of the sidebar.
   const [history, setHistory] = useState([
-    ...SEED_HISTORY,
+    ...(showSeedThreads ? SEED_HISTORY : []),
     ...initialHistory.filter((t) => !(t.id in SEED_THREAD_MESSAGES)),
   ]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [threadMessagesById, setThreadMessagesById] = useState<
     Record<string, readonly AskMessage[]>
-  >(() => ({ ...SEED_THREAD_MESSAGES }));
+  >(() => (showSeedThreads ? { ...SEED_THREAD_MESSAGES } : {}));
   // Show the first seed thread's messages on initial load.
   const [messages, setMessages] = useState<readonly AskMessage[]>(
-    (SEED_THREAD_MESSAGES[SEED_DEFAULT_THREAD_ID] as readonly SeedMessage[]) ??
-      [],
+    showSeedThreads
+      ? ((SEED_THREAD_MESSAGES[SEED_DEFAULT_THREAD_ID] as readonly SeedMessage[]) ??
+        [])
+      : [],
   );
   const [pendingDeleteThreadId, setPendingDeleteThreadId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -95,13 +103,36 @@ export function AskPage({ initialHistory, orgId }: AskPageProps) {
     description?: string;
     title: string;
   } | null>(null);
-  const [selectedThreadId, setSelectedThreadId] = useState<string | null>(SEED_DEFAULT_THREAD_ID);
+  const [selectedThreadId, setSelectedThreadId] = useState<string | null>(
+    showSeedThreads ? SEED_DEFAULT_THREAD_ID : null,
+  );
   const [forkState, setForkState] = useState<AskForkState | null>(null);
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
+  const threadViewportRef = useRef<HTMLDivElement | null>(null);
+  const threadScrollTopByIdRef = useRef<Record<string, number>>({});
+  const pendingThreadScrollRestoreIdRef = useRef<string | null>(
+    showSeedThreads ? SEED_DEFAULT_THREAD_ID : null,
+  );
 
   function openPlaceholderAction(title: string, description?: string) {
     console.info(`[PulseOps] ${title}: not implemented yet.`);
     setPlaceholderAction({ description, title });
+  }
+
+  function cacheThreadScrollTop(threadId: string, scrollTop: number) {
+    threadScrollTopByIdRef.current[threadId] = writeCachedAskThreadScrollTop(
+      orgId,
+      threadId,
+      scrollTop,
+    );
+  }
+
+  function captureThreadScrollTop(threadId: string | null) {
+    if (threadId === null || threadViewportRef.current === null) {
+      return;
+    }
+
+    cacheThreadScrollTop(threadId, threadViewportRef.current.scrollTop);
   }
 
   async function submitQuestion(
@@ -116,6 +147,10 @@ export function AskPage({ initialHistory, orgId }: AskPageProps) {
 
     if (trimmedQuestion.length === 0 || isSubmitting) {
       return;
+    }
+
+    if (saveQuestion && options?.threadId === undefined) {
+      captureThreadScrollTop(selectedThreadId);
     }
 
     const baseMessages = options?.baseMessages ?? messages;
@@ -145,7 +180,9 @@ export function AskPage({ initialHistory, orgId }: AskPageProps) {
       const payload = (await response.json()) as AskApiResponse | { error: string };
 
       if (!response.ok || "error" in payload) {
-        throw new Error("error" in payload ? payload.error : "Ask request failed.");
+        throw new Error(
+          "error" in payload ? payload.error : t("askPage.errorFallback", "Ask request failed."),
+        );
       }
 
       const assistantMessage: AskMessage = {
@@ -156,6 +193,7 @@ export function AskPage({ initialHistory, orgId }: AskPageProps) {
         text:
           payload.answer.answerText.trim().length === 0
             ? "No matching evidence is available in this workspace yet. Upload more data or narrow the question."
+            ? uiMessages.askPage.noAnswer
             : payload.answer.answerText,
         widget: payload.widget ?? null,
       };
@@ -198,7 +236,7 @@ export function AskPage({ initialHistory, orgId }: AskPageProps) {
           text:
             error instanceof Error
               ? error.message
-              : "The ask request could not be completed.",
+              : uiMessages.askPage.errorFallback,
         };
       const nextMessages = appendAskThreadMessages(baseMessages, [
         userMessage,
@@ -226,6 +264,8 @@ export function AskPage({ initialHistory, orgId }: AskPageProps) {
   }
 
   async function handleThreadSelection(thread: AskHistoryThread) {
+    captureThreadScrollTop(selectedThreadId);
+    pendingThreadScrollRestoreIdRef.current = thread.id;
     setSelectedThreadId(thread.id);
     setDraft(thread.question);
     const cachedMessages = threadMessagesById[thread.id];
@@ -259,11 +299,16 @@ export function AskPage({ initialHistory, orgId }: AskPageProps) {
     });
   }
 
-  function startNewThread() {
+  function startNewThread(options?: Readonly<{ captureCurrentScroll?: boolean }>) {
+    if (options?.captureCurrentScroll !== false) {
+      captureThreadScrollTop(selectedThreadId);
+    }
+
     setDraft("");
     setMessages([]);
     setSelectedThreadId(null);
     setForkState(null);
+    pendingThreadScrollRestoreIdRef.current = null;
     composerRef.current?.focus();
   }
 
@@ -273,9 +318,11 @@ export function AskPage({ initialHistory, orgId }: AskPageProps) {
       await fetch(`/api/ask/threads/${encodeURIComponent(threadId)}?orgId=${encodeURIComponent(orgId)}`, {
         method: "DELETE",
       });
+      clearCachedAskThreadScrollTop(orgId, threadId);
+      delete threadScrollTopByIdRef.current[threadId];
       setHistory((current) => current.filter((t) => t.id !== threadId));
       if (selectedThreadId === threadId) {
-        startNewThread();
+        startNewThread({ captureCurrentScroll: false });
       }
       setThreadMessagesById((current) => {
         if (!(threadId in current)) {
@@ -298,53 +345,96 @@ export function AskPage({ initialHistory, orgId }: AskPageProps) {
     void navigator.clipboard.writeText(text);
   }
 
+  useLayoutEffect(() => {
+    const threadId = pendingThreadScrollRestoreIdRef.current;
+    const viewport = threadViewportRef.current;
+
+    if (threadId === null || threadId !== selectedThreadId || viewport === null) {
+      return;
+    }
+
+    const inMemoryScrollTop = threadScrollTopByIdRef.current[threadId];
+
+    if (inMemoryScrollTop !== undefined) {
+      viewport.scrollTop = inMemoryScrollTop;
+      pendingThreadScrollRestoreIdRef.current = null;
+      return;
+    }
+
+    const persistedScrollTop = readCachedAskThreadScrollTop(orgId, threadId);
+
+    if (persistedScrollTop !== null) {
+      threadScrollTopByIdRef.current[threadId] = persistedScrollTop;
+    }
+
+    viewport.scrollTop = persistedScrollTop ?? 0;
+    pendingThreadScrollRestoreIdRef.current = null;
+  }, [messages, orgId, selectedThreadId]);
+
+  useLayoutEffect(() => {
+    const composer = composerRef.current;
+
+    if (composer === null) {
+      return;
+    }
+
+    composer.style.height = "0px";
+
+    const nextComposerHeight = resolveAskComposerHeight(composer.scrollHeight);
+
+    composer.style.height = `${nextComposerHeight}px`;
+    composer.style.overflowY =
+      composer.scrollHeight > ASK_COMPOSER_MAX_HEIGHT ? "auto" : "hidden";
+  }, [draft]);
+
   return (
     <div className="flex min-h-full flex-col">
       <WorkspaceHeader
         actions={[
           {
             label: "Saved thread history",
+            label: uiMessages.askPage.actions.history,
             onClick: () =>
               openPlaceholderAction(
-                "Saved thread history",
-                "Desktop thread history is already visible in the left rail. A dedicated history drawer for smaller screens is not implemented yet.",
+                uiMessages.askPage.actions.history,
+                uiMessages.askPage.historyActionDescription,
               ),
             variant: "secondary",
           },
           {
-            label: "Ask with evidence",
+            label: uiMessages.askPage.actions.ask,
             onClick: () => composerRef.current?.focus(),
             variant: "primary",
           },
         ]}
-        breadcrumbs={["Dashboard", "Ask"]}
-        description="Query the workspace in plain language. Each answer is grounded in saved facts and returned with citations."
-        title="Ask"
+        breadcrumbs={uiMessages.askPage.breadcrumbs}
+        description={uiMessages.askPage.description}
+        title={uiMessages.askPage.title}
       />
 
       <div className="flex min-h-0 flex-1 overflow-hidden">
         <aside className="hidden w-[220px] shrink-0 border-r border-border bg-card min-[721px]:flex min-[721px]:flex-col">
           <div className="border-b border-border px-4 py-4">
             <p className="text-xs font-semibold uppercase tracking-[0.07em] text-muted">
-              Threads
+              {uiMessages.askPage.threadsHeading}
             </p>
             <button
               className="mt-3 flex w-full items-center justify-center gap-2 rounded-[8px] bg-accent px-3 py-2 text-[12.5px] font-bold text-[#0d1b2a]"
-              onClick={startNewThread}
+              onClick={() => startNewThread()}
               type="button"
             >
               <span className="text-sm leading-none">+</span>
-              <span>New thread</span>
+              <span>{uiMessages.askPage.newThread}</span>
             </button>
           </div>
           <div className="flex-1 space-y-2 overflow-y-auto px-3 py-3">
             {history.length === 0 ? (
               <CatalogCard className="p-4 shadow-none">
                 <p className="text-sm font-semibold text-foreground">
-                  No saved threads yet
+                  {uiMessages.askPage.noThreadsTitle}
                 </p>
                 <p className="mt-2 text-xs leading-6 text-muted">
-                  Ask a question to create a reusable thread in this workspace.
+                  {uiMessages.askPage.noThreadsDescription}
                 </p>
               </CatalogCard>
             ) : null}
@@ -399,41 +489,27 @@ export function AskPage({ initialHistory, orgId }: AskPageProps) {
         </aside>
 
         <div className="flex min-h-0 flex-1 flex-col">
-          <div className="border-b border-border bg-card px-5 py-4">
-            <div className="flex flex-wrap gap-2">
-              {starterPrompts.map((prompt) => (
-                <button
-                  key={prompt}
-                  className={[
-                    "rounded-[20px] border px-[13px] py-[7px] text-[12.5px] font-medium transition-colors",
-                    draft === prompt
-                      ? "border-accent bg-accent/10 text-accent"
-                      : "border-[rgba(20,34,53,.09)] text-[rgba(20,34,53,.7)] hover:border-accent hover:text-accent dark:border-border dark:text-muted",
-                  ].join(" ")}
-                  onClick={() => {
-                    setDraft(prompt);
-                    void submitQuestion(prompt, true);
-                  }}
-                  type="button"
-                >
-                  {prompt}
-                </button>
-              ))}
-            </div>
-          </div>
+          <div
+            className="flex-1 overflow-y-auto px-5 py-5"
+            onScroll={(event) => {
+              if (selectedThreadId === null) {
+                return;
+              }
 
-          <div className="flex-1 overflow-y-auto px-5 py-5">
+              cacheThreadScrollTop(selectedThreadId, event.currentTarget.scrollTop);
+            }}
+            ref={threadViewportRef}
+          >
             {messages.length === 0 ? (
               <CatalogCard className="max-w-3xl p-6">
                 <p className="text-xs font-semibold uppercase tracking-[0.16em] text-accent">
-                  Ask Surface
+                  {uiMessages.askPage.askSurfaceEyebrow}
                 </p>
                 <h2 className="mt-3 text-2xl font-semibold tracking-tight text-foreground">
-                  Start with a question that maps to invoices, jobs, cash, or margin.
+                  {uiMessages.askPage.emptyStateTitle}
                 </h2>
                 <p className="mt-3 text-sm leading-7 text-muted">
-                  The current query planner already recognizes those business objects.
-                  When local evidence is missing, the page returns a clear no-evidence response instead of a dead mock.
+                  {uiMessages.askPage.emptyStateDescription}
                 </p>
               </CatalogCard>
             ) : (
@@ -464,7 +540,7 @@ export function AskPage({ initialHistory, orgId }: AskPageProps) {
                             {message.citations.length > 0 ? (
                               <div>
                                 <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">
-                                  Based on
+                                  {uiMessages.askPage.assistantLeadLabel}
                                 </span>
                                 <div className="mt-2">
                                   <CitationList items={message.citations} />
@@ -474,7 +550,7 @@ export function AskPage({ initialHistory, orgId }: AskPageProps) {
                             {message.clarificationQuestions.length > 0 ? (
                               <div>
                                 <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">
-                                  Clarify next
+                                  {uiMessages.askPage.clarifyNextLabel}
                                 </span>
                                 <ul className="mt-2 space-y-1 text-sm text-foreground">
                                   {message.clarificationQuestions.map((question) => (
@@ -514,17 +590,17 @@ export function AskPage({ initialHistory, orgId }: AskPageProps) {
                                 }
 
                                 openPlaceholderAction(
-                                  "Save to pack",
-                                  "Ask insights can be saved to packs once that workflow is implemented.",
+                                  uiMessages.askPage.saveToPack,
+                                  uiMessages.askPage.saveToPackDescription,
                                 );
                               }}
                               type="button"
                             >
                               {actionId === "copy"
-                                ? "Copy"
+                                ? uiMessages.askPage.copyAction
                                 : actionId === "fork-thread"
-                                  ? "Fork thread"
-                                  : "Save to pack"}
+                                  ? t("askPage.forkThread", "Fork thread")
+                                  : uiMessages.askPage.saveToPack}
                             </button>
                           ))}
                         </div>
@@ -547,7 +623,7 @@ export function AskPage({ initialHistory, orgId }: AskPageProps) {
           </div>
 
           <form
-            className="border-t border-border bg-card px-5 py-4"
+            className="border-t border-border bg-card px-5 py-2"
             onSubmit={(event) => {
               event.preventDefault();
               const question = draft.trim();
@@ -560,24 +636,42 @@ export function AskPage({ initialHistory, orgId }: AskPageProps) {
               void submitQuestion(question, true);
             }}
           >
-            <div className="rounded-[12px] border border-border bg-surface-subtle p-3">
+            <div className="-mx-1 mb-1.5 flex gap-2 overflow-x-auto px-1 pb-0.5">
+              {starterPrompts.map((prompt) => (
+                <button
+                  key={prompt}
+                  className={[
+                    "shrink-0 rounded-full border px-3 py-1.5 text-[12px] font-medium whitespace-nowrap transition-colors",
+                    draft === prompt
+                      ? "border-accent bg-accent/10 text-accent"
+                      : "border-[rgba(20,34,53,.09)] bg-background/75 text-[rgba(20,34,53,.72)] hover:border-accent hover:text-accent dark:border-border dark:bg-surface-subtle dark:text-muted",
+                  ].join(" ")}
+                  onClick={() => {
+                    setDraft(prompt);
+                    void submitQuestion(prompt, true);
+                  }}
+                  type="button"
+                >
+                  {prompt}
+                </button>
+              ))}
+            </div>
+            <div className="rounded-[12px] border border-border bg-surface-subtle px-2.5 py-1.5">
               <textarea
-                className="min-h-[96px] w-full resize-none border-none bg-transparent text-sm leading-7 text-foreground outline-none placeholder:text-muted"
+                className="w-full resize-none border-none bg-transparent text-[13px] leading-[1.5] text-foreground outline-none placeholder:text-muted"
+                rows={1}
                 ref={composerRef}
                 onChange={(event) => setDraft(event.target.value)}
-                placeholder="Ask about overdue invoices, underpriced jobs, cash pressure, or margin drift."
+                placeholder={uiMessages.askPage.placeholder}
                 value={draft}
               />
-              <div className="mt-3 flex items-center justify-between gap-3">
-                <p className="text-xs text-muted">
-                  Questions are saved to thread history when submitted from this input.
-                </p>
+              <div className="mt-1.5 flex items-center justify-end">
                 <button
-                  className="rounded-[8px] bg-accent px-4 py-2.5 text-sm font-bold text-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="rounded-[8px] bg-accent px-4 py-1.5 text-sm font-bold text-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
                   disabled={isSubmitting || draft.trim().length === 0}
                   type="submit"
                 >
-                  {isSubmitting ? "Running..." : "Ask"}
+                  {isSubmitting ? uiMessages.askPage.submitting : uiMessages.askPage.submitLabel}
                 </button>
               </div>
             </div>
@@ -658,20 +752,30 @@ export function AskPage({ initialHistory, orgId }: AskPageProps) {
             footer={
               <>
                 <CatalogButton
+                  disabled={isDeleting}
                   onClick={() => setPendingDeleteThreadId(null)}
                   variant="secondary"
                 >
                   Cancel
                 </CatalogButton>
                 <CatalogButton
+                  className="gap-2"
+                  disabled={isDeleting}
                   onClick={() => void deleteThread(pendingDeleteThreadId)}
                   variant="danger"
                 >
-                  {isDeleting ? "Deleting…" : "Delete thread"}
+                  {isDeleting ? (
+                    <>
+                      <DeleteThreadLoadingIcon />
+                      <span>Deleting...</span>
+                    </>
+                  ) : (
+                    "Delete thread"
+                  )}
                 </CatalogButton>
               </>
             }
-            onClose={() => setPendingDeleteThreadId(null)}
+            onClose={isDeleting ? undefined : () => setPendingDeleteThreadId(null)}
             title="Delete thread?"
           >
             <p className="text-[13px] leading-[1.6] text-muted">
@@ -701,4 +805,30 @@ function formatThreadTimestamp(createdAt: string) {
     minute: "2-digit",
     month: "short",
   }).format(new Date(createdAt));
+}
+
+export function resolveAskComposerHeight(scrollHeight: number) {
+  return Math.min(
+    ASK_COMPOSER_MAX_HEIGHT,
+    Math.max(ASK_COMPOSER_MIN_HEIGHT, Math.ceil(scrollHeight)),
+  );
+}
+
+export function DeleteThreadLoadingIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      className="h-3.5 w-3.5 animate-spin"
+      fill="none"
+      viewBox="0 0 16 16"
+    >
+      <circle cx="8" cy="8" r="5.25" stroke="currentColor" strokeOpacity="0.28" strokeWidth="1.5" />
+      <path
+        d="M13.25 8A5.25 5.25 0 008 2.75"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth="1.5"
+      />
+    </svg>
+  );
 }
