@@ -99,7 +99,7 @@ export function UploadFilesModal({
                 )
             : t(
                 "uploadModal.acceptsDescription",
-                "Accepts CSV and XLSX files up to 20 MB.",
+                "Accepts CSV, XLSX, and PDF files up to 20 MB.",
               )
         }
         footer={
@@ -207,7 +207,7 @@ export function UploadFilesModal({
                 </p>
               ) : (
                 <p className="text-[11px] text-muted" id="upload-files-hint">
-                  {t("uploadModal.uploadTypes", "CSV - XLSX - up to 20 MB")}
+                  {t("uploadModal.uploadTypes", "CSV - XLSX - PDF - up to 20 MB")}
                 </p>
               )}
             </div>
@@ -217,7 +217,7 @@ export function UploadFilesModal({
             </label>
             <input
               ref={inputRef}
-              accept=".csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              accept=".csv,.xlsx,.pdf,text/csv,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
               className="hidden"
               id="upload-files-input"
               type="file"
