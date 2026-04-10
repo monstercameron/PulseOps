@@ -370,8 +370,8 @@ export function PacksPage({ initialData, orgId }: PacksPageProps) {
         actions={[
           {
             label: isGeneratingPack
-              ? messages.packsPage.actions.generating
-              : messages.packsPage.actions.generate,
+              ? messages.packsPage.actions.generatingPreview
+              : messages.packsPage.actions.generatePreview,
             onClick: () => {
               void handleGeneratePack();
             },
@@ -379,7 +379,7 @@ export function PacksPage({ initialData, orgId }: PacksPageProps) {
           },
         ]}
         breadcrumbs={messages.packsPage.labels.breadcrumbs}
-        description={messages.packsPage.labels.description}
+        description={messages.packsPage.headerDescription}
         title={messages.packsPage.labels.title}
       />
 
@@ -506,6 +506,9 @@ function PackDetail({
   submittingRecommendationId: string | null;
 }>) {
   const { messages } = useUiI18n();
+  const canMarkReady =
+    pack.statusTone === "success" ||
+    (pack.recommendations.length > 0 && pack.sourceData.length > 0);
 
   return (
     <div className="space-y-6">
@@ -517,7 +520,7 @@ function PackDetail({
             <div className="max-w-3xl">
               <div className="flex flex-wrap items-center gap-2">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted">
-                  {messages.packsPage.detailEyebrow}
+                  {messages.packsPage.previewEyebrow}
                 </p>
                 <StatusBadge
                   label={pack.statusLabel}
@@ -555,19 +558,21 @@ function PackDetail({
                 variant="secondary"
               >
                 {exportingPackId === pack.id
-                  ? messages.packsPage.actions.exporting
-                  : messages.packsPage.actions.export}
+                  ? messages.packsPage.actions.exportingPreview
+                  : messages.packsPage.actions.exportPreview}
               </CatalogButton>
               <CatalogButton
-                disabled={reviewingPackId !== null}
+                disabled={!canMarkReady || reviewingPackId !== null}
                 onClick={() => {
                   void onReviewPack(pack.id);
                 }}
                 variant="primary"
               >
-                {reviewingPackId === pack.id
-                  ? messages.packsPage.actions.markingReviewed
-                  : messages.packsPage.actions.markReviewed}
+                {!canMarkReady
+                  ? messages.packsPage.actions.stillDrafting
+                  : reviewingPackId === pack.id
+                  ? messages.packsPage.actions.markingReady
+                  : messages.packsPage.actions.markReady}
               </CatalogButton>
             </div>
           </div>
@@ -712,7 +717,7 @@ function PackDetail({
       <section>
         <div className="mb-3">
           <h3 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-muted">
-            {messages.packsPage.sourceDataHeading}
+            {messages.packsPage.evidenceHeading}
           </h3>
           <p className="mt-1 text-[12px] leading-[1.6] text-muted">
             {messages.packsPage.sourceDataDescription}

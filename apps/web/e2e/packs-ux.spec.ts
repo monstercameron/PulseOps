@@ -16,7 +16,7 @@ test("/packs explains grouped business analysis clearly", async ({
     page.getByText("Pick the business concept to review", { exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Cash and Margin Brief" }),
+    page.locator("h2").filter({ hasText: "Cash and Margin Brief" }),
   ).toBeVisible();
   await expect(
     page.getByText("What this pack groups together", { exact: true }),
@@ -46,15 +46,15 @@ test("/packs lets operators switch between business concepts", async ({
     .getByRole("button", { name: /Capacity and Utilization/i })
     .click();
   await expect(
-    page.getByRole("heading", { name: "Capacity and Utilization" }),
+    page.locator("h2").filter({ hasText: "Capacity and Utilization" }),
   ).toBeVisible();
   await expect(
     page.getByText(/crew load, schedule pressure, and staffing risk/i),
   ).toBeVisible();
 
-  await page.getByRole("button", { name: "Draft" }).click();
+  await page.getByRole("button", { name: "Draft", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "Parts and Supplier" }),
+    page.locator("h2").filter({ hasText: "Parts and Supplier" }),
   ).toBeVisible();
   await expect(
     page.getByText(/vendor concentration, parts pricing, and procurement leverage/i),
