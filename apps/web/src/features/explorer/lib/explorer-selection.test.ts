@@ -16,6 +16,13 @@ const baseRecord: ExplorerRecord = {
   documentName: "example.csv",
   factsSummary: "1 extracted fact",
   id: "record_1",
+  reviewHealth: {
+    citedFactCount: 0,
+    hasParserArtifact: true,
+    highConfidenceFactCount: 0,
+    primaryFindingLabel: null,
+    uncitedFactCount: 0,
+  },
   sourceLabel: "Manual upload",
   statusLabel: "Extracted",
   statusTone: "success",

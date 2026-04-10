@@ -64,6 +64,14 @@ type ExplorerRecordKeyFinding = Readonly<{
   value: string;
 }>;
 
+type ExplorerRecordReviewHealth = Readonly<{
+  citedFactCount: number;
+  hasParserArtifact: boolean;
+  highConfidenceFactCount: number;
+  primaryFindingLabel: string | null;
+  uncitedFactCount: number;
+}>;
+
 export type ExplorerRecord = Readonly<{
   confidenceScore: number | null;
   dateLabel: string;
@@ -77,6 +85,7 @@ export type ExplorerRecord = Readonly<{
   documentName: string;
   factsSummary: string;
   id: string;
+  reviewHealth: ExplorerRecordReviewHealth;
   sourceLabel: string;
   statusLabel: string;
   statusTone: "danger" | "neutral" | "success" | "warning";
@@ -196,6 +205,8 @@ export async function getExplorerPageData({
           parserArtifactRepository,
           textParserArtifactRepository,
         });
+        const detailFacts = buildDetailFacts(facts, locale).slice(0, 10);
+        const detailKeyFindings = buildDetailKeyFindings(facts, locale);
 
         return {
           confidenceScore,
@@ -208,8 +219,8 @@ export async function getExplorerPageData({
             messages,
             parserContext,
           }),
-          detailFacts: buildDetailFacts(facts, locale).slice(0, 10),
-          detailKeyFindings: buildDetailKeyFindings(facts, locale),
+          detailFacts,
+          detailKeyFindings,
           detailParserFields: buildDetailParserFields({
             locale,
             messages,
@@ -220,6 +231,11 @@ export async function getExplorerPageData({
           documentName: document.fileName,
           factsSummary: buildFactsSummary(facts),
           id: document.id,
+          reviewHealth: buildReviewHealth({
+            detailFacts,
+            detailKeyFindings,
+            parserContext,
+          }),
           sourceLabel: buildSourceLabel(messages, document.source),
           statusLabel: buildStatusLabel(messages, document.status),
           statusTone: buildStatusTone(document.status),
@@ -698,6 +714,27 @@ function buildDetailKeyFindings(
       label,
       value,
     }));
+}
+
+function buildReviewHealth(input: Readonly<{
+  detailFacts: readonly ExplorerRecordFact[];
+  detailKeyFindings: readonly ExplorerRecordKeyFinding[];
+  parserContext: ResolvedDocumentArtifact;
+}>): ExplorerRecordReviewHealth {
+  const citedFactCount = input.detailFacts.filter(
+    (fact) => fact.excerpt !== undefined,
+  ).length;
+  const highConfidenceFactCount = input.detailFacts.filter(
+    (fact) => fact.confidenceScore >= 0.85,
+  ).length;
+
+  return {
+    citedFactCount,
+    hasParserArtifact: input.parserContext !== null,
+    highConfidenceFactCount,
+    primaryFindingLabel: input.detailKeyFindings[0]?.label ?? null,
+    uncitedFactCount: Math.max(input.detailFacts.length - citedFactCount, 0),
+  };
 }
 
 function summarizeFactGroup(

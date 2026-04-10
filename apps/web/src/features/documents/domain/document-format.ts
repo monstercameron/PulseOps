@@ -131,10 +131,10 @@ export class UnsupportedUploadFormatError extends Error {
 export class UploadFormatMismatchError extends Error {
   readonly expectedFormat: SupportedDocumentFormat;
   readonly fileName: string;
-  readonly detectedFormat: SupportedDocumentFormat;
+  readonly detectedFormat: SupportedDocumentFormat | "unknown";
 
   constructor(input: {
-    detectedFormat: SupportedDocumentFormat;
+    detectedFormat: SupportedDocumentFormat | "unknown";
     expectedFormat: SupportedDocumentFormat;
     fileName: string;
   }) {
@@ -200,6 +200,26 @@ export function resolveUploadRouting(
 
   if (resolvedFormat === undefined) {
     throw new UnsupportedUploadFormatError(input.fileName);
+  }
+
+  if (
+    expectedFormat !== undefined &&
+    requiresBinarySignature(expectedFormat) &&
+    input.body.byteLength > 0 &&
+    !hasRequiredBinarySignature(expectedFormat, input.body)
+  ) {
+    if (isPasswordProtectedUpload(expectedFormat, input.body)) {
+      throw new ProtectedUploadError({
+        fileName: input.fileName,
+        format: expectedFormat,
+      });
+    }
+
+    throw new UploadFormatMismatchError({
+      detectedFormat: inferDetectedMismatchFormat(input.body),
+      expectedFormat,
+      fileName: input.fileName,
+    });
   }
 
   if (
@@ -410,6 +430,35 @@ function hasZipSignature(body: Buffer): boolean {
     body[1] === 0x4b &&
     (body[2] === 0x03 || body[2] === 0x05 || body[2] === 0x07) &&
     (body[3] === 0x04 || body[3] === 0x06 || body[3] === 0x08)
+  );
+}
+
+function requiresBinarySignature(format: SupportedDocumentFormat): boolean {
+  return format === "docx" || format === "pdf" || format === "xlsx";
+}
+
+function hasRequiredBinarySignature(
+  format: SupportedDocumentFormat,
+  body: Buffer,
+): boolean {
+  if (format === "pdf") {
+    return hasPdfSignature(body);
+  }
+
+  if (format === "docx" || format === "xlsx") {
+    return hasZipSignature(body);
+  }
+
+  return true;
+}
+
+function inferDetectedMismatchFormat(
+  body: Buffer,
+): SupportedDocumentFormat | "unknown" {
+  return (
+    detectFormatFromSignature(body) ??
+    detectFormatFromText(body) ??
+    "unknown"
   );
 }
 

@@ -8,8 +8,11 @@ import { createLocalDocumentRepository } from "@/features/documents/repositories
 import { createInMemoryIngestionQueue } from "@/features/ingestion/queue/in-memory-ingestion-queue";
 import { createLocalIngestionEventRepository } from "@/features/ingestion/repositories/local-ingestion-event-repository";
 import { createLocalIngestionJobRepository } from "@/features/ingestion/repositories/local-ingestion-job-repository";
+import { processNextIngestionJob } from "@/features/ingestion/services/process-next-ingestion-job";
 import { submitTabularUploadToQueue } from "@/features/ingestion/services/submit-tabular-upload-to-queue";
 import { readCuratedAssetDocument } from "@/features/ingestion/testing/asset-documents";
+import { createLocalParserArtifactRepository } from "@/features/parsing/repositories/local-parser-artifact-repository";
+import { createLocalTextParserArtifactRepository } from "@/features/parsing/repositories/local-text-parser-artifact-repository";
 import { createLocalObjectStorage } from "@/features/storage/lib/local-object-storage";
 import { handleFileUpload } from "@/features/uploads/server/handle-file-upload";
 
@@ -82,8 +85,12 @@ describe("handleFileUpload integration", () => {
       isDuplicate: boolean;
       status: string;
     };
-    const persistedDocument = await documentRepository.getById(payload.documentId);
-    const persistedJob = await ingestionJobRepository.getById(payload.ingestionJobId);
+    const persistedDocument = await documentRepository.getById(
+      payload.documentId,
+    );
+    const persistedJob = await ingestionJobRepository.getById(
+      payload.ingestionJobId,
+    );
     const persistedEvents = await ingestionEventRepository.listByDocumentId(
       payload.documentId,
     );
@@ -111,5 +118,96 @@ describe("handleFileUpload integration", () => {
       documentId: payload.documentId,
       kind: "upload.queued",
     });
+  });
+
+  it("classifies curated field-service fixtures across multiple document families", async () => {
+    const rootDirectory = await mkdtemp(
+      path.join(os.tmpdir(), "bizopsaccelerator-upload-route-families-"),
+    );
+    temporaryDirectories.push(rootDirectory);
+
+    const recordsRoot = path.join(rootDirectory, "records");
+    const documentRepository = createLocalDocumentRepository({
+      rootDirectory: recordsRoot,
+    });
+    const ingestionEventRepository = createLocalIngestionEventRepository({
+      rootDirectory: recordsRoot,
+    });
+    const ingestionJobRepository = createLocalIngestionJobRepository({
+      rootDirectory: recordsRoot,
+    });
+    const parserArtifactRepository = createLocalParserArtifactRepository({
+      rootDirectory: recordsRoot,
+    });
+    const textParserArtifactRepository =
+      createLocalTextParserArtifactRepository({
+        rootDirectory: recordsRoot,
+      });
+    const queue = createInMemoryIngestionQueue();
+    const storage = createLocalObjectStorage({
+      now: () => "2026-04-09T20:30:00.000Z",
+      rootDirectory: path.join(rootDirectory, "storage"),
+    });
+    const fixtures = [
+      {
+        expectedFamily: "customer-invoice",
+        fileName: "field-service-customer-invoice.csv",
+      },
+      {
+        expectedFamily: "vendor-bill",
+        fileName: "field-service-vendor-bill.csv",
+      },
+      {
+        expectedFamily: "job-cost-report",
+        fileName: "field-service-job-cost-report.csv",
+      },
+    ] as const;
+
+    for (const fixture of fixtures) {
+      const uploadBody = await readCuratedAssetDocument(fixture.fileName);
+      const formData = new FormData();
+
+      formData.set(
+        "file",
+        new File([new Uint8Array(uploadBody)], fixture.fileName, {
+          type: "text/csv",
+        }),
+      );
+      formData.set("orgId", "org_123");
+
+      const response = await handleFileUpload(
+        new Request("http://localhost/api/ingest/upload", {
+          body: formData,
+          method: "POST",
+        }),
+        {
+          documentRepository,
+          ingestionEventRepository,
+          ingestionJobRepository,
+          processQueuedUpload: () =>
+            processNextIngestionJob({
+              documentRepository,
+              ingestionJobRepository,
+              parserArtifactRepository,
+              queue,
+              storage,
+              textParserArtifactRepository,
+            }),
+          queue,
+          storage,
+          submitTabularUpload: (input) =>
+            submitTabularUploadToQueue({
+              ...input,
+              now: () => "2026-04-09T20:30:00.000Z",
+            }),
+        },
+      );
+
+      await expect(response.json()).resolves.toMatchObject({
+        classificationConfidenceScore: expect.any(Number),
+        reviewState: "processing",
+        suggestedDocumentFamily: fixture.expectedFamily,
+      });
+    }
   });
 });

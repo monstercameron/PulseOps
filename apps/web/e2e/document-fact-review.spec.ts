@@ -10,7 +10,13 @@ test("/explorer shows readable findings and fact evidence for a seeded document"
   await expect(
     page.getByRole("heading", { name: "10020Records.csv" }),
   ).toBeVisible();
-  await expect(page.getByText("Ready to review")).toBeVisible();
+  await expect(page.getByText("Ready to review").first()).toBeVisible();
+  await expect(page.getByText("Recommended review order")).toBeVisible();
+  await expect(page.getByText("Jump to")).toBeVisible();
+  await expect(page.getByText("Review health")).toBeVisible();
+  await expect(
+    page.getByText("Every visible fact includes source evidence.").first(),
+  ).toBeVisible();
   await expect(
     page.getByRole("heading", { name: /Key findings/i }),
   ).toBeVisible();
@@ -37,8 +43,25 @@ test("/explorer fact review surfaces business labels instead of canonical fact i
   await expect(
     page.getByRole("heading", { name: "supermarket_sales - Sheet1.csv" }),
   ).toBeVisible();
-  await expect(page.getByText("Ready to review")).toBeVisible();
+  await expect(page.getByText("Ready to review").first()).toBeVisible();
+  await expect(page.getByText(/^Start with /).first()).toBeVisible();
   await expect(page.getByText("Gross income").first()).toBeVisible();
   await expect(page.getByText("Source excerpt").first()).toBeVisible();
   await expect(page.getByText("document.observation.number")).not.toBeVisible();
+});
+
+test("/explorer empty search state makes recovery obvious", async ({ page }) => {
+  await page.goto("/explorer");
+  await page.getByPlaceholder("Search records...").fill("no-match-playwright-query");
+
+  await expect(
+    page.getByRole("heading", { name: "No records match the current search" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Clear search" }),
+  ).toBeVisible();
+
+  await page.getByRole("button", { name: "Clear search" }).click();
+
+  await expect(page.getByRole("button", { name: /10020Records\.csv/i })).toBeVisible();
 });

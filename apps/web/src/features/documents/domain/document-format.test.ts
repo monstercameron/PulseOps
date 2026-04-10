@@ -32,6 +32,15 @@ describe("document format routing", () => {
     ).toThrow(UploadFormatMismatchError);
   });
 
+  it("rejects plain text renamed as xlsx before parsing starts", () => {
+    expect(() =>
+      resolveUploadRouting({
+        body: Buffer.from("this is not really an xlsx file", "utf8"),
+        fileName: "invoice.xlsx",
+      }),
+    ).toThrow(UploadFormatMismatchError);
+  });
+
   it("rejects unsupported upload extensions", () => {
     expect(() =>
       resolveUploadRouting({

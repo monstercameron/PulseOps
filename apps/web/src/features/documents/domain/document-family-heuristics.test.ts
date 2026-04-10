@@ -19,6 +19,38 @@ describe("document family heuristics", () => {
     expect(classification?.confidenceScore).toBeGreaterThan(0.8);
   });
 
+  it("classifies vendor bill headers", () => {
+    const classification = classifyDocumentFamily({
+      fileName: "vendor-bill-export.csv",
+      headers: [
+        "vendor_name",
+        "bill_number",
+        "bill_date",
+        "due_date",
+        "amount_due",
+      ],
+    });
+
+    expect(classification?.suggestedDocumentFamily).toBe("vendor-bill");
+    expect(classification?.confidenceScore).toBeGreaterThan(0.8);
+  });
+
+  it("classifies job cost report headers", () => {
+    const classification = classifyDocumentFamily({
+      fileName: "job-cost-report-export.csv",
+      headers: [
+        "job_id",
+        "job_number",
+        "labor_cost",
+        "material_cost",
+        "actual_revenue",
+      ],
+    });
+
+    expect(classification?.suggestedDocumentFamily).toBe("job-cost-report");
+    expect(classification?.confidenceScore).toBeGreaterThan(0.8);
+  });
+
   it("returns null when signals are too weak", () => {
     expect(
       classifyDocumentFamily({

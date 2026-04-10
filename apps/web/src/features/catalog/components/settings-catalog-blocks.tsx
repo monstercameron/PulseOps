@@ -270,6 +270,7 @@ export function PreferencePanel({
 }
 
 type DialogFrameProps = Readonly<{
+  className?: string;
   children: ReactNode;
   description: string;
   footer?: ReactNode;
@@ -278,6 +279,7 @@ type DialogFrameProps = Readonly<{
 }>;
 
 export function DialogFrame({
+  className,
   children,
   description,
   footer,
@@ -294,7 +296,10 @@ export function DialogFrame({
       aria-describedby={descriptionId}
       aria-labelledby={titleId}
       aria-modal="true"
-      className="w-full max-w-[440px] overflow-hidden rounded-[12px] border border-border-strong bg-card shadow-[0_24px_60px_rgba(0,0,0,0.45)]"
+      className={cx(
+        "flex max-h-[calc(100vh-2rem)] w-full max-w-[440px] flex-col overflow-hidden rounded-[12px] border border-border-strong bg-card shadow-[0_24px_60px_rgba(0,0,0,0.45)]",
+        className,
+      )}
       role="dialog"
     >
       <div className="flex items-start justify-between gap-3 border-b border-border px-5 pb-[14px] pt-4">
@@ -319,9 +324,13 @@ export function DialogFrame({
           ×
         </button>
       </div>
-      <div className="flex flex-col gap-[14px] px-5 py-[18px]">{children}</div>
+      <div className="min-h-0 flex flex-col gap-[14px] overflow-y-auto px-5 py-[18px]">
+        {children}
+      </div>
       {footer ? (
-        <div className="flex justify-end gap-2 border-t border-border px-5 pb-4 pt-3">{footer}</div>
+        <div className="shrink-0 border-t border-border px-5 pb-4 pt-3">
+          <div className="flex justify-end gap-2">{footer}</div>
+        </div>
       ) : null}
     </div>
   );

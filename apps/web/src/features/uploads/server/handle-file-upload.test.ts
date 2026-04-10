@@ -39,14 +39,21 @@ describe("handleFileUpload", () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
+      classificationConfidenceScore: null,
+      detectedFormat: "csv",
       documentId: "doc_123",
       ingestionEventId: "event_123",
       ingestionJobId: "job_123",
       isDuplicate: false,
       materializedChunkCount: null,
       materializedFactCount: null,
+      nextAction: "pipeline",
+      parserRoute: "tabular",
       processedStatus: null,
+      retainSourceFile: true,
+      reviewState: "processing",
       status: "queued",
+      suggestedDocumentFamily: null,
     });
   });
 
@@ -94,7 +101,10 @@ describe("handleFileUpload", () => {
       ingestionJob: { id: "job_999", status: "queued" },
       isDuplicate: false,
     }));
-    const settingsRecord = createDefaultSettingsRecord("org_123", "2026-04-10T12:00:00.000Z");
+    const settingsRecord = createDefaultSettingsRecord(
+      "org_123",
+      "2026-04-10T12:00:00.000Z",
+    );
 
     formData.set(
       "file",
@@ -195,6 +205,43 @@ describe("handleFileUpload", () => {
     expect(response.status).toBe(422);
   });
 
+  it("rejects plain text files renamed as xlsx with a clear validation error", async () => {
+    const formData = new FormData();
+
+    formData.set(
+      "file",
+      new File(["this is not really an xlsx file"], "notes.xlsx", {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      }),
+    );
+    formData.set("orgId", "org_123");
+
+    const response = await handleFileUpload(
+      new Request("http://localhost/api/ingest/upload", {
+        body: formData,
+        method: "POST",
+      }),
+      {
+        documentRepository: {} as never,
+        ingestionEventRepository: {} as never,
+        ingestionJobRepository: {} as never,
+        queue: {} as never,
+        storage: {} as never,
+        submitTabularUpload: vi.fn(),
+      },
+    );
+
+    expect(response.status).toBe(422);
+    await expect(response.json()).resolves.toMatchObject({
+      errorCode: "format_mismatch",
+      errorHelp:
+        "Open the file, export it again in the same format, and then try one more time.",
+      errorTitle: "The file contents do not match the file extension",
+      error:
+        "This file does not match its extension. Please save or export it again, then try once more.",
+    });
+  });
+
   it("rejects password-protected pdf uploads", async () => {
     const formData = new FormData();
 
@@ -241,12 +288,34 @@ describe("handleFileUpload", () => {
         method: "POST",
       }),
       {
-        documentRepository: {} as never,
+        documentRepository: {
+          getById: vi.fn(async () => ({
+            classificationConfidenceScore: 0.94,
+            createdAt: "2026-04-09T23:00:00.000Z",
+            fileName: "invoices.csv",
+            id: "doc_789",
+            orgId: "org_123",
+            source: "upload",
+            status: "extracted",
+            suggestedDocumentFamily: "customer-invoice",
+            updatedAt: "2026-04-09T23:00:01.000Z",
+          })),
+        } as never,
         ingestionEventRepository: {} as never,
         ingestionJobRepository: {} as never,
         processQueuedUpload: vi.fn(
           async (): Promise<ProcessedQueuedTabularUpload> => ({
-            classification: null,
+            classification: {
+              confidenceScore: 0.94,
+              matchedSignals: [
+                "invoice_id",
+                "invoice_number",
+                "customer_name",
+                "due_date",
+                "amount_due",
+              ],
+              suggestedDocumentFamily: "customer-invoice",
+            },
             extractionContractFieldCount: 3,
             format: "csv",
             ingestionJob: {
@@ -284,14 +353,73 @@ describe("handleFileUpload", () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
+      classificationConfidenceScore: 0.94,
+      detectedFormat: "csv",
       documentId: "doc_789",
       ingestionEventId: "event_789",
       ingestionJobId: "job_789",
       isDuplicate: false,
       materializedChunkCount: 1,
       materializedFactCount: 2,
+      nextAction: "explorer",
+      parserRoute: "tabular",
       processedStatus: "completed",
+      retainSourceFile: true,
+      reviewState: "ready",
       status: "completed",
+      suggestedDocumentFamily: "customer-invoice",
+    });
+  });
+
+  it("returns the existing document type for duplicate uploads", async () => {
+    const formData = new FormData();
+
+    formData.set(
+      "file",
+      new File(["vendor_name,bill_number\nUnited Supply,V-100"], "bills.csv", {
+        type: "text/csv",
+      }),
+    );
+    formData.set("orgId", "org_123");
+
+    const response = await handleFileUpload(
+      new Request("http://localhost/api/ingest/upload", {
+        body: formData,
+        method: "POST",
+      }),
+      {
+        documentRepository: {
+          getById: vi.fn(async () => ({
+            classificationConfidenceScore: 0.91,
+            createdAt: "2026-04-09T23:00:00.000Z",
+            fileName: "bills.csv",
+            id: "doc_dup",
+            orgId: "org_123",
+            source: "upload",
+            status: "extracted",
+            suggestedDocumentFamily: "vendor-bill",
+            updatedAt: "2026-04-09T23:00:01.000Z",
+          })),
+        } as never,
+        ingestionEventRepository: {} as never,
+        ingestionJobRepository: {} as never,
+        queue: {} as never,
+        storage: {} as never,
+        submitTabularUpload: vi.fn(async () => ({
+          document: { id: "doc_dup" },
+          ingestionEvent: { id: "event_dup" },
+          ingestionJob: { id: "job_dup", status: "completed" },
+          isDuplicate: true,
+        })),
+      },
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      classificationConfidenceScore: 0.91,
+      isDuplicate: true,
+      reviewState: "duplicate",
+      suggestedDocumentFamily: "vendor-bill",
     });
   });
 });

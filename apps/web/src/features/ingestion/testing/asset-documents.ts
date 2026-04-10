@@ -3,6 +3,9 @@ import { readFile } from "node:fs/promises";
 
 export const curatedAssetDocumentNames = [
   "10020Records.csv",
+  "field-service-customer-invoice.csv",
+  "field-service-job-cost-report.csv",
+  "field-service-vendor-bill.csv",
   "supermarket_sales - Sheet1.csv",
 ] as const;
 

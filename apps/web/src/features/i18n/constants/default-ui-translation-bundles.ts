@@ -154,7 +154,8 @@ const defaultUiMessagesEnUs = {
       cancel: "Cancel",
       delete: "Delete post",
       deleting: "Deleting...",
-      description: "This post will be permanently deleted and removed from the public blog.",
+      description:
+        "This post will be permanently deleted and removed from the public blog.",
       postFallback: "This post",
       title: "Delete post?",
     },
@@ -365,10 +366,55 @@ const defaultUiMessagesEnUs = {
     extractedFactsHeading: "Extracted facts",
     parserMetadataHeading: "Parser metadata",
     noCitations: "No citations attached yet.",
+    emptyStateClearSearch: "Clear search",
+    emptyStateDescription:
+      "Clear the search or change the filter to bring records back into view.",
+    emptyStateEyebrow: "Nothing in this view",
+    emptyStateOpenPipeline: "Open Pipeline",
+    emptyStateShowAll: "Show all records",
+    emptyStateTitle: "No records match the current search",
+    jumpToCitations: "Citations",
+    jumpToFacts: "Extracted facts",
+    jumpToFindings: "Key findings",
+    jumpToHeading: "Jump to",
     noFacts: "No extracted facts attached yet.",
     noRecordSelectedDescription:
       "Adjust the current filters or search query to bring a record into view.",
     noRecordSelectedTitle: "No record selected",
+    reviewChecklistHeading: "Recommended review order",
+    reviewHealthConfidence: "Confidence",
+    reviewHealthConfidenceEmpty:
+      "Confidence will show up after facts are extracted.",
+    reviewHealthConfidenceHigh: "The visible facts are all high confidence.",
+    reviewHealthConfidenceLow:
+      "Treat these facts as low confidence until more evidence arrives.",
+    reviewHealthConfidenceMixed: "{{count}} visible facts are high confidence.",
+    reviewHealthEvidence: "Evidence",
+    reviewHealthEvidenceComplete:
+      "Every visible fact includes source evidence.",
+    reviewHealthEvidenceEmpty: "No fact evidence is attached yet.",
+    reviewHealthEvidencePartial:
+      "{{count}} visible facts still need citations.",
+    reviewHealthFocusFailed:
+      "Resolve the pipeline issue before trusting the review details here.",
+    reviewHealthFocusFallback: "Review the fact cards and citations together.",
+    reviewHealthFocusPrimary: "Start with {{label}}.",
+    reviewHealthFocusWaiting:
+      "Wait for review-ready facts before doing a full check.",
+    reviewHealthHeading: "Review health",
+    reviewHealthParser: "Parser",
+    reviewHealthParserMissing:
+      "Parser details are not available yet, so use the document metadata and workflow status first.",
+    reviewHealthParserReady:
+      "Parser details are available below if you need to confirm headings, rows, or sections.",
+    reviewStatsCitations: "Citations",
+    reviewStatsCitationsDetail: "Source references attached for verification",
+    reviewStatsFacts: "Facts ready",
+    reviewStatsFactsDetail: "Fact cards with evidence and source fields",
+    reviewStatsFindings: "Key findings",
+    reviewStatsFindingsDetail: "High-signal takeaways to scan first",
+    reviewStatsState: "Review state",
+    reviewStatsStateDetail: "Current review readiness",
     searchPlaceholder: "Search records...",
     summary: {
       averageConfidence: "Avg confidence",
@@ -408,25 +454,41 @@ const defaultUiMessagesEnUs = {
       hero: {
         ...homePageContent.hero,
         eyebrow: "Inteligencia de efectivo y margen",
-        title: "Tu negocio de servicios funciona por intuicion. Empieza a operarlo con hechos.",
+        title:
+          "Tu negocio de servicios funciona por intuicion. Empieza a operarlo con hechos.",
         description:
           "PulseOps entrega un brief semanal en lenguaje claro que te dice por donde se fuga el dinero, que facturas perseguir y que corregir antes del viernes.",
         actions: [
           { href: "/signup", label: "Empieza gratis", variant: "primary" },
-          { href: "/#how-it-works", label: "Ver como funciona", variant: "secondary" },
+          {
+            href: "/#how-it-works",
+            label: "Ver como funciona",
+            variant: "secondary",
+          },
         ],
         stats: [
-          { value: "56%", detail: "de las pequenas empresas tienen facturas vencidas" },
+          {
+            value: "56%",
+            detail: "de las pequenas empresas tienen facturas vencidas",
+          },
           { value: "$17.5K", detail: "saldo promedio pendiente por empresa" },
-          { value: "75%", detail: "citan el alza de costos como el principal reto" },
-          { value: "#1", detail: "la claridad de margen es el punto ciego mas comun" },
+          {
+            value: "75%",
+            detail: "citan el alza de costos como el principal reto",
+          },
+          {
+            value: "#1",
+            detail: "la claridad de margen es el punto ciego mas comun",
+          },
         ],
-        footerNote: "Fuentes: encuesta crediticia de la Fed para pequenas empresas e investigacion SMB de Intuit.",
+        footerNote:
+          "Fuentes: encuesta crediticia de la Fed para pequenas empresas e investigacion SMB de Intuit.",
       },
       pain: {
         ...homePageContent.pain,
         eyebrow: "El problema real",
-        title: "Los numeros ya existen. Simplemente no se pueden usar con la suficiente rapidez para actuar.",
+        title:
+          "Los numeros ya existen. Simplemente no se pueden usar con la suficiente rapidez para actuar.",
         description:
           "Las ventas viven en un sistema, los costos en otro, los horarios en una hoja de calculo y las facturas en una bandeja de entrada. Los problemas se acumulan en silencio hasta que ya duelen.",
         items: [
@@ -570,7 +632,8 @@ const defaultUiMessagesEnUs = {
             detail: "Efectivo en riesgo: $8,750.",
           },
           {
-            title: "El calendario de un proveedor genera un bache de caja el viernes",
+            title:
+              "El calendario de un proveedor genera un bache de caja el viernes",
             summary:
               "Una factura de proveedor vence antes de que entren los cobros esperados, generando un faltante salvo que la cobranza se adelante.",
             detail: "Brecha proyectada: $1,400.",
@@ -580,7 +643,8 @@ const defaultUiMessagesEnUs = {
       difference: {
         ...homePageContent.difference,
         eyebrow: "Lo que nos diferencia",
-        title: "Otras herramientas muestran datos. Nosotros te decimos que hacer con ellos.",
+        title:
+          "Otras herramientas muestran datos. Nosotros te decimos que hacer con ellos.",
         description:
           "La mayoria de los productos lee un sistema limpio y te entrega una grafica. PulseOps reconcilia la realidad desordenada y la convierte en una decision.",
         items: [
@@ -607,7 +671,8 @@ const defaultUiMessagesEnUs = {
       industries: {
         ...homePageContent.industries,
         eyebrow: "Creado para",
-        title: "Negocios locales de servicio basados en proyectos con 5 a 50 empleados.",
+        title:
+          "Negocios locales de servicio basados en proyectos con 5 a 50 empleados.",
         description:
           "El primer paquete de decision esta optimizado para negocios de field service y oficios que viven las mismas preguntas de caja y margen cada semana.",
         items: [
@@ -734,14 +799,27 @@ const defaultUiMessagesEnUs = {
       form: {
         ...loginPageContent.form,
         title: "Bienvenido de nuevo",
-        subtitle: "Inicia sesion para entrar al espacio de trabajo de PulseOps.",
+        subtitle:
+          "Inicia sesion para entrar al espacio de trabajo de PulseOps.",
         fields: [
-          { label: "Email de trabajo", placeholder: "jamie@browardhvac.com", type: "email" },
-          { label: "Contrasena", placeholder: "Ingresa tu contrasena", type: "password" },
+          {
+            label: "Email de trabajo",
+            placeholder: "jamie@browardhvac.com",
+            type: "email",
+          },
+          {
+            label: "Contrasena",
+            placeholder: "Ingresa tu contrasena",
+            type: "password",
+          },
         ],
         actions: [
           { label: "Entrar", href: "/dashboard", variant: "primary" },
-          { label: "Olvidaste tu contrasena?", href: "/help", variant: "secondary" },
+          {
+            label: "Olvidaste tu contrasena?",
+            href: "/help",
+            variant: "secondary",
+          },
         ],
         footerPrompt: "Necesitas una cuenta?",
         footerLinkLabel: "Empieza una prueba gratis",
@@ -762,7 +840,10 @@ const defaultUiMessagesEnUs = {
       facts: [
         { value: "Field service", detail: "Foco inicial del ICP" },
         { value: "1 producto", detail: "Brief semanal de efectivo y margen" },
-        { value: "Confianza primero", detail: "Evidencia y confianza en cada recomendacion" },
+        {
+          value: "Confianza primero",
+          detail: "Evidencia y confianza en cada recomendacion",
+        },
         { value: "Next.js", detail: "Superficie local actual del producto" },
       ],
       coverage: [
@@ -883,16 +964,29 @@ const defaultUiMessagesEnUs = {
       form: {
         ...signupPageContent.form,
         title: "Crea tu cuenta",
-        subtitle: "Comparte lo necesario para levantar el primer espacio de trabajo y brief.",
+        subtitle:
+          "Comparte lo necesario para levantar el primer espacio de trabajo y brief.",
         fields: [
           { label: "Nombre completo", placeholder: "Jamie Reynolds" },
-          { label: "Email de trabajo", placeholder: "jamie@browardhvac.com", type: "email" },
+          {
+            label: "Email de trabajo",
+            placeholder: "jamie@browardhvac.com",
+            type: "email",
+          },
           { label: "Empresa", placeholder: "Broward HVAC Co." },
-          { label: "Contrasena", placeholder: "Elige una contrasena", type: "password" },
+          {
+            label: "Contrasena",
+            placeholder: "Elige una contrasena",
+            type: "password",
+          },
         ],
         actions: [
           { label: "Crear cuenta", href: "/dashboard", variant: "primary" },
-          { label: "Hablar con ventas", href: "/contact", variant: "secondary" },
+          {
+            label: "Hablar con ventas",
+            href: "/contact",
+            variant: "secondary",
+          },
         ],
         footerPrompt: "Ya tienes una cuenta?",
         footerLinkLabel: "Inicia sesion",
@@ -1132,19 +1226,63 @@ const defaultUiMessagesEnUs = {
     },
   },
   uploadModal: {
-    acceptsDescription: "Accepts CSV, XLSX, and PDF files up to 20 MB.",
+    acceptsDescription:
+      "Accepts CSV and XLSX files. CSV can be up to 5 MB and XLSX can be up to 20 MB.",
+    bestResultsHeading: "Best results on this path",
+    bestResultsTipOne: "Upload one export per file.",
+    bestResultsTipThree: "Use separate columns for dates, amounts, and IDs.",
+    bestResultsTipTwo: "Keep the header row at the top of the sheet.",
     cancel: "Cancel",
+    csvRule: "CSV up to 5 MB",
     documentIdLabel: "Document ID",
     done: "Done",
     duplicateDescription:
       "This file was already in the workspace, so the existing record was reused.",
+    duplicateDialogDescription:
+      "Upload complete. We matched this file to the copy already in your workspace.",
     duplicateNotice: "Already uploaded - using the existing record.",
+    duplicateTag: "Existing record reused",
     errorHelp: "Choose a different file or try again.",
     errorTitle: "We couldn't finish that upload",
+    familyConfidenceLabel: "Recognition confidence",
+    familyPendingBadge: "Type still settling",
+    familyPendingDescription:
+      "The file is saved, but the document type is not locked in yet. Pipeline will keep moving it forward.",
+    familyRecognizedDescription: "We recognized this file as {{family}}.",
+    familyUnrecognizedDescription:
+      "The file imported cleanly, but it did not match a named document type yet.",
+    factsFoundLabel: "{{count}} facts found",
     fileQueuedDescription: "Upload complete. We're checking the file now.",
+    fileTooLargeDescription:
+      "{{format}} files can be up to {{maxSize}} on this upload path.",
     fileTypeFallback: "unknown type",
+    importReadoutHeading: "Import readout",
+    manualQueueTag: "Manual review queue",
+    needsDifferentFileTag: "Needs a different file",
+    nextStepLabel: "Next step",
+    pathOverviewDescription:
+      "Files on this path are saved, checked, and then prepared for review in Explorer or Pipeline.",
+    pathOverviewTitle: "What this upload path does",
     processingNextSteps:
       "Check Pipeline for progress and Explorer when the file is ready to review.",
+    processingDialogDescription:
+      "Upload complete. Your file is in the workspace and still being prepared.",
+    readyDialogDescription: "Upload complete. Your file is ready to review.",
+    readyToSendTag: "Ready to upload",
+    recognizedTypesDescription:
+      "This importer can recognize clean business exports and route them into the right review experience.",
+    recognizedTypesHeading: "Recognized document types",
+    sourceNotRetainedTag: "Metadata only",
+    sourceRetainedTag: "Stored for download",
+    stepPreparedDuplicate:
+      "We found the existing copy and linked this upload back to it.",
+    stepPreparedProcessing:
+      "The file is in the workspace and will keep moving through Pipeline.",
+    stepPreparedReady: "The file is ready to review in Explorer.",
+    stepPreparedReceived:
+      "The file is in the workspace and ready for the next step.",
+    tabularRouteTag: "Tabular review path",
+    textRouteTag: "Text review path",
     title: "Upload files",
     upload: "Upload",
     uploadFailed: "Upload failed.",
@@ -1152,8 +1290,15 @@ const defaultUiMessagesEnUs = {
       "This can take a little longer for larger files. Keep this window open while we finish checking it.",
     uploadPrompt: "Drop a file here or click to browse",
     uploading: "Uploading...",
-    uploadTypes: "CSV - XLSX - PDF - up to 20 MB",
+    uploadTypes: "CSV - XLSX - up to 20 MB",
     uploadedBadge: "OK",
+    unsupportedFileDescription:
+      "Choose a CSV or XLSX file for this upload path.",
+    validationHint:
+      "Pick a file that matches the rules above, then upload when you're ready.",
+    validationRecoveryHelp: "Choose a different file and then try again.",
+    validationTitle: "This file needs attention",
+    xlsxRule: "XLSX up to 20 MB",
   },
 } as const;
 
@@ -1180,16 +1325,21 @@ const normalizedDefaultUiMessagesEnUs = {
   },
 } as const;
 
-type WidenUiMessages<T> =
-  T extends string ? string
-  : T extends number ? number
-  : T extends boolean ? boolean
-  : T extends readonly (infer Item)[] ? readonly WidenUiMessages<Item>[]
-  : T extends Record<string, unknown>
-    ? { readonly [Key in keyof T]: WidenUiMessages<T[Key]> }
-    : T;
+type WidenUiMessages<T> = T extends string
+  ? string
+  : T extends number
+    ? number
+    : T extends boolean
+      ? boolean
+      : T extends readonly (infer Item)[]
+        ? readonly WidenUiMessages<Item>[]
+        : T extends Record<string, unknown>
+          ? { readonly [Key in keyof T]: WidenUiMessages<T[Key]> }
+          : T;
 
-export type UiMessages = WidenUiMessages<typeof normalizedDefaultUiMessagesEnUs>;
+export type UiMessages = WidenUiMessages<
+  typeof normalizedDefaultUiMessagesEnUs
+>;
 
 const defaultUiMessagesEs: UiMessages = {
   ...normalizedDefaultUiMessagesEnUs,
@@ -1336,7 +1486,8 @@ const defaultUiMessagesEs: UiMessages = {
       create: "Crear publicacion",
       editDescription: "Edita los detalles de la publicacion.",
       editTitle: "Editar publicacion",
-      newDescription: "Completa los campos de abajo para crear una nueva publicacion.",
+      newDescription:
+        "Completa los campos de abajo para crear una nueva publicacion.",
       newTitle: "Nueva publicacion",
       saveChanges: "Guardar cambios",
       saving: "Guardando...",
@@ -1536,10 +1687,58 @@ const defaultUiMessagesEs: UiMessages = {
     extractedFactsHeading: "Hechos extraidos",
     parserMetadataHeading: "Metadatos del parser",
     noCitations: "Todavia no hay citas adjuntas.",
+    emptyStateClearSearch: "Limpiar busqueda",
+    emptyStateDescription:
+      "Limpia la busqueda o cambia el filtro para volver a ver registros.",
+    emptyStateEyebrow: "Nada en esta vista",
+    emptyStateOpenPipeline: "Abrir Pipeline",
+    emptyStateShowAll: "Mostrar todos los registros",
+    emptyStateTitle: "Ningun registro coincide con la busqueda actual",
+    jumpToCitations: "Citas",
+    jumpToFacts: "Hechos extraidos",
+    jumpToFindings: "Hallazgos clave",
+    jumpToHeading: "Ir a",
     noFacts: "Todavia no hay hechos extraidos adjuntos.",
     noRecordSelectedDescription:
       "Ajusta los filtros actuales o la busqueda para traer un registro a la vista.",
     noRecordSelectedTitle: "No hay registro seleccionado",
+    reviewChecklistHeading: "Orden de revision recomendado",
+    reviewHealthConfidence: "Confianza",
+    reviewHealthConfidenceEmpty:
+      "La confianza aparecera cuando se extraigan los hechos.",
+    reviewHealthConfidenceHigh:
+      "Todos los hechos visibles tienen alta confianza.",
+    reviewHealthConfidenceLow:
+      "Trata estos hechos como de baja confianza hasta que llegue mas evidencia.",
+    reviewHealthConfidenceMixed:
+      "{{count}} hechos visibles tienen alta confianza.",
+    reviewHealthEvidence: "Evidencia",
+    reviewHealthEvidenceComplete:
+      "Todos los hechos visibles incluyen evidencia fuente.",
+    reviewHealthEvidenceEmpty: "Todavia no hay evidencia adjunta a los hechos.",
+    reviewHealthEvidencePartial:
+      "{{count}} hechos visibles todavia necesitan citas.",
+    reviewHealthFocusFailed:
+      "Resuelve el problema del Pipeline antes de confiar en los detalles de revision.",
+    reviewHealthFocusFallback:
+      "Revisa juntas las tarjetas de hechos y las citas.",
+    reviewHealthFocusPrimary: "Empieza por {{label}}.",
+    reviewHealthFocusWaiting:
+      "Espera a que haya hechos listos para revision antes de hacer una revision completa.",
+    reviewHealthHeading: "Salud de la revision",
+    reviewHealthParser: "Parser",
+    reviewHealthParserMissing:
+      "Los detalles del parser todavia no estan disponibles, asi que empieza por los metadatos del documento y el estado del flujo.",
+    reviewHealthParserReady:
+      "Los detalles del parser estan disponibles abajo si necesitas confirmar encabezados, filas o secciones.",
+    reviewStatsCitations: "Citas",
+    reviewStatsCitationsDetail: "Referencias fuente adjuntas para verificar",
+    reviewStatsFacts: "Hechos listos",
+    reviewStatsFactsDetail: "Tarjetas de hechos con evidencia y campos fuente",
+    reviewStatsFindings: "Hallazgos clave",
+    reviewStatsFindingsDetail: "Senales principales para revisar primero",
+    reviewStatsState: "Estado de revision",
+    reviewStatsStateDetail: "Preparacion actual para la revision",
     searchPlaceholder: "Buscar registros...",
     summary: {
       averageConfidence: "Confianza media",
@@ -1584,9 +1783,18 @@ const defaultUiMessagesEs: UiMessages = {
       story:
         "PulseOps nace de la misma frustracion repetida en los oficios: los datos existian, pero nadie tenia tiempo para reconciliarlos, confiar en ellos y convertirlos en una accion antes de que la semana siguiera avanzando.",
       stats: [
-        { value: "5 min", detail: "tiempo objetivo de lectura del brief semanal" },
-        { value: "1 pack", detail: "enfoque actual del producto: efectivo y margen semanal" },
-        { value: "0 relleno", detail: "cada recomendacion necesita evidencia y confianza" },
+        {
+          value: "5 min",
+          detail: "tiempo objetivo de lectura del brief semanal",
+        },
+        {
+          value: "1 pack",
+          detail: "enfoque actual del producto: efectivo y margen semanal",
+        },
+        {
+          value: "0 relleno",
+          detail: "cada recomendacion necesita evidencia y confianza",
+        },
       ],
       values: [
         {
@@ -1732,12 +1940,14 @@ const defaultUiMessagesEs: UiMessages = {
       channels: [
         {
           title: "Soporte al cliente",
-          description: "Ayuda con onboarding, problemas de datos o interpretacion del brief.",
+          description:
+            "Ayuda con onboarding, problemas de datos o interpretacion del brief.",
           action: "support@pulseops.io",
         },
         {
           title: "Ventas y multiubicacion",
-          description: "Precios, expansion y despliegues operativos mas amplios.",
+          description:
+            "Precios, expansion y despliegues operativos mas amplios.",
           action: "sales@pulseops.io",
         },
         {
@@ -1747,13 +1957,18 @@ const defaultUiMessagesEs: UiMessages = {
         },
         {
           title: "Alianzas e integraciones",
-          description: "Alianzas de plataforma y conversaciones sobre conectores.",
+          description:
+            "Alianzas de plataforma y conversaciones sobre conectores.",
           action: "partners@pulseops.io",
         },
       ],
       formFields: [
         { label: "Nombre", placeholder: "Jamie Reynolds" },
-        { label: "Email de trabajo", placeholder: "jamie@browardhvac.com", type: "email" },
+        {
+          label: "Email de trabajo",
+          placeholder: "jamie@browardhvac.com",
+          type: "email",
+        },
         { label: "Empresa", placeholder: "Broward HVAC Co." },
         { label: "Mensaje", placeholder: "Cuentanos en que necesitas ayuda." },
       ],
@@ -1787,7 +2002,8 @@ const defaultUiMessagesEs: UiMessages = {
           title: "Conexion de datos",
           items: [
             {
-              question: "Puedo conectar ServiceTitan y QuickBooks al mismo tiempo?",
+              question:
+                "Puedo conectar ServiceTitan y QuickBooks al mismo tiempo?",
               answer:
                 "Si. El objetivo es reconciliar datos fragmentados en una sola vista operativa util.",
             },
@@ -1818,7 +2034,8 @@ const defaultUiMessagesEs: UiMessages = {
           items: [
             {
               question: "Puedo cancelar en cualquier momento?",
-              answer: "Si. El producto inicial esta disenado para seguir siendo simple y de baja friccion.",
+              answer:
+                "Si. El producto inicial esta disenado para seguir siendo simple y de baja friccion.",
             },
             {
               question: "Cobran por asiento?",
@@ -1830,7 +2047,8 @@ const defaultUiMessagesEs: UiMessages = {
       ],
       cta: {
         title: "Todavia tienes una pregunta?",
-        description: "Habla directamente con el equipo si el centro de ayuda no cubre tu caso.",
+        description:
+          "Habla directamente con el equipo si el centro de ayuda no cubre tu caso.",
         primaryAction: "Contactar soporte",
         secondaryAction: "Empieza gratis",
       },
@@ -1840,25 +2058,41 @@ const defaultUiMessagesEs: UiMessages = {
       hero: {
         ...homePageContent.hero,
         eyebrow: "Inteligencia de efectivo y margen",
-        title: "Tu negocio de servicios funciona por intuicion. Empieza a operarlo con hechos.",
+        title:
+          "Tu negocio de servicios funciona por intuicion. Empieza a operarlo con hechos.",
         description:
           "PulseOps entrega un brief semanal en lenguaje claro que te dice por donde se fuga el dinero, que facturas perseguir y que corregir antes del viernes.",
         actions: [
           { href: "/signup", label: "Empieza gratis", variant: "primary" },
-          { href: "/#how-it-works", label: "Ver como funciona", variant: "secondary" },
+          {
+            href: "/#how-it-works",
+            label: "Ver como funciona",
+            variant: "secondary",
+          },
         ],
         stats: [
-          { value: "56%", detail: "de las pequenas empresas tienen facturas vencidas" },
+          {
+            value: "56%",
+            detail: "de las pequenas empresas tienen facturas vencidas",
+          },
           { value: "$17.5K", detail: "saldo promedio pendiente por empresa" },
-          { value: "75%", detail: "citan el alza de costos como el principal reto" },
-          { value: "#1", detail: "la claridad de margen es el punto ciego mas comun" },
+          {
+            value: "75%",
+            detail: "citan el alza de costos como el principal reto",
+          },
+          {
+            value: "#1",
+            detail: "la claridad de margen es el punto ciego mas comun",
+          },
         ],
-        footerNote: "Fuentes: encuesta crediticia de la Fed para pequenas empresas e investigacion SMB de Intuit.",
+        footerNote:
+          "Fuentes: encuesta crediticia de la Fed para pequenas empresas e investigacion SMB de Intuit.",
       },
       pain: {
         ...homePageContent.pain,
         eyebrow: "El problema real",
-        title: "Los numeros ya existen. Simplemente no se pueden usar con la suficiente rapidez para actuar.",
+        title:
+          "Los numeros ya existen. Simplemente no se pueden usar con la suficiente rapidez para actuar.",
         description:
           "Las ventas viven en un sistema, los costos en otro, los horarios en una hoja de calculo y las facturas en una bandeja de entrada. Los problemas se acumulan en silencio hasta que ya duelen.",
         items: [
@@ -2002,7 +2236,8 @@ const defaultUiMessagesEs: UiMessages = {
             detail: "Efectivo en riesgo: $8,750.",
           },
           {
-            title: "El calendario de un proveedor genera un bache de caja el viernes",
+            title:
+              "El calendario de un proveedor genera un bache de caja el viernes",
             summary:
               "Una factura de proveedor vence antes de que entren los cobros esperados, generando un faltante salvo que la cobranza se adelante.",
             detail: "Brecha proyectada: $1,400.",
@@ -2012,7 +2247,8 @@ const defaultUiMessagesEs: UiMessages = {
       difference: {
         ...homePageContent.difference,
         eyebrow: "Lo que nos diferencia",
-        title: "Otras herramientas muestran datos. Nosotros te decimos que hacer con ellos.",
+        title:
+          "Otras herramientas muestran datos. Nosotros te decimos que hacer con ellos.",
         description:
           "La mayoria de los productos lee un sistema limpio y te entrega una grafica. PulseOps reconcilia la realidad desordenada y la convierte en una decision.",
         items: [
@@ -2039,7 +2275,8 @@ const defaultUiMessagesEs: UiMessages = {
       industries: {
         ...homePageContent.industries,
         eyebrow: "Creado para",
-        title: "Negocios locales de servicio basados en proyectos con 5 a 50 empleados.",
+        title:
+          "Negocios locales de servicio basados en proyectos con 5 a 50 empleados.",
         description:
           "El primer paquete de decision esta optimizado para negocios de field service y oficios que viven las mismas preguntas de caja y margen cada semana.",
         items: [
@@ -2166,14 +2403,27 @@ const defaultUiMessagesEs: UiMessages = {
       form: {
         ...loginPageContent.form,
         title: "Bienvenido de nuevo",
-        subtitle: "Inicia sesion para entrar al espacio de trabajo de PulseOps.",
+        subtitle:
+          "Inicia sesion para entrar al espacio de trabajo de PulseOps.",
         fields: [
-          { label: "Email de trabajo", placeholder: "jamie@browardhvac.com", type: "email" },
-          { label: "Contrasena", placeholder: "Ingresa tu contrasena", type: "password" },
+          {
+            label: "Email de trabajo",
+            placeholder: "jamie@browardhvac.com",
+            type: "email",
+          },
+          {
+            label: "Contrasena",
+            placeholder: "Ingresa tu contrasena",
+            type: "password",
+          },
         ],
         actions: [
           { label: "Entrar", href: "/dashboard", variant: "primary" },
-          { label: "Olvidaste tu contrasena?", href: "/help", variant: "secondary" },
+          {
+            label: "Olvidaste tu contrasena?",
+            href: "/help",
+            variant: "secondary",
+          },
         ],
         footerPrompt: "Necesitas una cuenta?",
         footerLinkLabel: "Empieza una prueba gratis",
@@ -2194,7 +2444,10 @@ const defaultUiMessagesEs: UiMessages = {
       facts: [
         { value: "Field service", detail: "Foco inicial del ICP" },
         { value: "1 producto", detail: "Brief semanal de efectivo y margen" },
-        { value: "Confianza primero", detail: "Evidencia y confianza en cada recomendacion" },
+        {
+          value: "Confianza primero",
+          detail: "Evidencia y confianza en cada recomendacion",
+        },
         { value: "Next.js", detail: "Superficie local actual del producto" },
       ],
       coverage: [
@@ -2267,7 +2520,8 @@ const defaultUiMessagesEs: UiMessages = {
         ctaLabel: "Empieza gratis",
         footerDescription:
           "Claridad semanal de efectivo y margen para negocios locales de servicio sin analistas, sin dashboards y sin adivinanzas.",
-        footerTagline: "Construido para negocios locales de servicio en cualquier lugar.",
+        footerTagline:
+          "Construido para negocios locales de servicio en cualquier lugar.",
       },
       footerGroups: [
         {
@@ -2318,7 +2572,8 @@ const defaultUiMessagesEs: UiMessages = {
       careersOpenRolesEyebrow: "Vacantes",
       careersOpenRolesTitle: "Puestos abiertos",
       careersWhyJoinEyebrow: "Por que unirte",
-      careersWhyJoinTitle: "Somos pequenos por diseno. Todos entregan trabajo real.",
+      careersWhyJoinTitle:
+        "Somos pequenos por diseno. Todos entregan trabajo real.",
       contactReachEyebrow: "Contactanos",
       contactReachTitle: "Otras formas de llegar al equipo",
       contactSendAction: "Enviar mensaje",
@@ -2337,7 +2592,8 @@ const defaultUiMessagesEs: UiMessages = {
       pressMediaPrimary: "press@pulseops.io",
       pressMediaSecondary: "Contactanos",
       pressMediaTitle: "Consultas de medios",
-      sampleBriefSubtitle: "Semana del 14 de abr de 2026 - Precision Plumbing Co.",
+      sampleBriefSubtitle:
+        "Semana del 14 de abr de 2026 - Precision Plumbing Co.",
       sampleBriefTitle: "Informe semanal de efectivo y margen",
       worksWithLabel: "Funciona con",
     },
@@ -2355,16 +2611,29 @@ const defaultUiMessagesEs: UiMessages = {
       form: {
         ...signupPageContent.form,
         title: "Crea tu cuenta",
-        subtitle: "Comparte lo necesario para levantar el primer espacio de trabajo y brief.",
+        subtitle:
+          "Comparte lo necesario para levantar el primer espacio de trabajo y brief.",
         fields: [
           { label: "Nombre completo", placeholder: "Jamie Reynolds" },
-          { label: "Email de trabajo", placeholder: "jamie@browardhvac.com", type: "email" },
+          {
+            label: "Email de trabajo",
+            placeholder: "jamie@browardhvac.com",
+            type: "email",
+          },
           { label: "Empresa", placeholder: "Broward HVAC Co." },
-          { label: "Contrasena", placeholder: "Elige una contrasena", type: "password" },
+          {
+            label: "Contrasena",
+            placeholder: "Elige una contrasena",
+            type: "password",
+          },
         ],
         actions: [
           { label: "Crear cuenta", href: "/dashboard", variant: "primary" },
-          { label: "Hablar con ventas", href: "/contact", variant: "secondary" },
+          {
+            label: "Hablar con ventas",
+            href: "/contact",
+            variant: "secondary",
+          },
         ],
         footerPrompt: "Ya tienes una cuenta?",
         footerLinkLabel: "Inicia sesion",
@@ -2470,7 +2739,8 @@ const defaultUiMessagesEs: UiMessages = {
     },
     labels: {
       breadcrumbs: ["Panel", "Paquetes de decision"],
-      description: "Briefs semanales y recomendaciones sustentadas en datos ingeridos.",
+      description:
+        "Briefs semanales y recomendaciones sustentadas en datos ingeridos.",
       title: "Paquetes de decision",
     },
     recommendationsHeading: "Recomendaciones",
@@ -2552,7 +2822,8 @@ const defaultUiMessagesEs: UiMessages = {
       currentCycle: "Ciclo actual en todo el espacio de trabajo.",
       notificationPreferences:
         "Elige como y cuando PulseOps te contacta. Se requiere rol de operador o superior.",
-      preferences: "Valores por defecto de visualizacion y flujo a nivel espacio de trabajo.",
+      preferences:
+        "Valores por defecto de visualizacion y flujo a nivel espacio de trabajo.",
       rolePermissions:
         "Define que puede ver y hacer cada rol dentro de tu espacio de trabajo.",
     },
@@ -2590,13 +2861,17 @@ const defaultUiMessagesEs: UiMessages = {
     },
     labels: {
       breadcrumbs: ["Panel", "Configuracion"],
-      description: "Administra tu organizacion, equipo, integraciones y preferencias de seguridad.",
+      description:
+        "Administra tu organizacion, equipo, integraciones y preferencias de seguridad.",
       dialogs: {
-        inviteDescription: "Invita a un companero al espacio de trabajo actual.",
+        inviteDescription:
+          "Invita a un companero al espacio de trabajo actual.",
         inviteTitle: "Invitar miembro del equipo",
-        revokeDescription: "Revocar esta clave bloquea de inmediato el acceso programatico que depende de ella.",
+        revokeDescription:
+          "Revocar esta clave bloquea de inmediato el acceso programatico que depende de ella.",
         revokeTitle: "Revocar clave API?",
-        twoFactorDescription: "Agrega un segundo factor antes de permitir acciones de cuenta de alto riesgo.",
+        twoFactorDescription:
+          "Agrega un segundo factor antes de permitir acciones de cuenta de alto riesgo.",
         twoFactorTitle: "Configurar autenticacion de dos factores",
       },
       title: "Configuracion",
@@ -2644,19 +2919,65 @@ const defaultUiMessagesEs: UiMessages = {
     },
   },
   uploadModal: {
-    acceptsDescription: "Acepta archivos CSV, XLSX y PDF de hasta 20 MB.",
+    acceptsDescription:
+      "Acepta archivos CSV y XLSX. CSV puede ser de hasta 5 MB y XLSX de hasta 20 MB.",
+    bestResultsHeading: "Mejores resultados en esta via",
+    bestResultsTipOne: "Sube una exportacion por archivo.",
+    bestResultsTipThree:
+      "Usa columnas separadas para fechas, montos e identificadores.",
+    bestResultsTipTwo: "Mantene la fila de encabezados al inicio de la hoja.",
     cancel: "Cancelar",
+    csvRule: "CSV hasta 5 MB",
     documentIdLabel: "ID del documento",
     done: "Listo",
     duplicateDescription:
       "Este archivo ya estaba en el espacio de trabajo, asi que se reutilizo el registro existente.",
+    duplicateDialogDescription:
+      "Carga completa. Relacionamos este archivo con la copia que ya estaba en tu espacio de trabajo.",
     duplicateNotice: "Ya estaba subido - se uso el registro existente.",
+    duplicateTag: "Se reutilizo el registro existente",
     errorHelp: "Elige otro archivo o vuelve a intentarlo.",
     errorTitle: "No pudimos terminar esa carga",
+    familyConfidenceLabel: "Confianza del reconocimiento",
+    familyPendingBadge: "Tipo todavia en revision",
+    familyPendingDescription:
+      "El archivo ya esta guardado, pero el tipo de documento todavia no quedo definido. Pipeline seguira avanzandolo.",
+    familyRecognizedDescription: "Reconocimos este archivo como {{family}}.",
+    familyUnrecognizedDescription:
+      "El archivo se importo bien, pero todavia no coincide con un tipo de documento con nombre.",
+    factsFoundLabel: "{{count}} hechos encontrados",
     fileQueuedDescription: "Carga completa. Ya estamos revisando el archivo.",
+    fileTooLargeDescription:
+      "Los archivos {{format}} pueden ser de hasta {{maxSize}} en esta via de carga.",
     fileTypeFallback: "tipo desconocido",
+    importReadoutHeading: "Resumen de importacion",
+    manualQueueTag: "Cola manual de revision",
+    needsDifferentFileTag: "Necesita otro archivo",
+    nextStepLabel: "Siguiente paso",
+    pathOverviewDescription:
+      "Los archivos en esta via se guardan, se revisan y luego se preparan para revisarlos en Explorer o Pipeline.",
+    pathOverviewTitle: "Que hace esta via de carga",
     processingNextSteps:
       "Revisa el Pipeline para ver el progreso y Explorer cuando el archivo este listo.",
+    processingDialogDescription:
+      "Carga completa. Tu archivo ya esta en el espacio de trabajo y todavia se esta preparando.",
+    readyDialogDescription:
+      "Carga completa. Tu archivo esta listo para revisar.",
+    readyToSendTag: "Listo para subir",
+    recognizedTypesDescription:
+      "Este importador puede reconocer exportaciones limpias del negocio y llevarlas a la experiencia de revision correcta.",
+    recognizedTypesHeading: "Tipos de documento reconocidos",
+    sourceNotRetainedTag: "Solo metadatos",
+    sourceRetainedTag: "Guardado para descargar",
+    stepPreparedDuplicate:
+      "Encontramos la copia existente y vinculamos esta carga con ese registro.",
+    stepPreparedProcessing:
+      "El archivo ya esta en el espacio de trabajo y seguira avanzando en Pipeline.",
+    stepPreparedReady: "El archivo esta listo para revisar en Explorer.",
+    stepPreparedReceived:
+      "El archivo ya esta en el espacio de trabajo y listo para el siguiente paso.",
+    tabularRouteTag: "Ruta tabular de revision",
+    textRouteTag: "Ruta de revision de texto",
     title: "Subir archivos",
     upload: "Subir",
     uploadFailed: "La carga fallo.",
@@ -2664,8 +2985,16 @@ const defaultUiMessagesEs: UiMessages = {
       "Esto puede tardar un poco mas con archivos grandes. Deja esta ventana abierta mientras terminamos de revisarlo.",
     uploadPrompt: "Suelta un archivo aqui o haz clic para buscar",
     uploading: "Subiendo...",
-    uploadTypes: "CSV - XLSX - PDF - hasta 20 MB",
+    uploadTypes: "CSV - XLSX - hasta 20 MB",
     uploadedBadge: "OK",
+    unsupportedFileDescription:
+      "Elige un archivo CSV o XLSX para esta via de carga.",
+    validationHint:
+      "Elige un archivo que cumpla las reglas anteriores y luego subelo cuando quieras.",
+    validationRecoveryHelp:
+      "Elige un archivo diferente y luego vuelve a intentarlo.",
+    validationTitle: "Este archivo necesita atencion",
+    xlsxRule: "XLSX hasta 20 MB",
   },
 };
 

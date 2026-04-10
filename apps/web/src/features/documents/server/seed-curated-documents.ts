@@ -20,7 +20,10 @@ import {
 } from "@/features/ingestion/testing/asset-documents";
 import { type ParserArtifact } from "@/features/parsing/domain/parser-artifact";
 import { type ParserArtifactRepository } from "@/features/parsing/repositories/parser-artifact-repository";
-import { parseCsvText, type ParsedCsv } from "@/features/parsing/lib/csv/parse-csv";
+import {
+  parseCsvText,
+  type ParsedCsv,
+} from "@/features/parsing/lib/csv/parse-csv";
 import { parseDocumentWithService } from "@/features/parsing/services/parser-service";
 import {
   buildObjectStorageKey,
@@ -31,11 +34,17 @@ import { createCitation } from "@/features/trust/domain/citation";
 
 const curatedSeedFileNames = [
   "10020Records.csv",
+  "field-service-customer-invoice.csv",
+  "field-service-job-cost-report.csv",
+  "field-service-vendor-bill.csv",
   "supermarket_sales - Sheet1.csv",
 ] as const satisfies readonly CuratedAssetDocumentName[];
 
 const curatedDocumentCreatedAts: Record<CuratedAssetDocumentName, string> = {
   "10020Records.csv": "2026-04-09T13:00:00.000Z",
+  "field-service-customer-invoice.csv": "2026-04-09T13:15:00.000Z",
+  "field-service-job-cost-report.csv": "2026-04-09T13:30:00.000Z",
+  "field-service-vendor-bill.csv": "2026-04-09T13:45:00.000Z",
   "supermarket_sales - Sheet1.csv": "2026-04-09T14:00:00.000Z",
 };
 
@@ -118,15 +127,17 @@ async function seedCuratedDocuments({
   }
 }
 
-async function seedSingleCuratedDocument(input: Readonly<{
-  documentRepository: DocumentRepository;
-  entityRepository: EntityRepository;
-  factRepository: FactRepository;
-  fileName: CuratedAssetDocumentName;
-  orgId: string;
-  parserArtifactRepository: ParserArtifactRepository;
-  storage: ObjectStorage;
-}>) {
+async function seedSingleCuratedDocument(
+  input: Readonly<{
+    documentRepository: DocumentRepository;
+    entityRepository: EntityRepository;
+    factRepository: FactRepository;
+    fileName: CuratedAssetDocumentName;
+    orgId: string;
+    parserArtifactRepository: ParserArtifactRepository;
+    storage: ObjectStorage;
+  }>,
+) {
   const createdAt = curatedDocumentCreatedAts[input.fileName];
   const body = await readCuratedAssetDocument(input.fileName);
   const parsedCsv = parseCsvText(body.toString("utf8"));
@@ -161,7 +172,10 @@ async function seedSingleCuratedDocument(input: Readonly<{
     fileName: input.fileName,
     orgId: input.orgId,
   });
-  const classification = classifyCuratedDocument(input.fileName, parserArtifact);
+  const classification = classifyCuratedDocument(
+    input.fileName,
+    parserArtifact,
+  );
 
   document = attachStoredObjectToDocument(document, rawObject, createdAt);
   document = markDocumentParsed(document, parserArtifact.id, createdAt);
@@ -173,8 +187,8 @@ async function seedSingleCuratedDocument(input: Readonly<{
   );
   document = markDocumentExtracted(document, createdAt);
 
-  await input.parserArtifactRepository.put(parserArtifact);
   await input.documentRepository.put(document);
+  await input.parserArtifactRepository.put(parserArtifact);
 
   const entity = createCanonicalEntity({
     canonicalKey: `seed:${input.fileName}`,
@@ -278,14 +292,19 @@ function buildCuratedSeedFacts(
   }));
 }
 
-function buildColumnAggregateFact(input: Readonly<{
-  columnKey: string;
-  label: string;
-  parsedCsv: ParsedCsv;
-}>): SeedFactDefinition {
+function buildColumnAggregateFact(
+  input: Readonly<{
+    columnKey: string;
+    label: string;
+    parsedCsv: ParsedCsv;
+  }>,
+): SeedFactDefinition {
   const aggregateValue = Number(
     input.parsedCsv.records
-      .reduce((total, record) => total + readNumericCell(record[input.columnKey]), 0)
+      .reduce(
+        (total, record) => total + readNumericCell(record[input.columnKey]),
+        0,
+      )
       .toFixed(2),
   );
 
@@ -322,13 +341,15 @@ function buildCuratedParserArtifactId(orgId: string, fileName: string) {
   return `seed_parser_${sanitizeObjectKeySegment(orgId)}_${createHash("sha1").update(fileName).digest("hex").slice(0, 12)}`;
 }
 
-async function createCuratedParserArtifact(input: Readonly<{
-  body: Buffer;
-  createdAt: string;
-  documentId: string;
-  fileName: CuratedAssetDocumentName;
-  orgId: string;
-}>): Promise<ParserArtifact> {
+async function createCuratedParserArtifact(
+  input: Readonly<{
+    body: Buffer;
+    createdAt: string;
+    documentId: string;
+    fileName: CuratedAssetDocumentName;
+    orgId: string;
+  }>,
+): Promise<ParserArtifact> {
   const { parserArtifact } = await parseDocumentWithService({
     body: input.body,
     createdAt: input.createdAt,
@@ -352,13 +373,15 @@ function classifyCuratedDocument(
   });
 }
 
-async function backfillCuratedDocumentParserArtifact(input: Readonly<{
-  document: DocumentRecord;
-  documentRepository: DocumentRepository;
-  fileName: CuratedAssetDocumentName;
-  orgId: string;
-  parserArtifactRepository: ParserArtifactRepository;
-}>) {
+async function backfillCuratedDocumentParserArtifact(
+  input: Readonly<{
+    document: DocumentRecord;
+    documentRepository: DocumentRepository;
+    fileName: CuratedAssetDocumentName;
+    orgId: string;
+    parserArtifactRepository: ParserArtifactRepository;
+  }>,
+) {
   if (input.document.parserArtifactId !== undefined) {
     const existingParserArtifact = await input.parserArtifactRepository.getById(
       input.document.parserArtifactId,
@@ -376,7 +399,10 @@ async function backfillCuratedDocumentParserArtifact(input: Readonly<{
     fileName: input.fileName,
     orgId: input.orgId,
   });
-  const classification = classifyCuratedDocument(input.fileName, parserArtifact);
+  const classification = classifyCuratedDocument(
+    input.fileName,
+    parserArtifact,
+  );
   let document = markDocumentParsed(
     input.document,
     parserArtifact.id,
