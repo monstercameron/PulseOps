@@ -8,7 +8,7 @@
 
 ### Workspace Localization
 - Localized dashboard, explorer, pipeline, dialogs, and workspace chrome with seeded UI translation bundles, locale-aware labels, and compact top-bar controls.
-- Updated explorer and dashboard interactions to use localized filters, localized action labels, scoped detail panes, and document download entry points.
+- Updated explorer, packs, and dashboard interactions to use localized filters, localized action labels, scoped detail panes, and document download entry points.
 
 ### Ask
 - Added persistent thread scroll caching, auto-resizing composer behavior, and localized thread dialogs and status labels for the Ask surface.
@@ -16,7 +16,10 @@
 
 ### Content and Marketing
 - Added a blog content workflow with public and workspace routes, CRUD API handlers, in-memory blog storage, and structured website contact details managed from settings.
-- Wired website details into the home and contact marketing pages and added Playwright coverage for public blog, content admin, and website-detail flows.
+- Wired website details into the home and contact marketing pages, restored blog admin copy and shell fallbacks, and added Playwright coverage for public blog, content admin, and website-detail flows.
+
+### Settings Localization
+- Localized organization profile controls and added the matching UI bundle labels so the settings surface stays consistent across supported locales.
 
 ### Research
 - Added an extraction prompt optimization runner plus representative XLSX and PDF fixtures for evaluating structured fact extraction quality against expected business facts.
