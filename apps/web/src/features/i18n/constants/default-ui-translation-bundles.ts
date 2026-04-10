@@ -75,12 +75,27 @@ const defaultUiMessagesEnUs = {
     breadcrumbs: ["Dashboard", "Ask"],
     clarifyNextLabel: "Clarify next",
     copyAction: "Copy",
+    forkDialog: {
+      cancel: "Cancel",
+      confirm: "Fork thread",
+      confirming: "Forking...",
+      description:
+        "The new thread will keep every prior message through the selected point, then continue from there with a new question.",
+      forkPointLabel: "Fork point",
+      helper:
+        "The forked thread will preserve the prior conversation and save the new branch to history.",
+      placeholder: "Ask the next question in the forked thread...",
+      priorMessagesLabel: "Prior messages carried into the new thread:",
+      title: "Fork thread",
+    },
+    forkThread: "Fork thread",
     deleteDialog: {
       cancel: "Cancel",
       delete: "Delete thread",
       deleting: "Deleting...",
       description:
         "This thread will be permanently removed from the workspace. This cannot be undone.",
+      threadFallback: "This thread",
       title: "Delete thread?",
     },
     description:
@@ -111,6 +126,12 @@ const defaultUiMessagesEnUs = {
     submitLabel: "Ask",
     submitting: "Running...",
     threadDeleteLabel: "Delete thread",
+    threadStatuses: {
+      clarify: "Clarify",
+      facts: "Facts",
+      hybrid: "Hybrid",
+      vectors: "Vectors",
+    },
     threadsHeading: "Threads",
     title: "Ask",
   },
@@ -1096,12 +1117,27 @@ const defaultUiMessagesEs: UiMessages = {
     breadcrumbs: ["Panel", "Preguntar"],
     clarifyNextLabel: "Aclarar lo siguiente",
     copyAction: "Copiar",
+    forkDialog: {
+      cancel: "Cancelar",
+      confirm: "Bifurcar hilo",
+      confirming: "Bifurcando...",
+      description:
+        "El nuevo hilo conservara todos los mensajes anteriores hasta el punto seleccionado y continuara desde alli con una nueva pregunta.",
+      forkPointLabel: "Punto de bifurcacion",
+      helper:
+        "El hilo bifurcado conservara la conversacion anterior y guardara la nueva rama en el historial.",
+      placeholder: "Haz la siguiente pregunta en el hilo bifurcado...",
+      priorMessagesLabel: "Mensajes anteriores incluidos en el nuevo hilo:",
+      title: "Bifurcar hilo",
+    },
+    forkThread: "Bifurcar hilo",
     deleteDialog: {
       cancel: "Cancelar",
       delete: "Eliminar hilo",
       deleting: "Eliminando...",
       description:
         "Este hilo se eliminara permanentemente del espacio de trabajo. Esta accion no se puede deshacer.",
+      threadFallback: "Este hilo",
       title: "Eliminar hilo?",
     },
     description:
@@ -1132,6 +1168,12 @@ const defaultUiMessagesEs: UiMessages = {
     submitLabel: "Preguntar",
     submitting: "Ejecutando...",
     threadDeleteLabel: "Eliminar hilo",
+    threadStatuses: {
+      clarify: "Aclarar",
+      facts: "Hechos",
+      hybrid: "Hibrido",
+      vectors: "Vectores",
+    },
     threadsHeading: "Hilos",
     title: "Preguntar",
   },

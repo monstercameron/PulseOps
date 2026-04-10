@@ -192,7 +192,6 @@ export function AskPage({ initialHistory, orgId }: AskPageProps) {
         role: "assistant",
         text:
           payload.answer.answerText.trim().length === 0
-            ? "No matching evidence is available in this workspace yet. Upload more data or narrow the question."
             ? uiMessages.askPage.noAnswer
             : payload.answer.answerText,
         widget: payload.widget ?? null,
@@ -392,7 +391,6 @@ export function AskPage({ initialHistory, orgId }: AskPageProps) {
       <WorkspaceHeader
         actions={[
           {
-            label: "Saved thread history",
             label: uiMessages.askPage.actions.history,
             onClick: () =>
               openPlaceholderAction(
@@ -461,17 +459,17 @@ export function AskPage({ initialHistory, orgId }: AskPageProps) {
                         {thread.question}
                       </div>
                       <div className="mt-1 text-[11px] text-muted">
-                        {formatThreadTimestamp(thread.createdAt)}
+                        {formatThreadTimestamp(thread.createdAt, locale)}
                       </div>
                     </div>
                     <StatusBadge
-                      label={thread.needsClarification ? "Clarify" : thread.retrievalMode}
+                      label={resolveThreadStatusLabel(thread, uiMessages)}
                       tone={thread.needsClarification ? "warning" : "info"}
                     />
                   </div>
                 </button>
                 <button
-                  aria-label="Delete thread"
+                  aria-label={uiMessages.askPage.threadDeleteLabel}
                   className="absolute right-[6px] top-1/2 -translate-y-1/2 rounded-[5px] p-[3px] text-muted opacity-0 transition-opacity hover:bg-red-50 hover:text-red-500 group-hover:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 dark:hover:bg-rose-500/10 dark:hover:text-rose-300"
                   onClick={(e) => {
                     e.stopPropagation();
@@ -599,7 +597,7 @@ export function AskPage({ initialHistory, orgId }: AskPageProps) {
                               {actionId === "copy"
                                 ? uiMessages.askPage.copyAction
                                 : actionId === "fork-thread"
-                                  ? t("askPage.forkThread", "Fork thread")
+                                  ? uiMessages.askPage.forkThread
                                   : uiMessages.askPage.saveToPack}
                             </button>
                           ))}
@@ -690,36 +688,40 @@ export function AskPage({ initialHistory, orgId }: AskPageProps) {
       {forkState !== null ? (
         <CatalogModalOverlay>
           <DialogFrame
-            description="The new thread will keep every prior message through the selected point, then continue from there with a new question."
+            description={uiMessages.askPage.forkDialog.description}
             footer={
               <>
                 <CatalogButton
                   onClick={() => setForkState(null)}
                   variant="secondary"
                 >
-                  Cancel
+                  {uiMessages.askPage.forkDialog.cancel}
                 </CatalogButton>
                 <CatalogButton
                   disabled={forkState.draft.trim().length === 0 || isSubmitting}
                   onClick={() => void handleForkConfirm()}
                   variant="primary"
                 >
-                  {isSubmitting ? "Forking…" : "Fork thread"}
+                  {isSubmitting
+                    ? uiMessages.askPage.forkDialog.confirming
+                    : uiMessages.askPage.forkDialog.confirm}
                 </CatalogButton>
               </>
             }
             onClose={() => setForkState(null)}
-            title="Fork thread"
+            title={uiMessages.askPage.forkDialog.title}
           >
             <div className="rounded-[8px] border border-border bg-surface-subtle px-3 py-2.5 text-[12px] leading-[1.6] text-muted">
-              <span className="font-semibold text-foreground">Fork point</span>
+              <span className="font-semibold text-foreground">
+                {uiMessages.askPage.forkDialog.forkPointLabel}
+              </span>
               <p className="mt-1">
                 {forkState.sourceMessagePreview.length > 180
                   ? `${forkState.sourceMessagePreview.slice(0, 180)}...`
                   : forkState.sourceMessagePreview}
               </p>
               <p className="mt-2">
-                Prior messages carried into the new thread:{" "}
+                {uiMessages.askPage.forkDialog.priorMessagesLabel}{" "}
                 <span className="font-semibold text-foreground">
                   {forkState.baseMessages.length}
                 </span>
@@ -735,11 +737,11 @@ export function AskPage({ initialHistory, orgId }: AskPageProps) {
                     : { ...current, draft: e.target.value },
                 )
               }
-              placeholder="Ask the next question in the forked thread…"
+              placeholder={uiMessages.askPage.forkDialog.placeholder}
               value={forkState.draft}
             />
             <p className="mt-2 text-[11.5px] text-muted">
-              The forked thread will preserve the prior conversation and save the new branch to history.
+              {uiMessages.askPage.forkDialog.helper}
             </p>
           </DialogFrame>
         </CatalogModalOverlay>
@@ -748,7 +750,7 @@ export function AskPage({ initialHistory, orgId }: AskPageProps) {
       {pendingDeleteThreadId ? (
         <CatalogModalOverlay>
           <DialogFrame
-            description="This thread will be permanently removed from the workspace. This cannot be undone."
+            description={uiMessages.askPage.deleteDialog.description}
             footer={
               <>
                 <CatalogButton
@@ -756,7 +758,7 @@ export function AskPage({ initialHistory, orgId }: AskPageProps) {
                   onClick={() => setPendingDeleteThreadId(null)}
                   variant="secondary"
                 >
-                  Cancel
+                  {uiMessages.askPage.deleteDialog.cancel}
                 </CatalogButton>
                 <CatalogButton
                   className="gap-2"
@@ -767,19 +769,20 @@ export function AskPage({ initialHistory, orgId }: AskPageProps) {
                   {isDeleting ? (
                     <>
                       <DeleteThreadLoadingIcon />
-                      <span>Deleting...</span>
+                      <span>{uiMessages.askPage.deleteDialog.deleting}</span>
                     </>
                   ) : (
-                    "Delete thread"
+                    uiMessages.askPage.deleteDialog.delete
                   )}
                 </CatalogButton>
               </>
             }
             onClose={isDeleting ? undefined : () => setPendingDeleteThreadId(null)}
-            title="Delete thread?"
+            title={uiMessages.askPage.deleteDialog.title}
           >
             <p className="text-[13px] leading-[1.6] text-muted">
-              {history.find((t) => t.id === pendingDeleteThreadId)?.question ?? "This thread"}
+              {history.find((t) => t.id === pendingDeleteThreadId)?.question ??
+                uiMessages.askPage.deleteDialog.threadFallback}
             </p>
           </DialogFrame>
         </CatalogModalOverlay>
@@ -792,14 +795,25 @@ function formatCitationLabel(citation: AskApiResponse["answer"]["citations"][num
   const firstLocatorEntry = Object.entries(citation.locator)[0];
 
   if (firstLocatorEntry === undefined) {
-    return `${citation.documentId} · ${citation.locatorType}`;
+    return `${citation.documentId} - ${citation.locatorType}`;
   }
 
-  return `${citation.documentId} · ${firstLocatorEntry[0]} ${firstLocatorEntry[1]}`;
+  return `${citation.documentId} - ${firstLocatorEntry[0]} ${firstLocatorEntry[1]}`;
 }
 
-function formatThreadTimestamp(createdAt: string) {
-  return new Intl.DateTimeFormat("en-US", {
+function resolveThreadStatusLabel(
+  thread: AskHistoryThread,
+  messages: ReturnType<typeof useUiI18n>["messages"],
+) {
+  if (thread.needsClarification) {
+    return messages.askPage.threadStatuses.clarify;
+  }
+
+  return messages.askPage.threadStatuses[thread.retrievalMode];
+}
+
+function formatThreadTimestamp(createdAt: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
