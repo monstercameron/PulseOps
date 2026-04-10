@@ -17,6 +17,12 @@ import {
 import { type AskHistoryThread } from "@/features/query/server/handle-ask-history-request";
 import { AskWidgetRenderer } from "@/features/ask/components/ask-widget-renderer";
 import { type AskWidget } from "@/features/ask/lib/ask-widget-types";
+import {
+  SEED_DEFAULT_THREAD_ID,
+  SEED_HISTORY,
+  SEED_THREAD_MESSAGES,
+  type SeedMessage,
+} from "@/features/ask/lib/ask-seed-threads";
 
 type AskPageProps = Readonly<{
   initialHistory: readonly AskHistoryThread[];
@@ -31,6 +37,11 @@ type AskMessage = Readonly<{
   text: string;
   widget?: AskWidget | null;
 }>;
+
+// SeedMessage is structurally identical — assign freely
+function isSeedId(threadId: string | null): threadId is string {
+  return threadId !== null && threadId in SEED_THREAD_MESSAGES;
+}
 
 type AskApiResponse = Readonly<{
   answer: Readonly<{
@@ -57,16 +68,23 @@ const starterPrompts = [
 
 export function AskPage({ initialHistory, orgId }: AskPageProps) {
   const [draft, setDraft] = useState("");
-  const [history, setHistory] = useState(initialHistory);
+  // Seed threads are prepended so they always appear at the top of the sidebar.
+  const [history, setHistory] = useState([
+    ...SEED_HISTORY,
+    ...initialHistory.filter((t) => !(t.id in SEED_THREAD_MESSAGES)),
+  ]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [messages, setMessages] = useState<readonly AskMessage[]>([]);
+  // Show the first seed thread's messages on initial load.
+  const [messages, setMessages] = useState<readonly AskMessage[]>(
+    (SEED_THREAD_MESSAGES[SEED_DEFAULT_THREAD_ID] as readonly SeedMessage[]) ?? [],
+  );
   const [pendingDeleteThreadId, setPendingDeleteThreadId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [placeholderAction, setPlaceholderAction] = useState<{
     description?: string;
     title: string;
   } | null>(null);
-  const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
+  const [selectedThreadId, setSelectedThreadId] = useState<string | null>(SEED_DEFAULT_THREAD_ID);
   const [forkDraft, setForkDraft] = useState<string | null>(null);
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
 
@@ -161,6 +179,11 @@ export function AskPage({ initialHistory, orgId }: AskPageProps) {
   async function handleThreadSelection(thread: AskHistoryThread) {
     setSelectedThreadId(thread.id);
     setDraft(thread.question);
+    // Seed threads have pre-built messages — no API call needed.
+    if (isSeedId(thread.id)) {
+      setMessages(SEED_THREAD_MESSAGES[thread.id] as readonly SeedMessage[]);
+      return;
+    }
     await submitQuestion(thread.question, false);
   }
 
