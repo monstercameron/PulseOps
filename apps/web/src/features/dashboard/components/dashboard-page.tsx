@@ -157,6 +157,45 @@ export function DashboardPage({ initialData, orgId }: DashboardPageProps) {
       </div>
 
       <div className="flex-1 px-6 py-5">
+        {initialData.scopedContent ? (
+          <CatalogCard className="mb-5 px-4 py-[14px]">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-muted">
+                  {initialData.scopedContent.title}
+                </p>
+                <p className="mt-1 text-[12.5px] leading-[1.5] text-muted">
+                  {initialData.scopedContent.description}
+                </p>
+              </div>
+              <button
+                className="rounded-[7px] border border-border-strong bg-surface-subtle px-3 py-[6px] text-[12px] font-semibold text-foreground transition hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                onClick={() => router.push("/explorer")}
+                type="button"
+              >
+                Open explorer
+              </button>
+            </div>
+            {initialData.scopedContent.items.length > 0 ? (
+              <div className="mt-4 grid gap-2 md:grid-cols-3">
+                {initialData.scopedContent.items.map((item) => (
+                  <div
+                    key={item.id}
+                    className="rounded-[8px] border border-border bg-surface-subtle px-3 py-3"
+                  >
+                    <p className="text-[12.5px] font-semibold text-foreground">
+                      {item.title}
+                    </p>
+                    <p className="mt-1 text-[11.5px] leading-[1.5] text-muted">
+                      {item.meta}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </CatalogCard>
+        ) : null}
+
         <div className="mb-5 grid grid-cols-2 gap-[10px] md:grid-cols-3 xl:grid-cols-5">
           {initialData.metrics.map((metric) => (
             <MetricTile
