@@ -8,10 +8,7 @@ type UploadLifecyclePolicy = {
   retentionPolicyKey: string;
 };
 
-const lifecyclePolicyBySource: Record<
-  DocumentSource,
-  UploadLifecyclePolicy
-> = {
+const lifecyclePolicyBySource: Record<DocumentSource, UploadLifecyclePolicy> = {
   api: {
     archiveAfterDays: 90,
     retentionPolicyKey: "api-hot-90d",
@@ -26,8 +23,31 @@ const lifecyclePolicyBySource: Record<
   },
 };
 
+const rawUploadPurgeSuffix = "-purge-source";
+
 export function resolveUploadLifecyclePolicy(
   source: DocumentSource,
+  options?: Readonly<{
+    retainSourceFile?: boolean;
+  }>,
 ): UploadLifecyclePolicy {
-  return lifecyclePolicyBySource[documentSourceSchema.parse(source)];
+  const resolvedSource = documentSourceSchema.parse(source);
+  const basePolicy = lifecyclePolicyBySource[resolvedSource];
+
+  if (options?.retainSourceFile === false) {
+    return {
+      ...basePolicy,
+      retentionPolicyKey: `${basePolicy.retentionPolicyKey}${rawUploadPurgeSuffix}`,
+    };
+  }
+
+  return basePolicy;
+}
+
+export function shouldRetainRawUpload(retentionPolicyKey?: string): boolean {
+  if (retentionPolicyKey === undefined) {
+    return true;
+  }
+
+  return !retentionPolicyKey.endsWith(rawUploadPurgeSuffix);
 }

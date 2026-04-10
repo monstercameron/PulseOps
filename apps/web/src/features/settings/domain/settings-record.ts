@@ -1,6 +1,10 @@
 import { z } from "zod";
 
 import { fallbackSettingsPageData } from "@/features/settings/constants/settings-page-content";
+import {
+  mergeSettingsPreferencesWithDefaults,
+  normalizeSettingsPreferenceId,
+} from "@/features/settings/domain/settings-preferences";
 
 const settingsOrganizationSchema = z.object({
   goals: z.array(z.string().min(1)).readonly(),
@@ -24,11 +28,17 @@ const settingsNotificationGroupSchema = z.object({
   title: z.string().min(1),
 });
 
-const settingsPreferenceSchema = z.object({
-  description: z.string().min(1),
-  enabled: z.boolean(),
-  title: z.string().min(1),
-});
+const settingsPreferenceSchema = z
+  .object({
+    description: z.string().min(1),
+    enabled: z.boolean(),
+    id: z.string().min(1).optional(),
+    title: z.string().min(1),
+  })
+  .transform((preference) => ({
+    ...preference,
+    id: normalizeSettingsPreferenceId(preference),
+  }));
 
 const settingsIntegrationSchema = z.object({
   actionLabel: z.string().min(1),
@@ -83,6 +93,7 @@ type CreateSettingsRecordInput = Omit<SettingsRecord, "updatedAt" | "version"> &
 export function createSettingsRecord(input: CreateSettingsRecordInput): SettingsRecord {
   return settingsRecordSchema.parse({
     ...input,
+    preferences: mergeSettingsPreferencesWithDefaults(input.preferences),
     updatedAt: input.updatedAt ?? new Date().toISOString(),
     version: "settings-record.v1",
   });

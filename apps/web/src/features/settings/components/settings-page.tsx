@@ -54,6 +54,7 @@ type AccountStatusLabel = "Active" | "Invited";
 type BillingPaymentMethodRecord = SettingsPageData["billing"]["paymentMethods"][number];
 type BillingPaymentMethodRole = BillingPaymentMethodRecord["role"];
 type BillingUsageMetricId = SettingsPageData["billing"]["usage"][number]["id"];
+type BillingUsageRecord = SettingsPageData["billing"]["usage"][number];
 type PaymentMethodDraft = Readonly<{
   cardNumber: string;
   cardholderName: string;
@@ -73,6 +74,11 @@ type TeamAccountDraft = Readonly<{
   roleLabel: InviteRoleLabel;
   setupAccess: boolean;
   statusLabel: AccountStatusLabel;
+}>;
+type BillingUsageCapProgress = Readonly<{
+  barWidthPercent: number;
+  caption: string;
+  summary: string;
 }>;
 
 const INDUSTRY_OPTIONS = [
@@ -178,9 +184,23 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
     pageData.billing.paymentMethods,
     "backup",
   );
+  const flatFeeUsage = getBillingUsageItem(pageData.billing.usage, "flat_fee");
+  const usageThisPeriodUsage = getBillingUsageItem(
+    pageData.billing.usage,
+    "usage_this_period",
+  );
+  const currentTotalUsage = getBillingUsageItem(
+    pageData.billing.usage,
+    "current_total",
+  );
   const usageGraphCapCents = getBillingGraphUsageCapCents({
     billingCapDraft,
     savedUsageCapCents: pageData.billing.usageCapCents,
+  });
+  const isPreviewingUsageCap = usageGraphCapCents !== pageData.billing.usageCapCents;
+  const usageCapProgress = getBillingUsageCapProgress({
+    usageCapCents: usageGraphCapCents,
+    usageThisPeriodCents: pageData.billing.graphMetrics.usageThisPeriodCents,
   });
   const selectedTeamMember =
     accountDraft === null
@@ -352,10 +372,10 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
     );
   }
 
-  function togglePreference(title: string) {
+  function togglePreference(preferenceId: string) {
     setPreferenceItems((currentItems) =>
       currentItems.map((item) =>
-        item.title === title ? { ...item, enabled: !item.enabled } : item,
+        item.id === preferenceId ? { ...item, enabled: !item.enabled } : item,
       ),
     );
   }
@@ -772,13 +792,7 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
   return (
     <div className="flex min-h-full flex-col">
       <WorkspaceHeader
-        actions={[
-          {
-            label: `${theme === "dark" ? "🌙" : "☀️"} ${theme === "dark" ? "Light mode" : "Dark mode"}`,
-            onClick: () => applyTheme(toggleAppTheme(theme)),
-            variant: "secondary",
-          },
-        ]}
+        actions={[]}
         breadcrumbs={settingsPageLabels.breadcrumbs}
         description={settingsPageLabels.description}
         title={settingsPageLabels.title}
@@ -1153,7 +1167,7 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
                       Billing model
                     </p>
                     <p className="mt-1 text-[13px] font-semibold text-foreground">
-                      Flat fee + usage
+                      Platform access + usage
                     </p>
                     <p className="mt-1 text-[11.5px] text-muted">
                       Totals update automatically from tracked AI usage.
@@ -1166,32 +1180,51 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
                   <h3 className="text-[13px] font-semibold tracking-[-0.015em] text-foreground">Usage this billing period</h3>
                   <p className="mt-[2px] text-[11.5px] leading-[1.4] text-muted">Current cycle across the workspace.</p>
                 </div>
-                <div className="grid gap-[18px] p-[18px] md:grid-cols-2 xl:grid-cols-3">
-                  {pageData.billing.usage.map((usage) => {
-                    const progressPercent = getBillingUsageGraphPercent({
-                      graphMetrics: pageData.billing.graphMetrics,
-                      metricId: usage.id,
-                      usageCapCents: usageGraphCapCents,
-                    });
-
-                    return (
-                      <div key={usage.id}>
-                        <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.07em] text-muted">
-                          {usage.label}
+                <div className="grid gap-[18px] p-[18px] md:grid-cols-2">
+                  <BillingUsageStatCard usage={flatFeeUsage} />
+                  <BillingUsageStatCard usage={currentTotalUsage} />
+                  <div className="rounded-[10px] border border-border bg-surface-subtle p-[18px] md:col-span-2">
+                    <div className="flex flex-wrap items-start justify-between gap-4">
+                      <div>
+                        <p className="text-[11px] font-bold uppercase tracking-[0.07em] text-muted">
+                          {usageThisPeriodUsage.label}
                         </p>
-                        <div className="mb-[5px] h-[4px] overflow-hidden rounded-[2px] bg-white/[0.07]">
-                          <div
-                            className="h-full rounded-[2px] bg-accent transition-[width] duration-150 ease-out"
-                            style={{ width: `${progressPercent}%` }}
-                          />
-                        </div>
-                        <p className="text-[13px] font-semibold text-foreground">
-                          {usage.value}{" "}
-                          <span className="font-normal text-muted">/ {usage.detail}</span>
+                        <p className="mt-1 text-[20px] font-semibold tracking-[-0.02em] text-foreground">
+                          {usageThisPeriodUsage.value}
+                        </p>
+                        <p className="mt-1 text-[11.5px] text-muted">
+                          {usageThisPeriodUsage.detail}
                         </p>
                       </div>
-                    );
-                  })}
+                      <div className="text-left md:text-right">
+                        <p className="text-[11px] font-bold uppercase tracking-[0.07em] text-muted">
+                          Monthly cap
+                        </p>
+                        <p className="mt-1 text-[16px] font-semibold text-foreground">
+                          {formatBillingCapSummary(usageGraphCapCents)}
+                        </p>
+                        <p className="mt-1 text-[11.5px] text-muted">
+                          {usageCapProgress.summary}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-4">
+                      <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-[11.5px] text-muted">
+                        <span>{usageCapProgress.caption}</span>
+                        {isPreviewingUsageCap ? (
+                          <span className="font-medium text-accent">
+                            Previewing unsaved cap
+                          </span>
+                        ) : null}
+                      </div>
+                      <div className="h-[8px] overflow-hidden rounded-full bg-white/[0.07]">
+                        <div
+                          className="h-full rounded-full bg-accent transition-[width] duration-150 ease-out"
+                          style={{ width: `${usageCapProgress.barWidthPercent}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </CatalogCard>
               <CatalogCard className="overflow-hidden">
@@ -1297,10 +1330,10 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
               >
                 {preferenceItems.map((preference) => (
                   <ToggleRow
-                    key={preference.title}
+                    key={preference.id}
                     description={preference.description}
                     enabled={preference.enabled}
-                    onToggle={() => togglePreference(preference.title)}
+                    onToggle={() => togglePreference(preference.id)}
                     title={preference.title}
                   />
                 ))}
@@ -1698,6 +1731,24 @@ type BillingPaymentMethodEditorProps = Readonly<{
   role: BillingPaymentMethodRole;
 }>;
 
+type BillingUsageStatCardProps = Readonly<{
+  usage: BillingUsageRecord;
+}>;
+
+function BillingUsageStatCard({ usage }: BillingUsageStatCardProps) {
+  return (
+    <div className="rounded-[10px] border border-border bg-surface-subtle p-[18px]">
+      <p className="text-[11px] font-bold uppercase tracking-[0.07em] text-muted">
+        {usage.label}
+      </p>
+      <p className="mt-1 text-[20px] font-semibold tracking-[-0.02em] text-foreground">
+        {usage.value}
+      </p>
+      <p className="mt-1 text-[11.5px] text-muted">{usage.detail}</p>
+    </div>
+  );
+}
+
 function BillingPaymentMethodEditor({
   currentPaymentMethod,
   draft,
@@ -1840,50 +1891,66 @@ function getBillingGraphUsageCapCents(input: Readonly<{
   }
 }
 
-function getBillingUsageGraphPercent(input: Readonly<{
-  graphMetrics: SettingsPageData["billing"]["graphMetrics"];
-  metricId: BillingUsageMetricId;
-  usageCapCents: number | null;
-}>): number {
-  const { currentTotalCents, flatFeeCents, usageThisPeriodCents } = input.graphMetrics;
-
-  if (input.usageCapCents !== null) {
-    const totalAvailableCents = flatFeeCents + input.usageCapCents;
-
-    switch (input.metricId) {
-      case "flat_fee":
-        return clampPercentage(
-          totalAvailableCents === 0 ? 0 : (flatFeeCents / totalAvailableCents) * 100,
-        );
-      case "usage_this_period":
-        return clampPercentage(
-          input.usageCapCents === 0
-            ? usageThisPeriodCents > 0
-              ? 100
-              : 0
-            : (usageThisPeriodCents / input.usageCapCents) * 100,
-        );
-      case "current_total":
-        return clampPercentage(
-          totalAvailableCents === 0 ? 0 : (currentTotalCents / totalAvailableCents) * 100,
-        );
+function getBillingUsageItem(
+  usageRecords: SettingsPageData["billing"]["usage"],
+  metricId: BillingUsageMetricId,
+): BillingUsageRecord {
+  return (
+    usageRecords.find((usageRecord) => usageRecord.id === metricId) ?? {
+      detail: "",
+      id: metricId,
+      label: getBillingUsageLabel(metricId),
+      value: "$0.00",
     }
+  );
+}
+
+function getBillingUsageCapProgress(input: Readonly<{
+  usageCapCents: number | null;
+  usageThisPeriodCents: number;
+}>): BillingUsageCapProgress {
+  if (input.usageCapCents === null) {
+    return {
+      barWidthPercent: 0,
+      caption: "Set a monthly cap to pause new AI runs automatically.",
+      summary: "No cap set.",
+    };
   }
 
-  const uncappedDenominator = Math.max(
-    flatFeeCents,
-    usageThisPeriodCents,
-    currentTotalCents,
-    1,
-  );
+  if (input.usageCapCents === 0) {
+    const isCapReached = input.usageThisPeriodCents > 0;
 
-  switch (input.metricId) {
+    return {
+      barWidthPercent: isCapReached ? 100 : 0,
+      caption: `${formatUsdFromCents(input.usageThisPeriodCents)} used of ${formatUsdFromCents(0)} cap`,
+      summary: isCapReached ? "Cap reached." : "No usage allowed at the current cap.",
+    };
+  }
+
+  const rawPercent =
+    (input.usageThisPeriodCents / input.usageCapCents) * 100;
+  const clampedPercent = clampPercentage(rawPercent);
+  const visiblePercent =
+    clampedPercent > 0 ? Math.max(clampedPercent, 1.5) : 0;
+
+  return {
+    barWidthPercent: visiblePercent,
+    caption: `${formatUsdFromCents(input.usageThisPeriodCents)} used of ${formatUsdFromCents(input.usageCapCents)} cap`,
+    summary:
+      clampedPercent >= 100
+        ? "Cap reached."
+        : `${formatBillingUsagePercent(clampedPercent)} of monthly cap used`,
+  };
+}
+
+function getBillingUsageLabel(metricId: BillingUsageMetricId): string {
+  switch (metricId) {
     case "flat_fee":
-      return clampPercentage((flatFeeCents / uncappedDenominator) * 100);
+      return "Platform access";
     case "usage_this_period":
-      return clampPercentage((usageThisPeriodCents / uncappedDenominator) * 100);
+      return "Usage this period";
     case "current_total":
-      return clampPercentage((currentTotalCents / uncappedDenominator) * 100);
+      return "Current total";
   }
 }
 
@@ -1893,6 +1960,30 @@ function clampPercentage(value: number): number {
   }
 
   return Math.min(100, Math.max(0, value));
+}
+
+function formatBillingUsagePercent(value: number): string {
+  if (value === 0) {
+    return "0%";
+  }
+
+  if (value < 0.01) {
+    return "<0.01%";
+  }
+
+  if (value < 0.1) {
+    return `${value.toFixed(3)}%`;
+  }
+
+  if (value < 1) {
+    return `${value.toFixed(2)}%`;
+  }
+
+  if (value < 10) {
+    return `${value.toFixed(1)}%`;
+  }
+
+  return `${value.toFixed(0)}%`;
 }
 
 function formatUsdFromCents(value: number): string {

@@ -72,7 +72,7 @@ export async function getSettingsBillingData({
     {
       detail: "Monthly recurring",
       id: "flat_fee",
-      label: "Flat fee",
+      label: "Platform access",
       value: formatUsdFromCents(billingAccount.monthlyPlatformFeeCents),
     },
     {
@@ -110,7 +110,7 @@ export async function getSettingsBillingData({
       roleLabel: getBillingPaymentMethodRoleLabel(paymentMethod.role),
     })),
     planDescription: [
-      "Flat monthly fee plus usage-based billing.",
+      "Platform access plus usage-based billing.",
       `Current cycle ${formatDate(billingPeriod.startAt)} to ${formatDate(billingPeriod.endAt)}.`,
     ].join(" "),
     planTitle: `${billingAccount.planName} plan`,

@@ -5,8 +5,10 @@ import { type ChunkRepository } from "@/features/chunks/repositories/chunk-repos
 import { materializeFactChunks } from "@/features/chunks/services/materialize-fact-chunks";
 import { resolveUploadRouting } from "@/features/documents/domain/document-format";
 import {
+  detachStoredObjectFromDocument,
   markDocumentExtracted,
   markDocumentFailed,
+  type DocumentRecord,
 } from "@/features/documents/domain/document";
 import { type DocumentRepository } from "@/features/documents/repositories/document-repository";
 import { type EntityRepository } from "@/features/entities/repositories/entity-repository";
@@ -36,6 +38,7 @@ import { type ParserArtifact } from "@/features/parsing/domain/parser-artifact";
 import { type TextParserArtifact } from "@/features/parsing/domain/text-parser-artifact";
 import { type ParserArtifactRepository } from "@/features/parsing/repositories/parser-artifact-repository";
 import { type TextParserArtifactRepository } from "@/features/parsing/repositories/text-parser-artifact-repository";
+import { shouldRetainRawUpload } from "@/features/ingestion/domain/upload-lifecycle-policy";
 import { type ObjectStorage } from "@/features/storage/lib/object-storage";
 import { serializeStructuredLogEntry } from "@/features/observability/lib/structured-logger";
 
@@ -213,6 +216,16 @@ export async function processNextIngestionJob(
         }
       }
 
+      documentToPersist = await maybePurgeStoredRawUpload({
+        document: documentToPersist,
+        isProcessingComplete:
+          documentToPersist.status === "extracted" ||
+          ingestionJobToPersist.status === "completed",
+        jobId: ingestionJobToPersist.id,
+        log: emitLog,
+        storage: input.storage,
+      });
+
       await input.documentRepository.put(documentToPersist);
       await input.ingestionJobRepository.put(ingestionJobToPersist);
       await input.parserArtifactRepository.put(advancedUpload.parserArtifact);
@@ -303,6 +316,16 @@ export async function processNextIngestionJob(
       }
     }
 
+    documentToPersist = await maybePurgeStoredRawUpload({
+      document: documentToPersist,
+      isProcessingComplete:
+        documentToPersist.status === "extracted" ||
+        ingestionJobToPersist.status === "completed",
+      jobId: ingestionJobToPersist.id,
+      log: emitLog,
+      storage: input.storage,
+    });
+
     await input.documentRepository.put(documentToPersist);
     await input.ingestionJobRepository.put(ingestionJobToPersist);
     await input.textParserArtifactRepository.put(
@@ -359,5 +382,69 @@ export async function processNextIngestionJob(
       ingestionJob: failedState.ingestionJob,
       jobId: failedState.ingestionJob.id,
     });
+  }
+}
+
+async function maybePurgeStoredRawUpload(input: Readonly<{
+  document: DocumentRecord;
+  isProcessingComplete: boolean;
+  jobId: string;
+  log: (message: string) => void;
+  storage: ObjectStorage;
+}>): Promise<DocumentRecord> {
+  if (
+    !input.isProcessingComplete ||
+    input.document.rawObject === undefined ||
+    shouldRetainRawUpload(input.document.retentionPolicyKey)
+  ) {
+    return input.document;
+  }
+
+  try {
+    await input.storage.deleteObject(input.document.rawObject.key);
+
+    input.log(
+      serializeStructuredLogEntry({
+        data: {
+          retentionPolicyKey: input.document.retentionPolicyKey,
+        },
+        documentId: input.document.id,
+        feature: "ingestion",
+        jobId: input.jobId,
+        level: "info",
+        message: "Purged raw upload after successful processing.",
+        orgId: input.document.orgId,
+        service: "web",
+      }),
+    );
+
+    return detachStoredObjectFromDocument(input.document);
+  } catch (error) {
+    input.log(
+      serializeStructuredLogEntry({
+        data: {
+          error:
+            error instanceof Error ? error.message : "Unknown storage deletion error",
+          retentionPolicyKey: input.document.retentionPolicyKey,
+        },
+        documentId: input.document.id,
+        exception:
+          error instanceof Error
+            ? {
+                message: error.message,
+                stack: error.stack,
+                type: error.name,
+              }
+            : undefined,
+        feature: "ingestion",
+        jobId: input.jobId,
+        level: "warn",
+        message: "Could not purge processed raw upload from storage.",
+        orgId: input.document.orgId,
+        service: "web",
+      }),
+    );
+
+    return input.document;
   }
 }

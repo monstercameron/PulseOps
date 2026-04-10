@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => {
     documentRepository: { name: "documents" },
     entityRepository: { name: "entities" },
     factRepository: { name: "facts" },
+    parserArtifactRepository: { name: "parser-artifacts" },
     storage: { name: "storage" },
   };
 
@@ -65,6 +66,7 @@ describe("/api/documents route", () => {
       entityRepository: mocks.runtime.entityRepository,
       factRepository: mocks.runtime.factRepository,
       orgId: "org_123",
+      parserArtifactRepository: mocks.runtime.parserArtifactRepository,
       storage: mocks.runtime.storage,
     });
     expect(mocks.handleDocumentsListRequest).toHaveBeenCalledWith(request, {

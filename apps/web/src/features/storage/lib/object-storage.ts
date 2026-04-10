@@ -22,6 +22,7 @@ export type PutObjectInput = {
 };
 
 export interface ObjectStorage {
+  deleteObject(key: string): Promise<void>;
   exists(key: string): Promise<boolean>;
   getObject(key: string): Promise<Buffer>;
   putObject(input: PutObjectInput): Promise<StoredObject>;

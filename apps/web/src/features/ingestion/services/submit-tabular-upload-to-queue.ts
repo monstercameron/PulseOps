@@ -46,6 +46,7 @@ export type SubmitTabularUploadToQueueInput = {
   now?: () => string;
   orgId: string;
   queue: IngestionQueue;
+  retainSourceFile?: boolean;
   requestId?: string;
   storage: ObjectStorage;
 };
@@ -56,7 +57,7 @@ export type SubmittedTabularUpload = {
   ingestionJob: IngestionJob;
   isDuplicate: boolean;
   queueMessage?: IngestionQueueMessage;
-  storageObject: StoredObject;
+  storageObject?: StoredObject;
 };
 
 export class SubmitTabularUploadToQueueError extends Error {
@@ -96,9 +97,9 @@ export async function submitTabularUploadToQueue(
     );
     const latestJob = selectLatestIngestionJob(existingJobs);
 
-    if (existingDocument.rawObject === undefined || latestJob === null) {
+    if (latestJob === null) {
       throw new Error(
-        `Existing duplicate upload ${existingDocument.id} is missing stored state.`,
+        `Existing duplicate upload ${existingDocument.id} is missing ingestion state.`,
       );
     }
 
@@ -119,7 +120,7 @@ export async function submitTabularUploadToQueue(
         orgId: input.orgId,
         retentionPolicyKey:
           existingDocument.retentionPolicyKey ?? "manual-upload-hot-30d",
-        sizeBytes: existingDocument.sizeBytes ?? existingDocument.rawObject.sizeBytes,
+        sizeBytes: existingDocument.sizeBytes ?? input.body.byteLength,
         source: existingDocument.source,
       }),
     );
@@ -129,7 +130,7 @@ export async function submitTabularUploadToQueue(
         data: {
           checksumSha256: uploadChecksumSha256,
           duplicateOfDocumentId: existingDocument.id,
-          sizeBytes: existingDocument.sizeBytes ?? existingDocument.rawObject.sizeBytes,
+          sizeBytes: existingDocument.sizeBytes ?? input.body.byteLength,
         },
         documentId: existingDocument.id,
         feature: "ingestion",
@@ -153,7 +154,9 @@ export async function submitTabularUploadToQueue(
 
   const documentId = generateId();
   const jobId = generateId();
-  const lifecyclePolicy = resolveUploadLifecyclePolicy("upload");
+  const lifecyclePolicy = resolveUploadLifecyclePolicy("upload", {
+    retainSourceFile: input.retainSourceFile,
+  });
   let document = createUploadedDocument(
     {
       archiveAfterDays: lifecyclePolicy.archiveAfterDays,

@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { access, mkdir, readFile, writeFile } from "node:fs/promises";
+import { access, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import {
@@ -21,6 +21,11 @@ export function createLocalObjectStorage({
   const absoluteRootDirectory = path.resolve(rootDirectory);
 
   return {
+    async deleteObject(key) {
+      await rm(resolveStoragePath(absoluteRootDirectory, key), {
+        force: true,
+      });
+    },
     async exists(key) {
       try {
         await access(resolveStoragePath(absoluteRootDirectory, key));

@@ -15,6 +15,7 @@ export const GET = createLoggedRouteHandler({
         entityRepository: localIngestionRuntime.entityRepository,
         factRepository: localIngestionRuntime.factRepository,
         orgId,
+        parserArtifactRepository: localIngestionRuntime.parserArtifactRepository,
         storage: localIngestionRuntime.storage,
       });
     }

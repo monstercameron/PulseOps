@@ -5,6 +5,7 @@ import {
   attachStoredObjectToDocument,
   createUploadedDocument,
   markDocumentExtracted,
+  markDocumentParsed,
   type DocumentRecord,
 } from "@/features/documents/domain/document";
 import { classifyDocumentFamily } from "@/features/documents/domain/document-family-heuristics";
@@ -17,7 +18,10 @@ import {
   readCuratedAssetDocument,
   type CuratedAssetDocumentName,
 } from "@/features/ingestion/testing/asset-documents";
+import { type ParserArtifact } from "@/features/parsing/domain/parser-artifact";
+import { type ParserArtifactRepository } from "@/features/parsing/repositories/parser-artifact-repository";
 import { parseCsvText, type ParsedCsv } from "@/features/parsing/lib/csv/parse-csv";
+import { parseDocumentWithService } from "@/features/parsing/services/parser-service";
 import {
   buildObjectStorageKey,
   sanitizeObjectKeySegment,
@@ -42,6 +46,7 @@ type EnsureCuratedDocumentsSeededInput = Readonly<{
   entityRepository: EntityRepository;
   factRepository: FactRepository;
   orgId: string;
+  parserArtifactRepository: ParserArtifactRepository;
   storage: ObjectStorage;
 }>;
 
@@ -79,15 +84,25 @@ async function seedCuratedDocuments({
   entityRepository,
   factRepository,
   orgId,
+  parserArtifactRepository,
   storage,
 }: EnsureCuratedDocumentsSeededInput) {
   const existingDocuments = await documentRepository.listByOrgId(orgId);
-  const existingFileNames = new Set(
-    existingDocuments.map((document) => document.fileName),
+  const existingDocumentsByFileName = new Map(
+    existingDocuments.map((document) => [document.fileName, document]),
   );
 
   for (const fileName of curatedSeedFileNames) {
-    if (existingFileNames.has(fileName)) {
+    const existingDocument = existingDocumentsByFileName.get(fileName);
+
+    if (existingDocument !== undefined) {
+      await backfillCuratedDocumentParserArtifact({
+        document: existingDocument,
+        documentRepository,
+        fileName,
+        orgId,
+        parserArtifactRepository,
+      });
       continue;
     }
 
@@ -97,6 +112,7 @@ async function seedCuratedDocuments({
       factRepository,
       fileName,
       orgId,
+      parserArtifactRepository,
       storage,
     });
   }
@@ -108,6 +124,7 @@ async function seedSingleCuratedDocument(input: Readonly<{
   factRepository: FactRepository;
   fileName: CuratedAssetDocumentName;
   orgId: string;
+  parserArtifactRepository: ParserArtifactRepository;
   storage: ObjectStorage;
 }>) {
   const createdAt = curatedDocumentCreatedAts[input.fileName];
@@ -137,12 +154,17 @@ async function seedSingleCuratedDocument(input: Readonly<{
       seedSource: "curated-assets",
     },
   });
-  const classification = classifyDocumentFamily({
+  const parserArtifact = await createCuratedParserArtifact({
+    body,
+    createdAt,
+    documentId,
     fileName: input.fileName,
-    headers: parsedCsv.headers,
+    orgId: input.orgId,
   });
+  const classification = classifyCuratedDocument(input.fileName, parserArtifact);
 
   document = attachStoredObjectToDocument(document, rawObject, createdAt);
+  document = markDocumentParsed(document, parserArtifact.id, createdAt);
   document = attachDocumentClassification(
     document,
     classification?.suggestedDocumentFamily ?? "generic-business-document",
@@ -151,7 +173,9 @@ async function seedSingleCuratedDocument(input: Readonly<{
   );
   document = markDocumentExtracted(document, createdAt);
 
+  await input.parserArtifactRepository.put(parserArtifact);
   await input.documentRepository.put(document);
+
   const entity = createCanonicalEntity({
     canonicalKey: `seed:${input.fileName}`,
     createdAt,
@@ -292,4 +316,83 @@ function readNumericCell(value: string | undefined) {
 
 function buildCuratedDocumentId(orgId: string, fileName: string) {
   return `seed_doc_${sanitizeObjectKeySegment(orgId)}_${createHash("sha1").update(fileName).digest("hex").slice(0, 12)}`;
+}
+
+function buildCuratedParserArtifactId(orgId: string, fileName: string) {
+  return `seed_parser_${sanitizeObjectKeySegment(orgId)}_${createHash("sha1").update(fileName).digest("hex").slice(0, 12)}`;
+}
+
+async function createCuratedParserArtifact(input: Readonly<{
+  body: Buffer;
+  createdAt: string;
+  documentId: string;
+  fileName: CuratedAssetDocumentName;
+  orgId: string;
+}>): Promise<ParserArtifact> {
+  const { parserArtifact } = await parseDocumentWithService({
+    body: input.body,
+    createdAt: input.createdAt,
+    documentId: input.documentId,
+    fileName: input.fileName,
+    parserArtifactId: buildCuratedParserArtifactId(input.orgId, input.fileName),
+  });
+
+  return parserArtifact;
+}
+
+function classifyCuratedDocument(
+  fileName: CuratedAssetDocumentName,
+  parserArtifact: ParserArtifact,
+) {
+  return classifyDocumentFamily({
+    fileName,
+    headers: Array.from(
+      new Set(parserArtifact.sheets.flatMap((sheet) => sheet.headers)),
+    ),
+  });
+}
+
+async function backfillCuratedDocumentParserArtifact(input: Readonly<{
+  document: DocumentRecord;
+  documentRepository: DocumentRepository;
+  fileName: CuratedAssetDocumentName;
+  orgId: string;
+  parserArtifactRepository: ParserArtifactRepository;
+}>) {
+  if (input.document.parserArtifactId !== undefined) {
+    const existingParserArtifact = await input.parserArtifactRepository.getById(
+      input.document.parserArtifactId,
+    );
+
+    if (existingParserArtifact !== null) {
+      return;
+    }
+  }
+
+  const parserArtifact = await createCuratedParserArtifact({
+    body: await readCuratedAssetDocument(input.fileName),
+    createdAt: input.document.createdAt,
+    documentId: input.document.id,
+    fileName: input.fileName,
+    orgId: input.orgId,
+  });
+  const classification = classifyCuratedDocument(input.fileName, parserArtifact);
+  let document = markDocumentParsed(
+    input.document,
+    parserArtifact.id,
+    input.document.updatedAt,
+  );
+
+  document = attachDocumentClassification(
+    document,
+    classification?.suggestedDocumentFamily ?? "generic-business-document",
+    classification?.confidenceScore ??
+      input.document.classificationConfidenceScore ??
+      0.58,
+    input.document.updatedAt,
+  );
+  document = markDocumentExtracted(document, input.document.updatedAt);
+
+  await input.parserArtifactRepository.put(parserArtifact);
+  await input.documentRepository.put(document);
 }

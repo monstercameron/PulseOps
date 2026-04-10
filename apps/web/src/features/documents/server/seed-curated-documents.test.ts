@@ -9,6 +9,7 @@ import { createLocalDocumentRepository } from "@/features/documents/repositories
 import { ensureCuratedDocumentsSeeded } from "@/features/documents/server/seed-curated-documents";
 import { createLocalEntityRepository } from "@/features/entities/repositories/local-entity-repository";
 import { createLocalFactRepository } from "@/features/facts/repositories/local-fact-repository";
+import { createLocalParserArtifactRepository } from "@/features/parsing/repositories/local-parser-artifact-repository";
 import { createLocalObjectStorage } from "@/features/storage/lib/local-object-storage";
 
 const temporaryDirectories: string[] = [];
@@ -34,6 +35,9 @@ describe("ensureCuratedDocumentsSeeded", () => {
     const documentRepository = createLocalDocumentRepository({ rootDirectory });
     const entityRepository = createLocalEntityRepository({ rootDirectory });
     const factRepository = createLocalFactRepository({ rootDirectory });
+    const parserArtifactRepository = createLocalParserArtifactRepository({
+      rootDirectory,
+    });
     const storage = createLocalObjectStorage({ rootDirectory: storageRoot });
 
     await ensureCuratedDocumentsSeeded({
@@ -41,6 +45,7 @@ describe("ensureCuratedDocumentsSeeded", () => {
       entityRepository,
       factRepository,
       orgId: "org_seed",
+      parserArtifactRepository,
       storage,
     });
     await ensureCuratedDocumentsSeeded({
@@ -48,12 +53,20 @@ describe("ensureCuratedDocumentsSeeded", () => {
       entityRepository,
       factRepository,
       orgId: "org_seed",
+      parserArtifactRepository,
       storage,
     });
 
     const documents = await documentRepository.listByOrgId("org_seed");
     const entities = await entityRepository.listByOrgId("org_seed");
     const facts = await factRepository.listByOrgId("org_seed");
+    const parserArtifacts = await Promise.all(
+      documents.map((document) =>
+        document.parserArtifactId === undefined
+          ? Promise.resolve(null)
+          : parserArtifactRepository.getById(document.parserArtifactId),
+      ),
+    );
     const salesDocument = documents.find(
       (document) => document.fileName === "10020Records.csv",
     );
@@ -74,10 +87,12 @@ describe("ensureCuratedDocumentsSeeded", () => {
       documents.every(
         (document) =>
           document.status === "extracted" &&
+          document.parserArtifactId !== undefined &&
           document.rawObject !== undefined &&
           document.checksumSha256 !== undefined,
       ),
     ).toBe(true);
+    expect(parserArtifacts.filter((artifact) => artifact !== null)).toHaveLength(2);
     expect(
       salesDocument &&
         (await storage.exists(salesDocument.rawObject?.key ?? "missing")),
@@ -123,6 +138,9 @@ describe("ensureCuratedDocumentsSeeded", () => {
     const documentRepository = createLocalDocumentRepository({ rootDirectory });
     const entityRepository = createLocalEntityRepository({ rootDirectory });
     const factRepository = createLocalFactRepository({ rootDirectory });
+    const parserArtifactRepository = createLocalParserArtifactRepository({
+      rootDirectory,
+    });
     const baseStorage = createLocalObjectStorage({ rootDirectory: storageRoot });
     let putObjectCount = 0;
     let releaseBlockedPutObject: (() => void) | undefined;
@@ -147,6 +165,7 @@ describe("ensureCuratedDocumentsSeeded", () => {
       entityRepository,
       factRepository,
       orgId: "org_seed_concurrent",
+      parserArtifactRepository,
       storage,
     });
     const secondRequest = ensureCuratedDocumentsSeeded({
@@ -154,6 +173,7 @@ describe("ensureCuratedDocumentsSeeded", () => {
       entityRepository,
       factRepository,
       orgId: "org_seed_concurrent",
+      parserArtifactRepository,
       storage,
     });
 

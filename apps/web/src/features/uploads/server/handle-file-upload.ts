@@ -9,6 +9,9 @@ import {
 } from "@/features/documents/domain/document-format";
 import { type SubmitTabularUploadToQueueInput } from "@/features/ingestion/services/submit-tabular-upload-to-queue";
 import { type ProcessedQueuedTabularUpload } from "@/features/ingestion/services/process-next-ingestion-job";
+import { shouldRetainUploadedSourceFiles } from "@/features/settings/domain/settings-preferences";
+import { type SettingsRepository } from "@/features/settings/repositories/settings-repository";
+import { getSettingsRecord } from "@/features/settings/server/settings-record-service";
 
 const fileUploadFormSchema = z.object({
   file: z.instanceof(File),
@@ -37,6 +40,7 @@ type FileUploadDependencies = Pick<
   | "queue"
   | "storage"
 > & {
+  settingsRepository?: SettingsRepository;
   submitTabularUpload: (
     input: SubmitTabularUploadToQueueInput,
   ) => Promise<QueuedUploadResult>;
@@ -63,6 +67,14 @@ export async function handleFileUpload(
     return routing;
   }
 
+  const settingsRecord = await getSettingsRecord(
+    dependencies.settingsRepository,
+    parsedForm.orgId,
+  );
+  const retainSourceFile = shouldRetainUploadedSourceFiles(
+    settingsRecord.preferences,
+  );
+
   const upload = await dependencies.submitTabularUpload({
     body,
     contentType: routing.detectedContentType,
@@ -72,6 +84,7 @@ export async function handleFileUpload(
     ingestionJobRepository: dependencies.ingestionJobRepository,
     orgId: parsedForm.orgId,
     queue: dependencies.queue,
+    retainSourceFile,
     storage: dependencies.storage,
   });
   const processedUpload = await dependencies.processQueuedUpload?.();

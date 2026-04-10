@@ -18,6 +18,7 @@ import { ensureCuratedDocumentsSeeded } from "@/features/documents/server/seed-c
 import { createLocalEntityRepository } from "@/features/entities/repositories/local-entity-repository";
 import { createCanonicalFactRecord } from "@/features/facts/domain/canonical-fact-record";
 import { createLocalFactRepository } from "@/features/facts/repositories/local-fact-repository";
+import { createLocalParserArtifactRepository } from "@/features/parsing/repositories/local-parser-artifact-repository";
 import { createLocalObjectStorage } from "@/features/storage/lib/local-object-storage";
 import { createCitation } from "@/features/trust/domain/citation";
 
@@ -63,12 +64,16 @@ describe("handleDocumentsListRequest", () => {
 
     const documentRepository = createLocalDocumentRepository({ rootDirectory });
     const factRepository = createLocalFactRepository({ rootDirectory });
+    const parserArtifactRepository = createLocalParserArtifactRepository({
+      rootDirectory,
+    });
 
     await ensureCuratedDocumentsSeeded({
       documentRepository,
       entityRepository: createLocalEntityRepository({ rootDirectory }),
       factRepository,
       orgId: "org_documents",
+      parserArtifactRepository,
       storage: createLocalObjectStorage({ rootDirectory: storageRoot }),
     });
 

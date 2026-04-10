@@ -61,8 +61,9 @@ describe("submitTabularUploadToQueue", () => {
     });
 
     expect(result.document.status).toBe("stored");
-    expect(result.document.checksumSha256).toBe(result.storageObject.sha256);
-    expect(result.document.sizeBytes).toBe(result.storageObject.sizeBytes);
+    expect(result.storageObject).toBeDefined();
+    expect(result.document.checksumSha256).toBe(result.storageObject!.sha256);
+    expect(result.document.sizeBytes).toBe(result.storageObject!.sizeBytes);
     expect(result.ingestionEvent.kind).toBe("upload.queued");
     expect(result.ingestionJob.status).toBe("queued");
     expect(result.isDuplicate).toBe(false);

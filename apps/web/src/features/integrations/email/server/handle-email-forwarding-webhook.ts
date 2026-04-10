@@ -10,6 +10,9 @@ import {
   UploadSizeExceededError,
 } from "@/features/documents/domain/document-format";
 import { type SubmitTabularUploadToQueueInput } from "@/features/ingestion/services/submit-tabular-upload-to-queue";
+import { shouldRetainUploadedSourceFiles } from "@/features/settings/domain/settings-preferences";
+import { type SettingsRepository } from "@/features/settings/repositories/settings-repository";
+import { getSettingsRecord } from "@/features/settings/server/settings-record-service";
 
 const emailAttachmentSchema = z.object({
   base64Body: z.string().min(1),
@@ -40,6 +43,7 @@ type EmailWebhookDependencies = Pick<
   | "queue"
   | "storage"
 > & {
+  settingsRepository?: SettingsRepository;
   submitTabularUpload: (
     input: SubmitTabularUploadToQueueInput,
   ) => Promise<QueuedEmailUploadResult>;
@@ -60,6 +64,13 @@ export async function handleEmailForwardingWebhook(
   }
 
   const payload = forwardedEmailWebhookSchema.parse(await request.json());
+  const settingsRecord = await getSettingsRecord(
+    dependencies.settingsRepository,
+    payload.orgId,
+  );
+  const retainSourceFile = shouldRetainUploadedSourceFiles(
+    settingsRecord.preferences,
+  );
   const acceptedUploads = [];
   const rejectedAttachments = [];
 
@@ -88,6 +99,7 @@ export async function handleEmailForwardingWebhook(
       ingestionJobRepository: dependencies.ingestionJobRepository,
       orgId: payload.orgId,
       queue: dependencies.queue,
+      retainSourceFile,
       storage: dependencies.storage,
     });
 

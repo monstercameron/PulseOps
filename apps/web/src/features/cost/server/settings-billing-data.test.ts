@@ -61,7 +61,7 @@ describe("settings billing data", () => {
     });
 
     expect(billing.planTitle).toBe("Growth plan");
-    expect(billing.planDescription).toContain("Flat monthly fee plus usage-based billing.");
+    expect(billing.planDescription).toContain("Platform access plus usage-based billing.");
     expect(billing.graphMetrics).toEqual({
       currentTotalCents: 15_140,
       flatFeeCents: 14_900,
@@ -72,7 +72,7 @@ describe("settings billing data", () => {
       {
         detail: "Monthly recurring",
         id: "flat_fee",
-        label: "Flat fee",
+        label: "Platform access",
         value: "$149.00",
       },
       {

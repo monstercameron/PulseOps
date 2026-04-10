@@ -524,4 +524,125 @@ describe("processNextIngestionJob", () => {
       status: "extracted",
     });
   });
+
+  it("purges the stored raw upload after processing when retention is disabled", async () => {
+    const rootDirectory = await mkdtemp(
+      path.join(os.tmpdir(), "bizopsaccelerator-process-purge-"),
+    );
+    temporaryDirectories.push(rootDirectory);
+
+    const storage = createLocalObjectStorage({
+      now: () => "2026-04-09T21:00:00.000Z",
+      rootDirectory: path.join(rootDirectory, "storage"),
+    });
+    const recordsRoot = path.join(rootDirectory, "records");
+    const chunkRepository = createLocalChunkRepository({
+      rootDirectory: recordsRoot,
+    });
+    const documentRepository = createLocalDocumentRepository({
+      rootDirectory: recordsRoot,
+    });
+    const entityRepository = createLocalEntityRepository({
+      rootDirectory: recordsRoot,
+    });
+    const factRepository = createLocalFactRepository({
+      rootDirectory: recordsRoot,
+    });
+    const ingestionEventRepository = createLocalIngestionEventRepository({
+      rootDirectory: recordsRoot,
+    });
+    const ingestionJobRepository = createLocalIngestionJobRepository({
+      rootDirectory: recordsRoot,
+    });
+    const parserArtifactRepository = createLocalParserArtifactRepository({
+      rootDirectory: recordsRoot,
+    });
+    const textParserArtifactRepository = createLocalTextParserArtifactRepository({
+      rootDirectory: recordsRoot,
+    });
+    const queue = createInMemoryIngestionQueue();
+    const ids = ["doc_623", "job_623"];
+
+    const submittedUpload = await submitTabularUploadToQueue({
+      body: Buffer.from(
+        "invoice_number,customer_name,due_date,amount_due\nINV-001,Acme Heating,2026-04-14,4200",
+        "utf8",
+      ),
+      documentRepository,
+      fileName: "customer-invoice-export.csv",
+      generateId: () => ids.shift() ?? "extra_id",
+      ingestionEventRepository,
+      ingestionJobRepository,
+      now: () => "2026-04-09T21:00:00.000Z",
+      orgId: "org_123",
+      queue,
+      retainSourceFile: false,
+      storage,
+    });
+
+    expect(submittedUpload.document.rawObject?.key).toBeDefined();
+    await expect(
+      storage.exists(submittedUpload.document.rawObject!.key),
+    ).resolves.toBe(true);
+
+    await processNextIngestionJob({
+      chunkRepository,
+      documentRepository,
+      embedder: createDeterministicTextEmbedder({
+        dimensions: 8,
+      }),
+      entityRepository,
+      factRepository,
+      generateId: () => "artifact_623",
+      ingestionJobRepository,
+      now: () => "2026-04-09T21:00:01.000Z",
+      parserArtifactRepository,
+      queue,
+      storage,
+      documentExtractionService: {
+        extract: async ({ document }) =>
+          createExtractionContract({
+            createdAt: "2026-04-09T21:00:01.000Z",
+            documentFamily: "customer-invoice",
+            documentId: document.id,
+            fields: [
+              {
+                canonicalFactTypeId: "invoice.amount.outstanding",
+                citations: [
+                  createCitation({
+                    confidenceScore: 0.96,
+                    documentFamily: "customer-invoice",
+                    documentId: document.id,
+                    locator: {
+                      column: "amount_due",
+                      row: 2,
+                      sheet: "Sheet1",
+                    },
+                    locatorType: "cell",
+                    sourceHash: "sha256:amount-due",
+                  }),
+                ],
+                confidenceScore: 0.96,
+                key: "sheet1.row_2.amount_outstanding",
+                label: "Amount outstanding",
+                value: 4200,
+              },
+            ],
+          }),
+      },
+      textParserArtifactRepository,
+    });
+
+    const persistedDocument = await documentRepository.getById("doc_623");
+
+    expect(persistedDocument).toMatchObject({
+      id: "doc_623",
+      retentionPolicyKey: "manual-upload-hot-30d-purge-source",
+      status: "extracted",
+    });
+    expect(persistedDocument?.rawObject).toBeUndefined();
+    await expect(
+      storage.exists(submittedUpload.document.rawObject!.key),
+    ).resolves.toBe(false);
+  });
 });

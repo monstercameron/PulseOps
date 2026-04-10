@@ -130,12 +130,12 @@ export function UploadFilesModal({
         {isSuccess ? (
           <div className="flex flex-col items-center gap-3 py-2 text-center">
             <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[rgba(34,197,94,.12)] text-[18px] font-bold text-green-400">
-              OK
+              {t("uploadModal.uploadedBadge", "OK")}
             </span>
             <p className="text-[13px] font-semibold text-foreground">{file?.name}</p>
             {resultDocumentId ? (
               <p className="text-[11px] text-muted">
-                Document ID:{" "}
+                {t("uploadModal.documentIdLabel", "Document ID")}:{" "}
                 <code className="rounded bg-surface-muted px-1 font-mono text-[10.5px]">
                   {resultDocumentId}
                 </code>

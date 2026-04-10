@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { type ProcessedQueuedTabularUpload } from "@/features/ingestion/services/process-next-ingestion-job";
+import { createDefaultSettingsRecord } from "@/features/settings/domain/settings-record";
+import { settingsPreferenceIds } from "@/features/settings/domain/settings-preferences";
 import { handleFileUpload } from "@/features/uploads/server/handle-file-upload";
 
 describe("handleFileUpload", () => {
@@ -82,6 +84,59 @@ describe("handleFileUpload", () => {
     );
 
     expect(response.status).toBe(200);
+  });
+
+  it("uses the workspace retention preference when submitting uploads", async () => {
+    const formData = new FormData();
+    const submitTabularUpload = vi.fn(async () => ({
+      document: { id: "doc_999" },
+      ingestionEvent: { id: "event_999" },
+      ingestionJob: { id: "job_999", status: "queued" },
+      isDuplicate: false,
+    }));
+    const settingsRecord = createDefaultSettingsRecord("org_123", "2026-04-10T12:00:00.000Z");
+
+    formData.set(
+      "file",
+      new File(["invoice_id,amount_due\nINV-001,4200"], "invoices.csv", {
+        type: "text/csv",
+      }),
+    );
+    formData.set("orgId", "org_123");
+
+    const response = await handleFileUpload(
+      new Request("http://localhost/api/ingest/upload", {
+        body: formData,
+        method: "POST",
+      }),
+      {
+        documentRepository: {} as never,
+        ingestionEventRepository: {} as never,
+        ingestionJobRepository: {} as never,
+        queue: {} as never,
+        settingsRepository: {
+          getByOrgId: vi.fn(async () => ({
+            ...settingsRecord,
+            preferences: settingsRecord.preferences.map((preference) =>
+              preference.id === settingsPreferenceIds.retainUploadedSourceFiles
+                ? { ...preference, enabled: false }
+                : preference,
+            ),
+          })),
+          put: vi.fn(),
+        },
+        storage: {} as never,
+        submitTabularUpload,
+      },
+    );
+
+    expect(response.status).toBe(200);
+    expect(submitTabularUpload).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orgId: "org_123",
+        retainSourceFile: false,
+      }),
+    );
   });
 
   it("rejects unsupported file extensions", async () => {

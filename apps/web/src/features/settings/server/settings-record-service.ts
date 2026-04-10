@@ -27,6 +27,7 @@ import {
   fallbackSettingsPageData,
   type SettingsPageData,
 } from "@/features/settings/constants/settings-page-content";
+import { normalizeSettingsPreferenceId } from "@/features/settings/domain/settings-preferences";
 import { type OrganizationRepository } from "@/features/settings/repositories/organization-repository";
 import { type SettingsRepository } from "@/features/settings/repositories/settings-repository";
 
@@ -55,11 +56,17 @@ export const settingsNotificationGroupsInputSchema = z.array(
 ).readonly();
 
 export const settingsPreferenceItemsInputSchema = z.array(
-  z.object({
-    description: z.string().min(1),
-    enabled: z.boolean(),
-    title: z.string().min(1),
-  }),
+  z
+    .object({
+      description: z.string().min(1),
+      enabled: z.boolean(),
+      id: z.string().min(1).optional(),
+      title: z.string().min(1),
+    })
+    .transform((preference) => ({
+      ...preference,
+      id: normalizeSettingsPreferenceId(preference),
+    })),
 ).readonly();
 
 export const settingsInviteInputSchema = z.object({
@@ -75,7 +82,7 @@ export async function getSettingsRecord(
   const persistedSettings = await settingsRepository?.getByOrgId(orgId);
 
   if (persistedSettings !== null && persistedSettings !== undefined) {
-    return persistedSettings;
+    return createSettingsRecord(persistedSettings);
   }
 
   return createDefaultSettingsRecord(orgId);

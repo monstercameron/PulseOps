@@ -62,4 +62,25 @@ describe("local object storage", () => {
       (await storage.getObject(storedObject.key)).toString("utf8"),
     ).toContain("INV-001");
   });
+
+  it("deletes stored objects", async () => {
+    const rootDirectory = await mkdtemp(
+      path.join(os.tmpdir(), "bizopsaccelerator-storage-"),
+    );
+    temporaryDirectories.push(rootDirectory);
+
+    const storage = createLocalObjectStorage({
+      now: () => "2026-04-09T16:00:00.000Z",
+      rootDirectory,
+    });
+
+    const storedObject = await storage.putObject({
+      body: Buffer.from("invoice_id,amount_due\nINV-001,4200", "utf8"),
+      key: "orgs/org-1/documents/doc-1/2026/04/invoices.csv",
+    });
+
+    await storage.deleteObject(storedObject.key);
+
+    await expect(storage.exists(storedObject.key)).resolves.toBe(false);
+  });
 });

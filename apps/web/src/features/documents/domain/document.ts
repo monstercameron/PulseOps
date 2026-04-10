@@ -98,6 +98,17 @@ export function attachStoredObjectToDocument(
   });
 }
 
+export function detachStoredObjectFromDocument(
+  document: DocumentRecord,
+  updatedAt = new Date().toISOString(),
+): DocumentRecord {
+  return documentSchema.parse({
+    ...document,
+    rawObject: undefined,
+    updatedAt,
+  });
+}
+
 export function markDocumentParsed(
   document: DocumentRecord,
   parserArtifactId: string,

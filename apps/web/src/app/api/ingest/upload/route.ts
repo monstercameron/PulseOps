@@ -8,7 +8,7 @@ export const POST = createLoggedRouteHandler({
   feature: "uploads",
   handler: async (request, context) =>
     handleFileUpload(request, {
-    ...localIngestionRuntime,
+      ...localIngestionRuntime,
       processQueuedUpload: () =>
         processNextIngestionJob({
           ...localIngestionRuntime,

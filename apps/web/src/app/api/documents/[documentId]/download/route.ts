@@ -1,6 +1,6 @@
 import { DEFAULT_WORKSPACE } from "@/features/foundation/domain/default-workspace";
 import { createLoggedRouteHandler } from "@/features/observability/lib/route-logging";
-import { handleDocumentDetailRequest } from "@/features/documents/server/handle-document-detail-request";
+import { handleDocumentDownloadRequest } from "@/features/documents/server/handle-document-download-request";
 import { ensureCuratedDocumentsSeeded } from "@/features/documents/server/seed-curated-documents";
 import { localIngestionRuntime } from "@/features/runtime/local-ingestion-runtime";
 
@@ -20,10 +20,10 @@ export const GET = createLoggedRouteHandler({
       });
     }
 
-    return handleDocumentDetailRequest(request, {
+    return handleDocumentDownloadRequest(request, {
       documentRepository: localIngestionRuntime.documentRepository,
-      factRepository: localIngestionRuntime.factRepository,
+      storage: localIngestionRuntime.storage,
     });
   },
-  route: "/api/documents/[documentId]",
+  route: "/api/documents/[documentId]/download",
 });

@@ -1,3 +1,5 @@
+import { buildDefaultSettingsPreferences } from "@/features/settings/domain/settings-preferences";
+
 export type SettingsTabId =
   | "organization"
   | "team"
@@ -74,6 +76,7 @@ export type SettingsPageData = Readonly<{
   preferences: readonly {
     description: string;
     enabled: boolean;
+    id: string;
     title: string;
   }[];
   security: Readonly<{
@@ -150,14 +153,14 @@ export const fallbackSettingsPageData: SettingsPageData = {
     },
     paymentMethods: [],
     planDescription:
-      "Flat monthly fee plus usage-based billing. Current cycle Apr 9, 2026 to May 9, 2026.",
+      "Platform access plus usage-based billing. Current cycle Apr 9, 2026 to May 9, 2026.",
     planTitle: "Growth plan",
     usageCapCents: null,
     usage: [
       {
         detail: "Monthly recurring",
         id: "flat_fee",
-        label: "Flat fee",
+        label: "Platform access",
         value: "$149.00",
       },
       {
@@ -283,23 +286,7 @@ export const fallbackSettingsPageData: SettingsPageData = {
     revenueModel: "Job-based",
     teamSize: "5–10 people",
   },
-  preferences: [
-    {
-      title: "Compact dashboard density",
-      description: "Fit more queue and signal cards on a single desktop screen.",
-      enabled: true,
-    },
-    {
-      title: "Evidence-first recommendation view",
-      description: "Open recommendation cards with citations expanded by default.",
-      enabled: true,
-    },
-    {
-      title: "Experimental pack drafts",
-      description: "Show draft decision-pack types before they are fully productionized.",
-      enabled: false,
-    },
-  ],
+  preferences: buildDefaultSettingsPreferences(),
   security: {
     apiKeys: [
       {

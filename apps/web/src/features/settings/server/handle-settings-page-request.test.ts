@@ -12,6 +12,7 @@ import { createLlmUsageEvent } from "@/features/cost/domain/llm-usage-event";
 import { createLocalBillingAccountRepository } from "@/features/cost/repositories/local-billing-account-repository";
 import { createLocalBillingPaymentMethodRepository } from "@/features/cost/repositories/local-billing-payment-method-repository";
 import { createLocalLlmUsageEventRepository } from "@/features/cost/repositories/local-llm-usage-event-repository";
+import { settingsPreferenceIds } from "@/features/settings/domain/settings-preferences";
 import { handleSettingsPageRequest } from "@/features/settings/server/handle-settings-page-request";
 import { createLocalSettingsRepository } from "@/features/settings/repositories/local-settings-repository";
 import { createDefaultSettingsRecord } from "@/features/settings/domain/settings-record";
@@ -74,6 +75,7 @@ describe("handleSettingsPageRequest", () => {
         {
           description: "Persisted preference.",
           enabled: false,
+          id: settingsPreferenceIds.compactDashboardDensity,
           title: "Compact dashboard density",
         },
       ],
@@ -102,20 +104,20 @@ describe("handleSettingsPageRequest", () => {
       organization: expect.objectContaining({
         name: "Precision Plumbing Co.",
       }),
-      preferences: [
+      preferences: expect.arrayContaining([
         expect.objectContaining({
           enabled: false,
           title: "Compact dashboard density",
         }),
-      ],
+      ]),
       team: {
-        members: [
+        members: expect.arrayContaining([
           expect.objectContaining({
             accessSummary: "Setup, Ops, Reports",
             email: "admin@example.com",
             role: "Admin",
           }),
-        ],
+        ]),
       },
     });
   });
