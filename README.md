@@ -1,48 +1,111 @@
 # PulseOps
 
-PulseOps is a local prototype for a field-service decision-support product.
+PulseOps is a prototype for a simpler kind of operations software for field-service businesses.
 
-The current MVP is intentionally narrow:
+Instead of asking an owner or operator to live inside dashboards all day, PulseOps is built around a narrower promise:
 
-- ICP: field-service and local service businesses
-- primary intake path: manual file upload
-- primary output: a weekly cash and margin brief
-- current proof path: upload data -> parse -> normalize/extract facts -> review evidence -> generate decision-pack workflow outputs
+- upload the files you already have
+- reconstruct what matters
+- show the facts with evidence
+- help you act on cash and margin issues faster
 
-This repo contains the working Next.js app, local development tooling, product docs, design prototypes, and sample business documents used to exercise the pipeline.
+The current MVP is focused on one business type, one intake path, and one decision rhythm:
 
-## Current Product Reality
+- field-service and local service businesses
+- manual file upload first
+- a weekly cash and margin brief first
 
-What works in the prototype today:
+## What PulseOps Is Trying To Do
 
-- public marketing site and blog
-- authenticated workspace surfaces for dashboard, pipeline, explorer, packs, ask, and settings
-- manual upload flows for CSV, XLSX, and PDF
-- parser and extraction paths that materialize document facts with evidence metadata
-- explorer and document review surfaces with key findings, citations, and source review cues
-- prototype decision-pack generation and recommendation feedback flows
-- local file-backed development mode, plus optional Postgres and pgvector support
+Most small operators do not need another generic analytics tool.
+They need a faster way to answer questions like:
 
-What this is not yet:
+- Where is cash getting stuck?
+- Which invoices or bills deserve attention this week?
+- Which jobs or service lines are quietly dragging margin down?
+- What should I review before the week gets away from me?
 
-- a production-ready multi-tenant SaaS deployment
-- a broad connector platform
-- a fully validated analytics engine for every downstream recommendation
+PulseOps is being shaped as an evidence-backed decision layer for those questions.
 
-The architecture docs in `docs/` are a mix of current implementation notes and target-state direction. Default to the code and the changelog when there is any conflict.
+The product direction is intentionally constrained:
 
-## Stack
+- not a broad BI platform
+- not an open-ended "ask anything" toy
+- not a connector-everything product on day one
 
-- Next.js 16
-- React 19
-- TypeScript
-- Vitest
-- Playwright
-- OpenAI SDK
-- local JSON/file-backed repositories for fast iteration
-- optional PostgreSQL 16 + pgvector for local database-backed testing
+The goal is operational clarity, not feature sprawl.
 
-## Quick Start
+## What You Can See In The Prototype Today
+
+The current repo includes a working product prototype with:
+
+- a public marketing site and blog
+- an authenticated workspace with dashboard, pipeline, explorer, packs, ask, and settings surfaces
+- manual upload flows for CSV, XLSX, and PDF files
+- document parsing and extraction flows
+- explorer and document-review screens that surface findings, evidence, and citations
+- a prototype decision-pack workflow for weekly cash and margin review
+
+This is still a prototype, but it already shows the intended user experience:
+
+1. Upload a business file
+2. Parse and classify it
+3. Extract facts with source evidence
+4. Review the document in plain business language
+5. Use those records inside downstream workflow surfaces
+
+## Trust Matters Here
+
+PulseOps is not being built as a black-box recommendation engine.
+
+The product direction in this repo is centered on trust:
+
+- facts should be reviewable
+- evidence should be visible
+- confidence should be explicit
+- operators should be able to trace a claim back to a real source
+
+That is why the prototype leans so heavily on:
+
+- document review
+- citations
+- readable fact presentation
+- evidence summaries
+
+## Why This Repo Exists
+
+This repository is the working home for:
+
+- the app prototype
+- local development tooling
+- product and architecture notes
+- design experiments
+- sample business documents and testing fixtures
+
+It is both a product repo and a working lab for narrowing the MVP.
+
+If you are looking for the current implementation truth, start with:
+
+- [`changelog.md`](./changelog.md)
+- [`docs/architecture.md`](./docs/architecture.md)
+- [`docs/manual-testing-workflows.md`](./docs/manual-testing-workflows.md)
+
+## A Few Technical Notes
+
+The product framing is business-first, but the implementation has a few deliberate choices:
+
+- the app is built with Next.js, React, and TypeScript
+- local development defaults to file-backed storage so the prototype is easy to run
+- optional PostgreSQL + pgvector support is included for local database-backed testing
+- the codebase is organized feature-first under [`apps/web/src/features`](./apps/web/src/features)
+
+The current pipeline direction is:
+
+`raw upload -> parsed artifact -> extracted facts -> review surface -> decision workflow`
+
+That direction matters more than broad infrastructure at this stage.
+
+## Running It Locally
 
 1. Install dependencies:
 
@@ -50,7 +113,7 @@ The architecture docs in `docs/` are a mix of current implementation notes and t
 npm install
 ```
 
-2. Create a local env file from the template:
+2. Create a local env file:
 
 ```bash
 copy .env.example .env
@@ -62,101 +125,37 @@ copy .env.example .env
 npm run dev
 ```
 
-4. Open the app at `http://localhost:3000`.
+4. Open `http://localhost:3000`
 
-Notes:
-
-- Local development defaults to file-backed repositories, so Postgres is not required for basic app usage.
-- `OPENAI_API_KEY` is optional for general local UI work, but required for the OpenAI-backed ask and extraction paths.
-
-## Useful Commands
-
-From the repo root:
+Useful commands:
 
 ```bash
 npm run dev
-npm run build
 npm run check
 npm run test
-npm run typecheck
-npm run lint
+npm run build
 ```
 
-App-only commands:
-
-```bash
-npm run dev --workspace web
-npm run test --workspace web
-npm run typecheck --workspace web
-npm run test:e2e --workspace web
-```
-
-## Environment
-
-The default env template is in [`.env.example`](./.env.example).
-
-Common values:
-
-- `DATABASE_URL`: Postgres connection string for database-backed runs
-- `OPENAI_API_KEY`: enables OpenAI-backed ask and extraction services
-- `BIZOPS_OPENAI_ASK_MODEL`: ask model override
-- `BIZOPS_OPENAI_EXTRACTION_MODEL`: extraction model override
-- `BIZOPS_AUTH_SECRET`: local auth session signing secret
-- `BIZOPS_STORAGE_ROOT`: raw file/object storage root for local mode
-- `BIZOPS_RECORDS_ROOT`: local record store root for file-backed repositories
-
-Do not commit `.env`.
-
-## Optional Local Postgres
-
-If you want the local database-backed setup, use the Windows scripts already included in the repo:
-
-```bash
-npm run db:install:vector
-npm run db:init
-npm run db:check
-npm run db:test
-```
-
-Reference: [`docs/local-postgres.md`](./docs/local-postgres.md)
+If you want the optional local Postgres path, see [`docs/local-postgres.md`](./docs/local-postgres.md).
 
 ## Repo Layout
 
-- [`apps/web`](./apps/web): main Next.js app
-- [`assets/docs`](./assets/docs): sample business documents and testing fixtures
+- [`apps/web`](./apps/web): main Next.js application
+- [`assets/docs`](./assets/docs): sample source documents and testing fixtures
 - [`design`](./design): static design prototypes
-- [`docs`](./docs): architecture notes, QA workflows, and implementation references
-- [`infra/sql`](./infra/sql): local Postgres and verification SQL
+- [`docs`](./docs): architecture notes, QA workflows, and reference material
+- [`infra/sql`](./infra/sql): local SQL setup and verification files
 - [`scripts`](./scripts): setup, seed, and research scripts
 
-Within the app, code is organized feature-first under [`apps/web/src/features`](./apps/web/src/features).
+## Current Scope Reminder
 
-## Recommended Read Order
+The repo is intentionally not trying to solve every workflow yet.
 
-- [`changelog.md`](./changelog.md)
-- [`docs/architecture.md`](./docs/architecture.md)
-- [`docs/local-postgres.md`](./docs/local-postgres.md)
-- [`docs/manual-testing-workflows.md`](./docs/manual-testing-workflows.md)
-- [`docs/manual-playwright-document-fact-review-script.md`](./docs/manual-playwright-document-fact-review-script.md)
+The current bar is smaller and sharper:
 
-## Current Testing Focus
+- one ICP first
+- one upload path first
+- one review workflow first
+- one weekly brief first
 
-The current QA focus is:
-
-- reliable manual upload for CSV and XLSX, with PDF support exercised as a secondary path
-- readable document review in Explorer
-- grounded fact labels, values, evidence, and excerpts
-- pack lifecycle workflow validation
-
-Reference sample documents:
-
-- `assets/docs/10020Records.csv`
-- `assets/docs/supermarket_sales - Sheet1.csv`
-- `assets/docs/weekly_cash_margin_alert.pdf`
-
-## Development Notes
-
-- Keep MVP scope tight: field-service first, weekly cash and margin brief first.
-- Prefer explicit contracts, runtime validation, and evidence-backed outputs.
-- Keep domain logic under `src/features` testable and deterministic where practical.
-- Treat docs as implementation-adjacent artifacts; update them when behavior changes.
+That constraint is part of the product strategy, not a missing feature.
