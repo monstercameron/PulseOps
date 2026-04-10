@@ -35,6 +35,7 @@ import {
 } from "@/features/settings/lib/settings-page-state";
 import { useUiI18n } from "@/features/i18n/components/ui-i18n-provider";
 import {
+  persistAppTheme,
   type AppTheme,
 } from "@/features/shell/lib/theme-preference";
 
@@ -545,8 +546,7 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
   }
 
   function applyTheme(themeValue: AppTheme) {
-    document.documentElement.setAttribute("data-theme", themeValue);
-    window.localStorage.setItem("pulseops-theme", themeValue);
+    persistAppTheme(themeValue);
     setTheme(themeValue);
   }
 
@@ -1018,7 +1018,9 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
               <CatalogCard className="overflow-hidden">
                 <div className="flex items-center justify-between gap-3 border-b border-border px-[18px] py-[13px]">
                   <div className="flex items-center gap-2">
-                    <h3 className="text-[13px] font-semibold tracking-[-0.015em] text-foreground">Team members</h3>
+                    <h3 className="text-[13px] font-semibold tracking-[-0.015em] text-foreground">
+                      {messages.settingsPage.actionTitles.teamMembers}
+                    </h3>
                     <span className="rounded-full bg-white/[0.06] px-2 py-[2px] text-[10.5px] font-bold text-muted">
                       {pageData.team.members.length} members
                     </span>
@@ -1072,8 +1074,12 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
               <CatalogCard className="overflow-hidden">
                 <div className="flex items-start justify-between gap-3 border-b border-border px-[18px] py-[13px]">
                   <div>
-                    <h3 className="text-[13px] font-semibold tracking-[-0.015em] text-foreground">Role permissions</h3>
-                    <p className="mt-[2px] text-[11.5px] leading-[1.4] text-muted">Defines what each role can see and do in your workspace.</p>
+                    <h3 className="text-[13px] font-semibold tracking-[-0.015em] text-foreground">
+                      {messages.settingsPage.actionTitles.rolePermissions}
+                    </h3>
+                    <p className="mt-[2px] text-[11.5px] leading-[1.4] text-muted">
+                      {messages.settingsPage.actionDescriptions.rolePermissions}
+                    </p>
                   </div>
                 </div>
                 <div className="overflow-x-auto">
@@ -1127,8 +1133,12 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
           {activeTab === "integrations" ? (
             <CatalogCard className="overflow-hidden">
               <div className="border-b border-border px-[18px] py-[13px]">
-                <h3 className="text-[13px] font-semibold tracking-[-0.015em] text-foreground">Connected sources</h3>
-                <p className="mt-[2px] text-[11.5px] leading-[1.4] text-muted">Connect your business systems to feed the ingestion pipeline.</p>
+                  <h3 className="text-[13px] font-semibold tracking-[-0.015em] text-foreground">
+                    {messages.settingsPage.actionTitles.connectedSources}
+                  </h3>
+                  <p className="mt-[2px] text-[11.5px] leading-[1.4] text-muted">
+                    {messages.settingsPage.actionDescriptions.connectedSources}
+                  </p>
               </div>
               {pageData.integrations.map((integration) => (
                 <IntegrationListItem
@@ -1155,8 +1165,12 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
             <div className="space-y-5">
               <CatalogCard className="overflow-hidden">
                 <div className="border-b border-border px-[18px] py-[13px]">
-                  <h3 className="text-[13px] font-semibold tracking-[-0.015em] text-foreground">Notification preferences</h3>
-                  <p className="mt-[2px] text-[11.5px] leading-[1.4] text-muted">Choose how and when PulseOps contacts you. Operator role or above required.</p>
+                  <h3 className="text-[13px] font-semibold tracking-[-0.015em] text-foreground">
+                    {messages.settingsPage.actionTitles.notificationPreferences}
+                  </h3>
+                  <p className="mt-[2px] text-[11.5px] leading-[1.4] text-muted">
+                    {messages.settingsPage.actionDescriptions.notificationPreferences}
+                  </p>
                 </div>
                 <div className="px-[18px] pb-1">
                   {notificationGroups.map((group) => (
@@ -1193,7 +1207,7 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
           {activeTab === "security" ? (
             <div className="space-y-5">
               <PreferencePanel
-                description="Authentication and access-control settings for the workspace."
+                description={messages.settingsPage.actionDescriptions.authentication}
                 title="Authentication"
               >
                 <div className="space-y-3">
@@ -1297,8 +1311,12 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
               </div>
               <CatalogCard className="overflow-hidden">
                 <div className="border-b border-border px-[18px] py-[13px]">
-                  <h3 className="text-[13px] font-semibold tracking-[-0.015em] text-foreground">Usage this billing period</h3>
-                  <p className="mt-[2px] text-[11.5px] leading-[1.4] text-muted">Current cycle across the workspace.</p>
+                  <h3 className="text-[13px] font-semibold tracking-[-0.015em] text-foreground">
+                    {messages.settingsPage.actionTitles.currentUsage}
+                  </h3>
+                  <p className="mt-[2px] text-[11.5px] leading-[1.4] text-muted">
+                    {messages.settingsPage.actionDescriptions.currentCycle}
+                  </p>
                 </div>
                 <div className="grid gap-[18px] p-[18px] md:grid-cols-2">
                   <BillingUsageStatCard usage={flatFeeUsage} />
@@ -1445,7 +1463,7 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
           {activeTab === "preferences" ? (
             <div className="space-y-5">
               <PreferencePanel
-                description="Workspace-level display and workflow defaults."
+                description={messages.settingsPage.actionDescriptions.preferences}
                 title="Preferences"
               >
                 {preferenceItems.map((preference) => (
@@ -1487,7 +1505,7 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
                       onClick={() => applyTheme("dark")}
                       type="button"
                     >
-                      Dark
+                      {messages.settingsPage.appearance.dark}
                     </button>
                     <button
                       className={[
@@ -1499,7 +1517,7 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
                       onClick={() => applyTheme("light")}
                       type="button"
                     >
-                      Light
+                      {messages.settingsPage.appearance.light}
                     </button>
                   </div>
                 </div>
@@ -1513,7 +1531,7 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
       {activeDialog === "invite" ? (
         <CatalogModalOverlay>
           <DialogFrame
-            description={settingsPageLabels.dialogs.inviteDescription}
+            description={messages.settingsPage.labels.dialogs.inviteDescription}
             footer={
               <>
                 <CatalogButton onClick={handleInviteSubmit} variant="primary">
@@ -1531,28 +1549,28 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
               </>
             }
             onClose={() => setActiveDialog(null)}
-            title={settingsPageLabels.dialogs.inviteTitle}
+            title={messages.settingsPage.labels.dialogs.inviteTitle}
           >
-            <FieldGroup label="Name">
+            <FieldGroup label={messages.settingsPage.dialogs.invite.name}>
               <TextField
                 onChange={(value) =>
                   setInviteDraft((current) => ({ ...current, name: value }))
                 }
-                placeholder="Jamie Reynolds"
+                placeholder={messages.settingsPage.placeholders.name}
                 value={inviteDraft.name}
               />
             </FieldGroup>
-            <FieldGroup label="Email">
+            <FieldGroup label={messages.settingsPage.dialogs.invite.email}>
               <TextField
                 onChange={(value) =>
                   setInviteDraft((current) => ({ ...current, email: value }))
                 }
-                placeholder="jamie@browardhvac.com"
+                placeholder={messages.settingsPage.placeholders.email}
                 type="email"
                 value={inviteDraft.email}
               />
             </FieldGroup>
-            <FieldGroup label="Role">
+            <FieldGroup label={messages.settingsPage.dialogs.invite.role}>
               <SelectField
                 onChange={(value) =>
                   setInviteDraft((current) => ({
@@ -1560,7 +1578,7 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
                     roleLabel: value as InviteRoleLabel,
                   }))
                 }
-                options={INVITE_ROLE_OPTIONS}
+                options={inviteRoleOptions}
                 value={inviteDraft.roleLabel}
               />
             </FieldGroup>

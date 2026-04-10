@@ -13,6 +13,7 @@ import {
 } from "@/features/i18n/lib/locale";
 import {
   resolveTranslatedBranch,
+  resolveTranslatedValue,
   translateMessage,
 } from "@/features/i18n/lib/messages";
 import { localIngestionRuntime } from "@/features/runtime/local-ingestion-runtime";
@@ -57,9 +58,10 @@ async function loadUiMessages(locale: SupportedUiLocale): Promise<UiMessages> {
     namespace: UI_TRANSLATION_NAMESPACE,
     orgId: null,
   });
-  const messages =
-    (translationBundle?.messages as UiMessages | undefined) ??
-    defaultUiTranslationBundles[locale];
+  const messages = resolveTranslatedValue(
+    defaultUiTranslationBundles[locale],
+    translationBundle?.messages,
+  );
 
   serverUiMessagesCache.set(locale, messages);
 

@@ -1,32 +1,59 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { LocaleSwitcher } from "@/features/i18n/components/locale-switcher";
-import { toggleAppTheme, type AppTheme } from "@/features/shell/lib/theme-preference";
+import {
+  persistAppTheme,
+  toggleAppTheme,
+  type AppTheme,
+} from "@/features/shell/lib/theme-preference";
 
 export function TopBarControls() {
-  const [theme, setTheme] = useState<AppTheme>(() => {
-    if (typeof window === "undefined") return "dark";
-    return document.documentElement.getAttribute("data-theme") === "light" ? "light" : "dark";
-  });
+  const [theme, setTheme] = useState<AppTheme | null>(null);
+
+  useEffect(() => {
+    setTheme(
+      document.documentElement.getAttribute("data-theme") === "light"
+        ? "light"
+        : "dark",
+    );
+  }, []);
 
   function handleThemeToggle() {
+    if (theme === null) {
+      return;
+    }
+
     const next = toggleAppTheme(theme);
-    document.documentElement.setAttribute("data-theme", next);
-    window.localStorage.setItem("pulseops-theme", next);
+    persistAppTheme(next);
     setTheme(next);
   }
+
+  const themeToggleLabel =
+    theme === null
+      ? "Toggle theme"
+      : theme === "dark"
+        ? "Switch to light mode"
+        : "Switch to dark mode";
 
   return (
     <div className="flex shrink-0 items-center gap-2">
       <button
-        aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+        aria-label={themeToggleLabel}
         className="flex h-[26px] w-[26px] items-center justify-center rounded-[6px] border border-border-strong bg-surface-subtle text-muted transition hover:bg-surface-muted hover:text-foreground active:scale-[.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         onClick={handleThemeToggle}
-        title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+        title={themeToggleLabel}
         type="button"
       >
-        {theme === "dark" ? (
+        {theme === null ? (
+          <svg fill="none" height="14" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" width="14">
+            <circle cx="12" cy="12" r="4" />
+            <path d="M12 2v2" />
+            <path d="M12 20v2" />
+            <path d="M4.93 4.93l1.41 1.41" />
+            <path d="M17.66 17.66l1.41 1.41" />
+          </svg>
+        ) : theme === "dark" ? (
           <svg fill="none" height="14" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" width="14">
             <circle cx="12" cy="12" r="5" />
             <line x1="12" x2="12" y1="1" y2="3" />

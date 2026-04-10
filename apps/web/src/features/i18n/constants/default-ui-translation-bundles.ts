@@ -1151,6 +1151,29 @@ const defaultUiMessagesEnUs = {
   },
 } as const;
 
+const normalizedDefaultUiMessagesEnUs = {
+  ...defaultUiMessagesEnUs,
+  marketing: {
+    about: aboutPageContent,
+    blog: blogPageContent,
+    careers: careersPageContent,
+    contact: contactPageContent,
+    help: helpPageContent,
+    home: homePageContent,
+    login: loginPageContent,
+    press: pressPageContent,
+    privacy: privacyPageContent,
+    shell: {
+      content: marketingShellContent,
+      footerGroups: marketingFooterGroups,
+      navigationLinks: marketingNavigationLinks,
+    },
+    shared: defaultUiMessagesEnUs.marketing.shared,
+    signup: signupPageContent,
+    terms: termsPageContent,
+  },
+} as const;
+
 type WidenUiMessages<T> =
   T extends string ? string
   : T extends number ? number
@@ -1160,12 +1183,12 @@ type WidenUiMessages<T> =
     ? { readonly [Key in keyof T]: WidenUiMessages<T[Key]> }
     : T;
 
-export type UiMessages = WidenUiMessages<typeof defaultUiMessagesEnUs>;
+export type UiMessages = WidenUiMessages<typeof normalizedDefaultUiMessagesEnUs>;
 
 const defaultUiMessagesEs: UiMessages = {
-  ...defaultUiMessagesEnUs,
+  ...normalizedDefaultUiMessagesEnUs,
   appShell: {
-    ...defaultUiMessagesEnUs.appShell,
+    ...normalizedDefaultUiMessagesEnUs.appShell,
     localeLabel: "Idioma",
     mobileNavigationAriaLabel: "Navegacion movil",
     navItems: {
@@ -1206,7 +1229,7 @@ const defaultUiMessagesEs: UiMessages = {
     workspaceSwitcherLabel: "Espacio de trabajo",
   },
   askPage: {
-    ...defaultUiMessagesEnUs.askPage,
+    ...normalizedDefaultUiMessagesEnUs.askPage,
     actions: {
       ask: "Preguntar con evidencia",
       history: "Historial guardado de hilos",
@@ -2401,7 +2424,7 @@ const defaultUiMessagesEs: UiMessages = {
     },
   },
   packsPage: {
-    ...defaultUiMessagesEnUs.packsPage,
+    ...normalizedDefaultUiMessagesEnUs.packsPage,
     actions: {
       export: "Exportar PDF",
       exporting: "Exportando...",
@@ -2454,7 +2477,7 @@ const defaultUiMessagesEs: UiMessages = {
     sourceDataHeading: "Datos fuente",
   },
   pipelinePage: {
-    ...defaultUiMessagesEnUs.pipelinePage,
+    ...normalizedDefaultUiMessagesEnUs.pipelinePage,
     dismissAction: "Descartar alerta",
     labels: {
       actions: {
@@ -2506,7 +2529,7 @@ const defaultUiMessagesEs: UiMessages = {
       "Los diagnosticos del pipeline estan planeados, pero la orquestacion de ejecucion de prueba todavia no esta implementada.",
   },
   settingsPage: {
-    ...defaultUiMessagesEnUs.settingsPage,
+    ...normalizedDefaultUiMessagesEnUs.settingsPage,
     actions: {
       reset: "Restablecer",
       saveProfile: "Guardar perfil",
@@ -2637,8 +2660,8 @@ const defaultUiMessagesEs: UiMessages = {
 const defaultUiMessagesByLocale = {
   "es-ES": defaultUiMessagesEs,
   "es-MX": defaultUiMessagesEs,
-  "en-GB": defaultUiMessagesEnUs,
-  "en-US": defaultUiMessagesEnUs,
+  "en-GB": normalizedDefaultUiMessagesEnUs,
+  "en-US": normalizedDefaultUiMessagesEnUs,
 } satisfies Record<SupportedUiLocale, UiMessages>;
 
 export const defaultUiTranslationBundles = Object.fromEntries(
