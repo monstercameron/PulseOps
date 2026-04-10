@@ -856,8 +856,8 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
 
       <div className="min-h-0 flex-1 overflow-y-auto px-[22px] py-[18px] pb-10">
         <div className="flex items-start gap-5">
-        <aside className="w-[172px] shrink-0 pt-[2px]">
-          <div className="sticky top-0 flex flex-col gap-[2px]">
+        <aside className="sticky top-0 w-[172px] shrink-0 pt-[2px]">
+          <div className="flex flex-col gap-[2px]">
             {pageData.tabs.map((tab) => (
               <SettingsTabButton
                 key={tab.id}
