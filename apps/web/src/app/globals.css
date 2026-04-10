@@ -1,0 +1,84 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+:root {
+  --background: #f2f5f9;
+  --foreground: #142235;
+  --card: #ffffff;
+  --muted: #5a7291;
+  --foreground-soft: #31445b;
+  --border: rgba(20, 34, 53, 0.08);
+  --border-strong: rgba(20, 34, 53, 0.16);
+  --accent: #00a98e;
+  --accent-strong: #008f78;
+  --accent-dim: rgba(0, 169, 142, 0.1);
+  --accent-glow: rgba(0, 169, 142, 0.2);
+  --surface-subtle: #f4f7fb;
+  --surface-muted: #e8edf4;
+  --surface-strong: #ffffff;
+  --overlay: rgba(20, 34, 53, 0.38);
+  --danger: #dc2626;
+}
+
+[data-theme="dark"] {
+  --background: #090f17;
+  --foreground: #dce4ef;
+  --card: #0d1824;
+  --muted: #607592;
+  --foreground-soft: rgba(220, 228, 239, 0.8);
+  --border: rgba(255, 255, 255, 0.065);
+  --border-strong: rgba(255, 255, 255, 0.13);
+  --accent: #00c9a7;
+  --accent-strong: #00a98e;
+  --accent-dim: rgba(0, 201, 167, 0.11);
+  --accent-glow: rgba(0, 201, 167, 0.18);
+  --surface-subtle: #111f30;
+  --surface-muted: #172843;
+  --surface-strong: #0d1824;
+  --overlay: rgba(9, 15, 23, 0.72);
+  --danger: #ef4444;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-muted: var(--muted);
+  --color-foreground-soft: var(--foreground-soft);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-dim: var(--accent-dim);
+  --color-accent-glow: var(--accent-glow);
+  --color-surface-subtle: var(--surface-subtle);
+  --color-surface-muted: var(--surface-muted);
+  --color-surface-strong: var(--surface-strong);
+  --color-overlay: var(--overlay);
+  --color-danger: var(--danger);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-geist-sans), sans-serif;
+    transition: background 0.2s, color 0.2s;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--accent) 28%, var(--background));
+  }
+}
