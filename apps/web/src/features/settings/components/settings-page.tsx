@@ -1,0 +1,1117 @@
+"use client";
+
+import React, { useState } from "react";
+
+import { type OrganizationAccountRole } from "@/features/accounts/domain/organization-account";
+import {
+  CatalogModalOverlay,
+  PlaceholderActionDialog,
+} from "@/features/catalog/components/catalog-dialogs";
+import { CatalogButton, CatalogCard } from "@/features/catalog/components/catalog-primitives";
+import {
+  ApiKeyRow,
+  DialogFrame,
+  FieldGroup,
+  IntegrationListItem,
+  PillGroup,
+  PreferencePanel,
+  SelectField,
+  SessionRow,
+  SettingsActionRow,
+  SettingsTabButton,
+  TeamMemberRow,
+  TextField,
+  ToggleRow,
+} from "@/features/catalog/components/settings-catalog-blocks";
+import { WorkspaceHeader } from "@/features/catalog/components/workspace-catalog-blocks";
+import {
+  settingsPageLabels,
+  type SettingsPageData,
+  type SettingsTabId,
+} from "@/features/settings/constants/settings-page-content";
+import {
+  mergeSettingsMutationResponse,
+  type SettingsMutationResponse,
+} from "@/features/settings/lib/settings-page-state";
+import {
+  toggleAppTheme,
+  type AppTheme,
+} from "@/features/shell/lib/theme-preference";
+
+type SettingsPageProps = Readonly<{
+  initialData: SettingsPageData;
+  orgId: string;
+}>;
+
+type DialogId = "invite" | "revoke-key" | "two-factor" | null;
+type PlaceholderAction = Readonly<{
+  description?: string;
+  title: string;
+}> | null;
+type OrganizationEditableField = Exclude<keyof SettingsPageData["organization"], "goals">;
+type InviteRoleLabel = "Admin" | "Operator" | "Analyst" | "Viewer";
+
+const INDUSTRY_OPTIONS = [
+  "HVAC / Field service",
+  "Plumbing",
+  "Electrical",
+  "Landscaping",
+  "Roofing",
+  "Other…",
+] as const;
+
+const REVENUE_MODEL_OPTIONS = ["Job-based", "Subscription", "Mixed"] as const;
+
+const INVOICE_CYCLE_OPTIONS = ["Weekly", "Bi-weekly", "Monthly", "Per job"] as const;
+
+const TEAM_SIZE_OPTIONS = [
+  "1–4 people",
+  "5–10 people",
+  "11–25 people",
+  "26–50 people",
+  "51+ people",
+] as const;
+
+const ALL_GOALS = [
+  "Improve cash flow visibility",
+  "Increase job margin",
+  "Reduce overhead costs",
+  "Cut time spent on reporting",
+  "Reduce cost per job",
+] as const;
+const INVITE_ROLE_OPTIONS = ["Admin", "Operator", "Analyst", "Viewer"] as const;
+
+const settingsTabIcons: Record<SettingsTabId, React.ReactNode> = {
+  organization: <svg fill="currentColor" height="14" viewBox="0 0 18 18" width="14"><path clipRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" fillRule="evenodd" /></svg>,
+  team: <svg fill="currentColor" height="14" viewBox="0 0 18 18" width="14"><path d="M9 6a3 3 0 100-6 3 3 0 000 6zM17 6a3 3 0 10-6 0 3 3 0 006 0zM12.93 17H4.07c.08-3.08 2.44-5 4.93-5s4.85 1.92 4.93 5zM14.5 11a3 3 0 10-3 2.83A4.97 4.97 0 0114.5 17H17a3 3 0 000-6z" /></svg>,
+  integrations: <svg fill="currentColor" height="14" viewBox="0 0 18 18" width="14"><path clipRule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z" fillRule="evenodd" /></svg>,
+  notifications: <svg fill="currentColor" height="14" viewBox="0 0 18 18" width="14"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zm0 16a2 2 0 01-2-2h4a2 2 0 01-2 2z" /></svg>,
+  security: <svg fill="currentColor" height="14" viewBox="0 0 18 18" width="14"><path clipRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" fillRule="evenodd" /></svg>,
+  billing: <svg fill="currentColor" height="14" viewBox="0 0 18 18" width="14"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z" /><path clipRule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" fillRule="evenodd" /></svg>,
+  preferences: <svg fill="currentColor" height="14" viewBox="0 0 18 18" width="14"><path d="M3 5a1 1 0 011-1h10a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h6a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h4a1 1 0 110 2H4a1 1 0 01-1-1z" /></svg>,
+};
+
+type SettingsRequestError = Readonly<{
+  error: string;
+}>;
+
+export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
+  const [activeTab, setActiveTab] = useState<SettingsTabId>("organization");
+  const [activeDialog, setActiveDialog] = useState<DialogId>(null);
+  const [placeholderAction, setPlaceholderAction] = useState<PlaceholderAction>(null);
+  const [theme, setTheme] = useState<AppTheme>(() => {
+    if (typeof document === "undefined") {
+      return "light";
+    }
+
+    return document.documentElement.getAttribute("data-theme") === "dark"
+      ? "dark"
+      : "light";
+  });
+  const [pageData, setPageData] = useState(initialData);
+  const [organizationDraft, setOrganizationDraft] = useState(initialData.organization);
+  const [notificationGroups, setNotificationGroups] = useState(initialData.notifications);
+  const [preferenceItems, setPreferenceItems] = useState(initialData.preferences);
+  const [inviteDraft, setInviteDraft] = useState({
+    email: "",
+    name: "",
+    roleLabel: "Operator" as InviteRoleLabel,
+  });
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isSavingNotifications, setIsSavingNotifications] = useState(false);
+  const [isSavingPreferences, setIsSavingPreferences] = useState(false);
+  const [isSendingInvite, setIsSendingInvite] = useState(false);
+  const [pendingApiKeyName, setPendingApiKeyName] = useState<string | null>(null);
+  const [revokingApiKeyName, setRevokingApiKeyName] = useState<string | null>(null);
+  const [revokingSessionTitle, setRevokingSessionTitle] = useState<string | null>(null);
+  const [pendingConnectIntegration, setPendingConnectIntegration] = useState<string | null>(null);
+  const [connectApiKeyDraft, setConnectApiKeyDraft] = useState("");
+  const [isConnectingIntegration, setIsConnectingIntegration] = useState(false);
+
+  function openPlaceholderAction(title: string, description?: string) {
+    setPlaceholderAction({ description, title });
+  }
+
+  function applyMutationResponse(response: SettingsMutationResponse) {
+    const nextPageData = mergeSettingsMutationResponse(pageData, response);
+
+    setPageData(nextPageData);
+
+    if ("tabs" in response) {
+      setOrganizationDraft(nextPageData.organization);
+      setNotificationGroups(nextPageData.notifications);
+      setPreferenceItems(nextPageData.preferences);
+    }
+  }
+
+  async function requestSettingsMutation(
+    input: Readonly<{
+      body: Record<string, unknown>;
+      method: "PATCH" | "POST";
+      url: string;
+    }>,
+  ) {
+    const response = await fetch(input.url, {
+      body: JSON.stringify(input.body),
+      headers: {
+        "content-type": "application/json",
+      },
+      method: input.method,
+    });
+    const payload = (await response.json()) as
+      | SettingsMutationResponse
+      | SettingsRequestError;
+
+    if (!response.ok || "error" in payload) {
+      throw new Error(
+        "error" in payload ? payload.error : "The request could not be completed.",
+      );
+    }
+
+    return payload;
+  }
+
+  function updateOrganizationField(field: OrganizationEditableField, value: string) {
+    setOrganizationDraft((current) => ({
+      ...current,
+      [field]: value,
+    }));
+  }
+
+  function toggleNotification(groupId: string, itemTitle: string) {
+    setNotificationGroups((currentGroups) =>
+      currentGroups.map((group) =>
+        group.id !== groupId
+          ? group
+          : {
+              ...group,
+              items: group.items.map((item) =>
+                item.title === itemTitle
+                  ? { ...item, enabled: !item.enabled }
+                  : item,
+              ),
+            },
+      ),
+    );
+  }
+
+  function togglePreference(title: string) {
+    setPreferenceItems((currentItems) =>
+      currentItems.map((item) =>
+        item.title === title ? { ...item, enabled: !item.enabled } : item,
+      ),
+    );
+  }
+
+  async function handleInviteSubmit() {
+    if (isSendingInvite) {
+      return;
+    }
+
+    setIsSendingInvite(true);
+
+    try {
+      const payload = await requestSettingsMutation({
+        body: {
+          invite: {
+            email: inviteDraft.email,
+            name: inviteDraft.name,
+            role: normalizeInviteDraftRole(inviteDraft.roleLabel),
+          },
+          orgId,
+        },
+        method: "POST",
+        url: "/api/settings/team/invitations",
+      });
+
+      applyMutationResponse(payload);
+      setActiveDialog(null);
+      setInviteDraft({
+        email: "",
+        name: "",
+        roleLabel: "Operator",
+      });
+    } catch (error) {
+      openPlaceholderAction(
+        "Could not send invite",
+        error instanceof Error ? error.message : "The request could not be completed.",
+      );
+    } finally {
+      setIsSendingInvite(false);
+    }
+  }
+
+  async function handleSaveProfile() {
+    if (isSavingProfile) {
+      return;
+    }
+
+    setIsSavingProfile(true);
+
+    try {
+      const payload = await requestSettingsMutation({
+        body: {
+          organization: organizationDraft,
+          orgId,
+        },
+        method: "PATCH",
+        url: "/api/settings",
+      });
+
+      applyMutationResponse(payload);
+    } catch (error) {
+      openPlaceholderAction(
+        "Could not save profile",
+        error instanceof Error ? error.message : "The request could not be completed.",
+      );
+    } finally {
+      setIsSavingProfile(false);
+    }
+  }
+
+  function handleResetProfile() {
+    setOrganizationDraft(pageData.organization);
+    console.info("[PulseOps] Reset profile: form values restored to the current workspace defaults.");
+  }
+
+  async function handleSaveNotifications() {
+    if (isSavingNotifications) {
+      return;
+    }
+
+    setIsSavingNotifications(true);
+
+    try {
+      const payload = await requestSettingsMutation({
+        body: {
+          notifications: notificationGroups,
+          orgId,
+        },
+        method: "PATCH",
+        url: "/api/settings",
+      });
+
+      applyMutationResponse(payload);
+    } catch (error) {
+      openPlaceholderAction(
+        "Could not save notifications",
+        error instanceof Error ? error.message : "The request could not be completed.",
+      );
+    } finally {
+      setIsSavingNotifications(false);
+    }
+  }
+
+  function toggleGoal(goal: string) {
+    setOrganizationDraft((current) => ({
+      ...current,
+      goals: current.goals.includes(goal)
+        ? current.goals.filter((g) => g !== goal)
+        : [...current.goals, goal],
+    }));
+  }
+
+  function applyTheme(themeValue: AppTheme) {
+    document.documentElement.setAttribute("data-theme", themeValue);
+    window.localStorage.setItem("pulseops-theme", themeValue);
+    setTheme(themeValue);
+  }
+
+  async function handleSavePreferences() {
+    if (isSavingPreferences) {
+      return;
+    }
+
+    setIsSavingPreferences(true);
+
+    try {
+      const payload = await requestSettingsMutation({
+        body: {
+          orgId,
+          preferences: preferenceItems,
+        },
+        method: "PATCH",
+        url: "/api/settings",
+      });
+
+      applyMutationResponse(payload);
+    } catch (error) {
+      openPlaceholderAction(
+        "Could not save preferences",
+        error instanceof Error ? error.message : "The request could not be completed.",
+      );
+    } finally {
+      setIsSavingPreferences(false);
+    }
+  }
+
+  async function handleRevokeSession(title: string) {
+    if (revokingSessionTitle !== null) {
+      return;
+    }
+
+    setRevokingSessionTitle(title);
+
+    try {
+      const payload = await requestSettingsMutation({
+        body: {
+          orgId,
+          title,
+        },
+        method: "POST",
+        url: "/api/settings/security/sessions/revoke",
+      });
+
+      applyMutationResponse(payload);
+    } catch (error) {
+      openPlaceholderAction(
+        "Could not revoke session",
+        error instanceof Error ? error.message : "The request could not be completed.",
+      );
+    } finally {
+      setRevokingSessionTitle(null);
+    }
+  }
+
+  async function handleRevokeApiKey() {
+    if (pendingApiKeyName === null || revokingApiKeyName !== null) {
+      return;
+    }
+
+    setRevokingApiKeyName(pendingApiKeyName);
+
+    try {
+      const payload = await requestSettingsMutation({
+        body: {
+          name: pendingApiKeyName,
+          orgId,
+        },
+        method: "POST",
+        url: "/api/settings/security/api-keys/revoke",
+      });
+
+      applyMutationResponse(payload);
+      setActiveDialog(null);
+      setPendingApiKeyName(null);
+    } catch (error) {
+      openPlaceholderAction(
+        "Could not revoke API key",
+        error instanceof Error ? error.message : "The request could not be completed.",
+      );
+    } finally {
+      setRevokingApiKeyName(null);
+    }
+  }
+
+  async function handleIntegrationAction(integration: SettingsPageData["integrations"][number]) {
+    const actionLabel = integration.actionLabel.toLowerCase();
+
+    if (actionLabel === "connect" || actionLabel === "reconnect") {
+      setConnectApiKeyDraft("");
+      setPendingConnectIntegration(integration.title);
+      return;
+    }
+
+    if (actionLabel === "disconnect") {
+      if (isConnectingIntegration) return;
+      setIsConnectingIntegration(true);
+      try {
+        const payload = await requestSettingsMutation({
+          body: { action: "disconnect", integrationTitle: integration.title, orgId },
+          method: "POST",
+          url: "/api/settings/integrations/connect",
+        });
+        applyMutationResponse(payload);
+      } catch (error) {
+        openPlaceholderAction(
+          "Could not disconnect",
+          error instanceof Error ? error.message : "The request could not be completed.",
+        );
+      } finally {
+        setIsConnectingIntegration(false);
+      }
+      return;
+    }
+
+    openPlaceholderAction(integration.actionLabel, integration.title);
+  }
+
+  async function handleIntegrationConnect() {
+    if (pendingConnectIntegration === null || isConnectingIntegration) return;
+    setIsConnectingIntegration(true);
+    try {
+      const payload = await requestSettingsMutation({
+        body: { action: "connect", integrationTitle: pendingConnectIntegration, orgId },
+        method: "POST",
+        url: "/api/settings/integrations/connect",
+      });
+      applyMutationResponse(payload);
+      setPendingConnectIntegration(null);
+      setConnectApiKeyDraft("");
+    } catch (error) {
+      openPlaceholderAction(
+        "Could not connect integration",
+        error instanceof Error ? error.message : "The request could not be completed.",
+      );
+    } finally {
+      setIsConnectingIntegration(false);
+    }
+  }
+
+  return (
+    <div className="flex min-h-full flex-col">
+      <WorkspaceHeader
+        actions={[
+          {
+            label: `${theme === "dark" ? "🌙" : "☀️"} ${theme === "dark" ? "Light mode" : "Dark mode"}`,
+            onClick: () => applyTheme(toggleAppTheme(theme)),
+            variant: "secondary",
+          },
+        ]}
+        breadcrumbs={settingsPageLabels.breadcrumbs}
+        description={settingsPageLabels.description}
+        title={settingsPageLabels.title}
+      />
+
+      <div className="min-h-0 flex-1 overflow-y-auto px-[22px] py-[18px] pb-10">
+        <div className="flex items-start gap-5">
+        <aside className="w-[172px] shrink-0 pt-[2px]">
+          <div className="sticky top-0 flex flex-col gap-[2px]">
+            {pageData.tabs.map((tab) => (
+              <SettingsTabButton
+                key={tab.id}
+                active={activeTab === tab.id}
+                icon={settingsTabIcons[tab.id]}
+                label={tab.label}
+                onClick={() => setActiveTab(tab.id)}
+              />
+            ))}
+          </div>
+        </aside>
+
+        <div className="min-w-0 flex-1">
+          {activeTab === "organization" ? (
+            <PreferencePanel
+              description="This information shapes how PulseOps interprets your data and builds your Cash & Margin Brief."
+              title="Business profile"
+            >
+              <div className="grid gap-[14px] md:grid-cols-2">
+                <FieldGroup label="Business name">
+                  <TextField
+                    onChange={(value) => updateOrganizationField("name", value)}
+                    value={organizationDraft.name}
+                  />
+                </FieldGroup>
+                <FieldGroup label="Primary location">
+                  <TextField
+                    onChange={(value) => updateOrganizationField("location", value)}
+                    value={organizationDraft.location}
+                  />
+                </FieldGroup>
+                <div className="md:col-span-2">
+                  <FieldGroup label="Industry">
+                    <PillGroup
+                      options={INDUSTRY_OPTIONS}
+                      selected={organizationDraft.industry}
+                      onChange={(value) => updateOrganizationField("industry", value)}
+                    />
+                  </FieldGroup>
+                </div>
+                <FieldGroup label="Revenue model">
+                  <PillGroup
+                    options={REVENUE_MODEL_OPTIONS}
+                    selected={organizationDraft.revenueModel}
+                    onChange={(value) => updateOrganizationField("revenueModel", value)}
+                  />
+                </FieldGroup>
+                <FieldGroup label="Invoice cycle">
+                  <SelectField
+                    options={INVOICE_CYCLE_OPTIONS}
+                    onChange={(value) => updateOrganizationField("invoiceCycle", value)}
+                    value={organizationDraft.invoiceCycle}
+                  />
+                </FieldGroup>
+                <FieldGroup label="Team size">
+                  <SelectField
+                    options={TEAM_SIZE_OPTIONS}
+                    onChange={(value) => updateOrganizationField("teamSize", value)}
+                    value={organizationDraft.teamSize}
+                  />
+                </FieldGroup>
+                <div className="md:col-span-2">
+                  <FieldGroup label="Goals (all that apply)">
+                    <div className="mt-1 flex flex-col gap-1">
+                      {ALL_GOALS.map((goal) => (
+                        <label
+                          key={goal}
+                          className="flex cursor-pointer items-center gap-[10px] rounded-[6px] py-[5px] text-[13px] text-foreground transition-colors"
+                        >
+                          <input
+                            checked={organizationDraft.goals.includes(goal)}
+                            className="h-[14px] w-[14px] shrink-0 cursor-pointer rounded accent-accent"
+                            onChange={() => toggleGoal(goal)}
+                            type="checkbox"
+                          />
+                          {goal}
+                        </label>
+                      ))}
+                    </div>
+                  </FieldGroup>
+                </div>
+              </div>
+              <SettingsActionRow
+                onPrimaryAction={handleSaveProfile}
+                onSecondaryAction={handleResetProfile}
+                primaryLabel={isSavingProfile ? "Saving..." : "Save profile"}
+                secondaryLabel="Reset"
+              />
+            </PreferencePanel>
+          ) : null}
+
+          {activeTab === "team" ? (
+            <div className="space-y-[16px]">
+              <CatalogCard className="overflow-hidden">
+                <div className="flex items-center justify-between gap-3 border-b border-border px-[18px] py-[13px]">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-[13px] font-semibold tracking-[-0.015em] text-foreground">Team members</h3>
+                    <span className="rounded-full bg-white/[0.06] px-2 py-[2px] text-[10.5px] font-bold text-muted">
+                      {pageData.team.members.length} members
+                    </span>
+                  </div>
+                  <CatalogButton
+                    onClick={() => setActiveDialog("invite")}
+                    variant="primary"
+                  >
+                    + Invite member
+                  </CatalogButton>
+                </div>
+                <div>
+                  {pageData.team.members.map((member) => (
+                    <TeamMemberRow
+                      accessSummary={member.accessSummary}
+                      key={member.email}
+                      email={member.email}
+                      name={member.name}
+                      role={member.role}
+                      status={member.status}
+                      statusLabel={member.statusLabel}
+                    />
+                  ))}
+                </div>
+              </CatalogCard>
+
+              <CatalogCard className="overflow-hidden">
+                <div className="flex items-start justify-between gap-3 border-b border-border px-[18px] py-[13px]">
+                  <div>
+                    <h3 className="text-[13px] font-semibold tracking-[-0.015em] text-foreground">Role permissions</h3>
+                    <p className="mt-[2px] text-[11.5px] leading-[1.4] text-muted">Defines what each role can see and do in your workspace.</p>
+                  </div>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full border-collapse text-[12.5px]">
+                    <thead>
+                      <tr className="border-b border-border">
+                        {["Permission", "Admin", "Operator", "Analyst", "Viewer"].map((header) => (
+                          <th
+                            key={header}
+                            className="px-[14px] py-2 text-left text-[10.5px] font-bold uppercase tracking-[0.07em] text-muted"
+                          >
+                            {header}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pageData.team.permissions.map((permission) => (
+                        <tr key={permission.permission} className="border-b border-border last:border-b-0 transition-colors hover:bg-white/[0.02]">
+                          <td className="px-[14px] py-2 font-medium text-foreground">{permission.permission}</td>
+                          {[
+                            permission.admin,
+                            permission.operator,
+                            permission.analyst,
+                            permission.viewer,
+                          ].map((value, index) => (
+                            <td
+                              key={`${permission.permission}-${index}`}
+                              className="px-[14px] py-2 text-center"
+                            >
+                              {value ? (
+                                <span className="inline-flex h-[18px] w-[18px] items-center justify-center rounded-full bg-[rgba(34,197,94,.12)] text-[10px] font-extrabold text-green-400">
+                                  ✓
+                                </span>
+                              ) : (
+                                <span className="inline-flex h-[18px] w-[18px] items-center justify-center rounded-full bg-white/[0.05] text-[12px] text-muted/30">
+                                  —
+                                </span>
+                              )}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </CatalogCard>
+            </div>
+          ) : null}
+
+          {activeTab === "integrations" ? (
+            <CatalogCard className="overflow-hidden">
+              <div className="border-b border-border px-[18px] py-[13px]">
+                <h3 className="text-[13px] font-semibold tracking-[-0.015em] text-foreground">Connected sources</h3>
+                <p className="mt-[2px] text-[11.5px] leading-[1.4] text-muted">Connect your business systems to feed the ingestion pipeline.</p>
+              </div>
+              {pageData.integrations.map((integration) => (
+                <IntegrationListItem
+                  key={integration.title}
+                  actionLabel={integration.actionLabel}
+                  description={integration.description}
+                  onAction={() => void handleIntegrationAction(integration)}
+                  onSecondaryAction={() =>
+                    openPlaceholderAction(
+                      integration.secondaryActionLabel ?? "Configure",
+                      integration.title,
+                    )
+                  }
+                  secondaryActionLabel={integration.secondaryActionLabel}
+                  statusLabel={integration.statusLabel}
+                  statusTone={integration.statusTone}
+                  title={integration.title}
+                />
+              ))}
+            </CatalogCard>
+          ) : null}
+
+          {activeTab === "notifications" ? (
+            <div className="space-y-5">
+              <CatalogCard className="overflow-hidden">
+                <div className="border-b border-border px-[18px] py-[13px]">
+                  <h3 className="text-[13px] font-semibold tracking-[-0.015em] text-foreground">Notification preferences</h3>
+                  <p className="mt-[2px] text-[11.5px] leading-[1.4] text-muted">Choose how and when PulseOps contacts you. Operator role or above required.</p>
+                </div>
+                <div className="px-[18px] pb-1">
+                  {notificationGroups.map((group) => (
+                    <div key={group.id}>
+                      <p className="pb-[6px] pt-[14px] text-[10.5px] font-bold uppercase tracking-[0.1em] text-muted">
+                        {group.title}
+                      </p>
+                      {group.items.map((item) => (
+                        <ToggleRow
+                          key={item.title}
+                          description={item.description}
+                          enabled={item.enabled}
+                          onToggle={() => toggleNotification(group.id, item.title)}
+                          title={item.title}
+                        />
+                      ))}
+                    </div>
+                  ))}
+                </div>
+                <div className="border-t border-border px-[18px] py-3">
+                  <CatalogButton
+                    onClick={() => {
+                      void handleSaveNotifications();
+                    }}
+                    variant="primary"
+                  >
+                    {isSavingNotifications ? "Saving..." : "Save preferences"}
+                  </CatalogButton>
+                </div>
+              </CatalogCard>
+            </div>
+          ) : null}
+
+          {activeTab === "security" ? (
+            <div className="space-y-5">
+              <PreferencePanel
+                description="Authentication and access-control settings for the workspace."
+                title="Authentication"
+              >
+                <div className="space-y-3">
+                  {pageData.security.authRows.map((row) => (
+                    <div
+                      key={row.title}
+                      className="flex flex-col gap-3 border-b border-border pb-4 last:border-b-0 last:pb-0 md:flex-row md:items-center md:justify-between"
+                    >
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{row.title}</p>
+                        <p className="mt-1 text-xs text-muted">{row.description}</p>
+                      </div>
+                      <button
+                        className="rounded-[7px] border border-border-strong bg-surface-subtle px-4 py-2 text-[12.5px] font-semibold text-foreground transition-[border-color,background] hover:bg-surface-muted hover:border-foreground/20"
+                        onClick={() =>
+                          row.title === "Two-factor authentication"
+                            ? setActiveDialog("two-factor")
+                            : openPlaceholderAction(row.actionLabel, row.title)
+                        }
+                        type="button"
+                      >
+                        {row.actionLabel}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </PreferencePanel>
+
+              <PreferencePanel
+                description="Review active sessions and revoke stale device access."
+                title="Active sessions"
+              >
+                <div className="divide-y divide-border overflow-hidden rounded-2xl border border-border">
+                  {pageData.security.sessions.map((session) => (
+                    <SessionRow
+                      key={session.title}
+                      actionLabel={session.actionLabel}
+                      detail={session.detail}
+                      isCurrent={session.isCurrent}
+                      onAction={() => {
+                        if (session.actionLabel === undefined) {
+                          return;
+                        }
+
+                        void handleRevokeSession(session.title);
+                      }}
+                      title={session.title}
+                    />
+                  ))}
+                </div>
+              </PreferencePanel>
+
+              <PreferencePanel
+                description="Programmatic access keys for server-side integrations only."
+                title="API keys"
+              >
+                <div className="divide-y divide-border overflow-hidden rounded-2xl border border-border">
+                  {pageData.security.apiKeys.map((apiKey) => (
+                    <ApiKeyRow
+                      key={apiKey.name}
+                      actionLabel="Revoke"
+                      createdLabel={apiKey.createdLabel}
+                      keyLabel={apiKey.keyLabel}
+                      name={apiKey.name}
+                      onAction={() => {
+                        setPendingApiKeyName(apiKey.name);
+                        setActiveDialog("revoke-key");
+                      }}
+                    />
+                  ))}
+                </div>
+              </PreferencePanel>
+            </div>
+          ) : null}
+
+          {activeTab === "billing" ? (
+            <div className="space-y-[16px]">
+              <div className="rounded-[10px] border border-[rgba(0,201,167,.15)] bg-gradient-to-br from-[#0d1f36] to-[#0a1625] p-[22px]">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <span className="inline-flex items-center rounded-full bg-[rgba(34,197,94,.1)] px-2 py-[2px] text-[10.5px] font-bold uppercase tracking-[0.06em] text-green-400">
+                      Active plan
+                    </span>
+                    <h2 className="mt-[10px] text-[20px] font-extrabold tracking-[-0.03em] text-foreground">
+                      {pageData.billing.planTitle}
+                    </h2>
+                    <p className="mt-[3px] text-[12px] text-muted">{pageData.billing.planDescription}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-muted">
+                      Billing model
+                    </p>
+                    <p className="mt-1 text-[13px] font-semibold text-foreground">
+                      Platform access + usage
+                    </p>
+                    <p className="mt-1 text-[11.5px] text-muted">
+                      Totals update automatically from tracked LLM token usage.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <CatalogCard className="overflow-hidden">
+                <div className="border-b border-border px-[18px] py-[13px]">
+                  <h3 className="text-[13px] font-semibold tracking-[-0.015em] text-foreground">Usage this billing period</h3>
+                  <p className="mt-[2px] text-[11.5px] leading-[1.4] text-muted">Current cycle across the workspace.</p>
+                </div>
+                <div className="grid gap-[18px] p-[18px] md:grid-cols-2 xl:grid-cols-3">
+                  {pageData.billing.usage.map((usage) => (
+                    <div key={usage.label}>
+                      <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.07em] text-muted">
+                        {usage.label}
+                      </p>
+                      <div className="mb-[5px] h-[4px] overflow-hidden rounded-[2px] bg-white/[0.07]">
+                        <div className="h-full w-1/2 rounded-[2px] bg-accent" />
+                      </div>
+                      <p className="text-[13px] font-semibold text-foreground">
+                        {usage.value}{" "}
+                        <span className="font-normal text-muted">/ {usage.detail}</span>
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </CatalogCard>
+            </div>
+          ) : null}
+
+          {activeTab === "preferences" ? (
+            <div className="space-y-5">
+              <PreferencePanel
+                description="Workspace-level display and workflow defaults."
+                title="Preferences"
+              >
+                {preferenceItems.map((preference) => (
+                  <ToggleRow
+                    key={preference.title}
+                    description={preference.description}
+                    enabled={preference.enabled}
+                    onToggle={() => togglePreference(preference.title)}
+                    title={preference.title}
+                  />
+                ))}
+              </PreferencePanel>
+              <CatalogButton
+                onClick={() => {
+                  void handleSavePreferences();
+                }}
+                variant="primary"
+              >
+                {isSavingPreferences ? "Saving..." : "Save preferences"}
+              </CatalogButton>
+
+              <PreferencePanel
+                description="Mirror the settings design controls and persist the workspace color mode in local storage."
+                title="Appearance"
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Color mode</p>
+                    <p className="mt-1 text-xs leading-6 text-muted">Persisted across sessions.</p>
+                  </div>
+                  <div className="inline-flex rounded-lg border border-border bg-surface-subtle p-1">
+                    <button
+                      className={[
+                        "rounded-md px-3 py-1.5 text-sm font-semibold transition-colors",
+                        theme === "dark"
+                          ? "bg-accent-dim text-accent"
+                          : "text-muted hover:text-foreground",
+                      ].join(" ")}
+                      onClick={() => applyTheme("dark")}
+                      type="button"
+                    >
+                      Dark
+                    </button>
+                    <button
+                      className={[
+                        "rounded-md px-3 py-1.5 text-sm font-semibold transition-colors",
+                        theme === "light"
+                          ? "bg-accent text-white dark:bg-accent-dim dark:text-accent"
+                          : "text-muted hover:text-foreground",
+                      ].join(" ")}
+                      onClick={() => applyTheme("light")}
+                      type="button"
+                    >
+                      Light
+                    </button>
+                  </div>
+                </div>
+              </PreferencePanel>
+            </div>
+          ) : null}
+        </div>
+        </div>
+      </div>
+
+      {activeDialog === "invite" ? (
+        <CatalogModalOverlay>
+          <DialogFrame
+            description={settingsPageLabels.dialogs.inviteDescription}
+            footer={
+              <>
+                <CatalogButton onClick={handleInviteSubmit} variant="primary">
+                  {isSendingInvite ? "Sending..." : "Send invite"}
+                </CatalogButton>
+                <CatalogButton
+                  onClick={() => {
+                    setActiveDialog(null);
+                    setPendingApiKeyName(null);
+                  }}
+                  variant="secondary"
+                >
+                  Cancel
+                </CatalogButton>
+              </>
+            }
+            onClose={() => setActiveDialog(null)}
+            title={settingsPageLabels.dialogs.inviteTitle}
+          >
+            <FieldGroup label="Name">
+              <TextField
+                onChange={(value) =>
+                  setInviteDraft((current) => ({ ...current, name: value }))
+                }
+                placeholder="Jamie Reynolds"
+                value={inviteDraft.name}
+              />
+            </FieldGroup>
+            <FieldGroup label="Email">
+              <TextField
+                onChange={(value) =>
+                  setInviteDraft((current) => ({ ...current, email: value }))
+                }
+                placeholder="jamie@browardhvac.com"
+                type="email"
+                value={inviteDraft.email}
+              />
+            </FieldGroup>
+            <FieldGroup label="Role">
+              <SelectField
+                onChange={(value) =>
+                  setInviteDraft((current) => ({
+                    ...current,
+                    roleLabel: value as InviteRoleLabel,
+                  }))
+                }
+                options={INVITE_ROLE_OPTIONS}
+                value={inviteDraft.roleLabel}
+              />
+            </FieldGroup>
+          </DialogFrame>
+        </CatalogModalOverlay>
+      ) : null}
+
+      {activeDialog === "two-factor" ? (
+        <CatalogModalOverlay>
+          <DialogFrame
+            description={settingsPageLabels.dialogs.twoFactorDescription}
+            footer={
+              <>
+                <CatalogButton
+                  onClick={() => {
+                    setActiveDialog(null);
+                    openPlaceholderAction(
+                      "Continue",
+                      "Two-factor setup handoff is not implemented yet.",
+                    );
+                  }}
+                  variant="primary"
+                >
+                  Continue
+                </CatalogButton>
+                <CatalogButton onClick={() => setActiveDialog(null)} variant="secondary">
+                  Cancel
+                </CatalogButton>
+              </>
+            }
+            onClose={() => setActiveDialog(null)}
+            title={settingsPageLabels.dialogs.twoFactorTitle}
+          >
+            <p className="text-sm leading-7 text-muted">
+              Scan the QR code in your authenticator app, confirm the six-digit code, and store the backup codes securely.
+            </p>
+            <CatalogCard className="flex h-48 items-center justify-center border-dashed bg-surface-subtle p-4 shadow-none">
+              <span className="text-sm font-medium text-muted">Authenticator QR placeholder</span>
+            </CatalogCard>
+          </DialogFrame>
+        </CatalogModalOverlay>
+      ) : null}
+
+      {activeDialog === "revoke-key" ? (
+        <CatalogModalOverlay>
+          <DialogFrame
+            description={settingsPageLabels.dialogs.revokeDescription}
+            footer={
+              <>
+                <button
+                  className="rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-700 dark:bg-rose-500 dark:hover:bg-rose-400"
+                  onClick={() => {
+                    void handleRevokeApiKey();
+                  }}
+                  type="button"
+                >
+                  {revokingApiKeyName === null ? "Revoke key" : "Revoking..."}
+                </button>
+                <CatalogButton onClick={() => setActiveDialog(null)} variant="secondary">
+                  Cancel
+                </CatalogButton>
+              </>
+            }
+            onClose={() => {
+              setActiveDialog(null);
+              setPendingApiKeyName(null);
+            }}
+            title={settingsPageLabels.dialogs.revokeTitle}
+          >
+            <p className="text-sm leading-7 text-muted">
+              Any service using this key will lose access immediately and will need a replacement key before the integration can recover.
+            </p>
+          </DialogFrame>
+        </CatalogModalOverlay>
+      ) : null}
+
+      {placeholderAction ? (
+        <PlaceholderActionDialog
+          description={placeholderAction.description}
+          onClose={() => setPlaceholderAction(null)}
+          title={placeholderAction.title}
+        />
+      ) : null}
+
+      {pendingConnectIntegration ? (
+        <CatalogModalOverlay>
+          <DialogFrame
+            description={`Enter the API key for ${pendingConnectIntegration} to activate the connection.`}
+            footer={
+              <>
+                <CatalogButton
+                  onClick={() => {
+                    setPendingConnectIntegration(null);
+                    setConnectApiKeyDraft("");
+                  }}
+                  variant="secondary"
+                >
+                  Cancel
+                </CatalogButton>
+                <CatalogButton
+                  disabled={connectApiKeyDraft.trim().length === 0 || isConnectingIntegration}
+                  onClick={() => void handleIntegrationConnect()}
+                  variant="primary"
+                >
+                  {isConnectingIntegration ? "Connecting…" : "Connect"}
+                </CatalogButton>
+              </>
+            }
+            onClose={() => {
+              setPendingConnectIntegration(null);
+              setConnectApiKeyDraft("");
+            }}
+            title={`Connect ${pendingConnectIntegration}`}
+          >
+            <FieldGroup label="API key">
+              <TextField
+                onChange={setConnectApiKeyDraft}
+                placeholder="Paste your API key here"
+                type="password"
+                value={connectApiKeyDraft}
+              />
+            </FieldGroup>
+            <p className="text-[11.5px] leading-[1.5] text-muted">
+              The key is sent over HTTPS and stored in your workspace settings. You can
+              disconnect at any time.
+            </p>
+          </DialogFrame>
+        </CatalogModalOverlay>
+      ) : null}
+    </div>
+  );
+}
+
+function normalizeInviteDraftRole(roleLabel: InviteRoleLabel): OrganizationAccountRole {
+  switch (roleLabel) {
+    case "Admin":
+      return "admin";
+    case "Operator":
+      return "operator";
+    case "Analyst":
+      return "analyst";
+    case "Viewer":
+      return "viewer";
+  }
+}
