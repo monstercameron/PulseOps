@@ -1,0 +1,37 @@
+ops-decision-os-starter/
+├── apps/
+│   ├── web/
+│   │   ├── src/app/
+│   │   │   ├── api/
+│   │   │   │   ├── ask/route.ts
+│   │   │   │   ├── ingest/upload/route.ts
+│   │   │   │   ├── inngest/route.ts
+│   │   │   │   └── webhooks/email/route.ts
+│   │   │   ├── ask/page.tsx
+│   │   │   ├── dashboard/page.tsx
+│   │   │   ├── decisions/page.tsx
+│   │   │   ├── feedback/page.tsx
+│   │   │   ├── upload/page.tsx
+│   │   │   ├── layout.tsx
+│   │   │   └── page.tsx
+│   │   └── src/server/
+│   └── worker/
+│       └── src/pipelines/ingest-pipeline.ts
+├── packages/
+│   ├── config/
+│   ├── core/
+│   │   ├── src/buckets/
+│   │   ├── src/decisions/
+│   │   ├── src/extraction/
+│   │   ├── src/feedback/
+│   │   ├── src/parsing/
+│   │   └── src/query-plan/
+│   ├── db/
+│   │   └── prisma/schema.prisma
+│   ├── prompts/
+│   │   └── src/templates/
+│   └── ui/
+├── services/
+│   └── parser-py/
+├── infra/sql/
+└── docs/
