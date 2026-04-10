@@ -42,6 +42,17 @@
 - Persisted theme preference through cookies and client hydration, normalized default UI bundle fallback merging, and wired more settings headings and descriptions through seeded translation content.
 - Localized account, billing, integration, security, and preference controls more deeply, and updated the settings UI helpers so select and pill inputs can carry translated labels without changing stored values.
 
+### Settings and Access
+- Reworked settings into role-scoped groups for My account, Workspace, Sources and operations, People and access, and Billing, with current-user-aware tab visibility and restricted data for accounts that should not see operational or billing details.
+- Added operational settings for delivery rules, source retention policy, review thresholds, and import rules, and enforced actor-aware authorization on settings mutations, team invites, integrations, API keys, and active sessions.
+- Added focused server and Playwright coverage for the new access rules and operational settings flows, and tightened the shell theme toggle so it follows the hydrated document theme without client-effect lint regressions.
+
+### Ingestion Retention
+- Threaded source-specific archive windows through upload lifecycle policies, queued tabular ingestion, manual uploads, and email forwarding so configured retention differs cleanly between manual uploads and forwarded email documents.
+
+### Workspace Follow-up
+- Updated pack detail actions and copy to speak in terms of previews, clarified evidence labeling, and kept the ready-to-share action disabled until the selected preview has enough supporting content.
+
 ### Localization Ops
 - Updated UI translation seeding to backfill missing keys into existing bundles, report updated locales, and clear the server message cache after seeding so new defaults show up without wiping overrides.
 - Wired `db:init` to seed the default UI translation bundles into local Postgres and documented the new `db:seed:ui-translations` flow for fresh local environments.
