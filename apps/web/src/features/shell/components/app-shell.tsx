@@ -72,8 +72,8 @@ export function AppShell({
     },
     {
       href: "/content",
-      label: messages.appShell.navItems.blog.label,
-      mobileLabel: messages.appShell.navItems.blog.mobileLabel,
+      label: messages.appShell.navItems.blog?.label ?? "Blog",
+      mobileLabel: messages.appShell.navItems.blog?.mobileLabel ?? "Blog",
       Icon: IconBlog,
     },
   ];

@@ -37,7 +37,10 @@ function slugify(title: string): string {
     .slice(0, 80);
 }
 
-export function BlogAdminPage() {
+export function BlogAdminPage({
+  orgId: _orgId,
+}: Readonly<{ orgId?: string }>) {
+  const { locale, messages } = useUiI18n();
   const [posts, setPosts] = useState<readonly BlogPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [draft, setDraft] = useState<DraftState | null>(null);
@@ -62,7 +65,7 @@ export function BlogAdminPage() {
   }, []);
 
   function openNew() {
-    setDraft(emptyDraft());
+    setDraft(emptyDraft(messages.contentPage.placeholders.author));
   }
 
   function openEdit(post: BlogPost) {
@@ -150,40 +153,44 @@ export function BlogAdminPage() {
       <WorkspaceHeader
         actions={[
           {
-            label: "New post",
+            label: messages.contentPage.actions.newPost,
             onClick: openNew,
             variant: "primary",
           },
           {
-            label: "View public blog",
+            label: messages.contentPage.actions.viewPublicBlog,
             onClick: () =>
               setPlaceholderAction({
-                title: "View public blog",
-                description: "Opens /blog — the public-facing blog page powered by this API.",
+                title: messages.contentPage.actions.viewPublicBlog,
+                description: messages.contentPage.publicBlogDescription,
               }),
             variant: "secondary",
           },
         ]}
-        breadcrumbs={["Dashboard", "Content"]}
-        description="Manage published and draft blog posts. Changes are reflected on the public blog immediately."
-        title="Blog posts"
+        breadcrumbs={messages.contentPage.breadcrumbs}
+        description={messages.contentPage.description}
+        title={messages.contentPage.title}
       />
 
       <div className="min-h-0 flex-1 overflow-y-auto px-[22px] py-5">
         {isLoading ? (
           <div className="flex items-center justify-center py-20 text-[13px] text-muted">
-            Loading posts…
+            {messages.contentPage.loading}
           </div>
         ) : posts.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-3 py-20">
-            <p className="text-[14px] font-semibold text-foreground">No blog posts yet</p>
-            <p className="text-[12.5px] text-muted">Create your first post to get started.</p>
+            <p className="text-[14px] font-semibold text-foreground">
+              {messages.contentPage.emptyState.title}
+            </p>
+            <p className="text-[12.5px] text-muted">
+              {messages.contentPage.emptyState.description}
+            </p>
             <button
               className="mt-2 rounded-[8px] bg-accent px-4 py-2 text-[12.5px] font-bold text-[#0d1b2a]"
               onClick={openNew}
               type="button"
             >
-              New post
+              {messages.contentPage.actions.newPost}
             </button>
           </div>
         ) : (
@@ -191,11 +198,21 @@ export function BlogAdminPage() {
             <table className="w-full text-left text-[13px]">
               <thead>
                 <tr className="border-b border-border bg-surface-subtle">
-                  <th className="px-4 py-3 font-semibold text-muted">Title</th>
-                  <th className="px-4 py-3 font-semibold text-muted">Author</th>
-                  <th className="px-4 py-3 font-semibold text-muted">Status</th>
-                  <th className="px-4 py-3 font-semibold text-muted">Date</th>
-                  <th className="px-4 py-3 font-semibold text-muted">Actions</th>
+                  <th className="px-4 py-3 font-semibold text-muted">
+                    {messages.contentPage.tableHeaders.title}
+                  </th>
+                  <th className="px-4 py-3 font-semibold text-muted">
+                    {messages.contentPage.tableHeaders.author}
+                  </th>
+                  <th className="px-4 py-3 font-semibold text-muted">
+                    {messages.contentPage.tableHeaders.status}
+                  </th>
+                  <th className="px-4 py-3 font-semibold text-muted">
+                    {messages.contentPage.tableHeaders.date}
+                  </th>
+                  <th className="px-4 py-3 font-semibold text-muted">
+                    {messages.contentPage.tableHeaders.actions}
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border bg-card">
@@ -212,18 +229,22 @@ export function BlogAdminPage() {
                       <button
                         className="cursor-pointer"
                         onClick={() => void handleToggleStatus(post)}
-                        title="Click to toggle status"
+                        title={messages.contentPage.toggleStatusTitle}
                         type="button"
                       >
                         <StatusBadge
-                          label={post.status === "published" ? "Published" : "Draft"}
+                          label={
+                            post.status === "published"
+                              ? messages.contentPage.statusLabels.published
+                              : messages.contentPage.statusLabels.draft
+                          }
                           tone={post.status === "published" ? "success" : "neutral"}
                         />
                       </button>
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-[12px] text-muted">
                       {post.publishedAt
-                        ? new Intl.DateTimeFormat("en-US", {
+                        ? new Intl.DateTimeFormat(locale, {
                             day: "numeric",
                             month: "short",
                             year: "numeric",
@@ -237,14 +258,14 @@ export function BlogAdminPage() {
                           onClick={() => openEdit(post)}
                           type="button"
                         >
-                          Edit
+                          {messages.contentPage.actions.edit}
                         </button>
                         <button
                           className="rounded-[6px] border border-red-300/30 bg-red-50/5 px-2.5 py-1 text-[11.5px] font-medium text-red-400 transition hover:bg-red-500/10 hover:text-red-300"
                           onClick={() => setPendingDeleteId(post.id)}
                           type="button"
                         >
-                          Delete
+                          {messages.contentPage.actions.delete}
                         </button>
                       </div>
                     </td>
@@ -260,74 +281,86 @@ export function BlogAdminPage() {
       {draft !== null ? (
         <CatalogModalOverlay>
           <DialogFrame
-            description={draft.id === null ? "Fill in the fields below to create a new post." : "Edit the post details below."}
+            description={
+              draft.id === null
+                ? messages.contentPage.editor.newDescription
+                : messages.contentPage.editor.editDescription
+            }
             footer={
               <>
                 <CatalogButton onClick={() => setDraft(null)} variant="secondary">
-                  Cancel
+                  {messages.contentPage.editor.cancel}
                 </CatalogButton>
                 <CatalogButton
                   disabled={isSubmitting || !draft.title.trim() || !draft.slug.trim()}
                   onClick={() => void handleSave()}
                   variant="primary"
                 >
-                  {isSubmitting ? "Saving…" : draft.id === null ? "Create post" : "Save changes"}
+                  {isSubmitting
+                    ? messages.contentPage.editor.saving
+                    : draft.id === null
+                      ? messages.contentPage.editor.create
+                      : messages.contentPage.editor.saveChanges}
                 </CatalogButton>
               </>
             }
             onClose={() => setDraft(null)}
-            title={draft.id === null ? "New post" : "Edit post"}
+            title={
+              draft.id === null
+                ? messages.contentPage.editor.newTitle
+                : messages.contentPage.editor.editTitle
+            }
           >
             <div className="space-y-3">
-              <BlogField label="Title">
+              <BlogField label={messages.contentPage.fields.title}>
                 <input
                   autoFocus
                   className="w-full rounded-[8px] border border-border bg-surface-subtle px-3 py-2 text-[13px] text-foreground outline-none transition focus:border-accent focus:shadow-[0_0_0_3px_var(--accent-glow)] placeholder:text-muted"
                   onChange={(e) => updateDraft("title", e.target.value)}
-                  placeholder="e.g. 5 Cash Flow Mistakes"
+                  placeholder={messages.contentPage.placeholders.title}
                   value={draft.title}
                 />
               </BlogField>
-              <BlogField label="Slug">
+              <BlogField label={messages.contentPage.fields.slug}>
                 <input
                   className="w-full rounded-[8px] border border-border bg-surface-subtle px-3 py-2 font-mono text-[12px] text-foreground outline-none transition focus:border-accent focus:shadow-[0_0_0_3px_var(--accent-glow)] placeholder:text-muted"
                   onChange={(e) => updateDraft("slug", e.target.value)}
-                  placeholder="cash-flow-mistakes"
+                  placeholder={messages.contentPage.placeholders.slug}
                   value={draft.slug}
                 />
               </BlogField>
-              <BlogField label="Author">
+              <BlogField label={messages.contentPage.fields.author}>
                 <input
                   className="w-full rounded-[8px] border border-border bg-surface-subtle px-3 py-2 text-[13px] text-foreground outline-none transition focus:border-accent focus:shadow-[0_0_0_3px_var(--accent-glow)] placeholder:text-muted"
                   onChange={(e) => updateDraft("author", e.target.value)}
-                  placeholder="PulseOps Team"
+                  placeholder={messages.contentPage.placeholders.author}
                   value={draft.author}
                 />
               </BlogField>
-              <BlogField label="Status">
+              <BlogField label={messages.contentPage.fields.status}>
                 <select
                   className="rounded-[8px] border border-border bg-surface-subtle px-3 py-2 text-[13px] text-foreground outline-none transition focus:border-accent"
                   onChange={(e) => updateDraft("status", e.target.value as BlogPostStatus)}
                   value={draft.status}
                 >
-                  <option value="draft">Draft</option>
-                  <option value="published">Published</option>
+                  <option value="draft">{messages.contentPage.statusLabels.draft}</option>
+                  <option value="published">{messages.contentPage.statusLabels.published}</option>
                 </select>
               </BlogField>
-              <BlogField label="Summary">
+              <BlogField label={messages.contentPage.fields.summary}>
                 <textarea
                   className="w-full resize-none rounded-[8px] border border-border bg-surface-subtle px-3 py-2 text-[13px] leading-[1.6] text-foreground outline-none transition focus:border-accent focus:shadow-[0_0_0_3px_var(--accent-glow)] placeholder:text-muted"
                   onChange={(e) => updateDraft("summary", e.target.value)}
-                  placeholder="One-paragraph summary shown in listing views."
+                  placeholder={messages.contentPage.placeholders.summary}
                   rows={2}
                   value={draft.summary}
                 />
               </BlogField>
-              <BlogField label="Body (Markdown)">
+              <BlogField label={messages.contentPage.fields.body}>
                 <textarea
                   className="w-full resize-y rounded-[8px] border border-border bg-surface-subtle px-3 py-2 font-mono text-[12px] leading-[1.7] text-foreground outline-none transition focus:border-accent focus:shadow-[0_0_0_3px_var(--accent-glow)] placeholder:text-muted"
                   onChange={(e) => updateDraft("body", e.target.value)}
-                  placeholder="Write the full post body here. Markdown is supported."
+                  placeholder={messages.contentPage.placeholders.body}
                   rows={10}
                   value={draft.body}
                 />
@@ -341,7 +374,7 @@ export function BlogAdminPage() {
       {pendingDeleteId !== null ? (
         <CatalogModalOverlay>
           <DialogFrame
-            description="This post will be permanently deleted and removed from the public blog."
+            description={messages.contentPage.deleteDialog.description}
             footer={
               <>
                 <CatalogButton
@@ -349,22 +382,24 @@ export function BlogAdminPage() {
                   onClick={() => setPendingDeleteId(null)}
                   variant="secondary"
                 >
-                  Cancel
+                  {messages.contentPage.deleteDialog.cancel}
                 </CatalogButton>
                 <CatalogButton
                   disabled={isDeleting}
                   onClick={() => void handleDelete(pendingDeleteId)}
                   variant="danger"
                 >
-                  {isDeleting ? "Deleting…" : "Delete post"}
+                  {isDeleting
+                    ? messages.contentPage.deleteDialog.deleting
+                    : messages.contentPage.deleteDialog.delete}
                 </CatalogButton>
               </>
             }
             onClose={() => setPendingDeleteId(null)}
-            title="Delete post?"
+            title={messages.contentPage.deleteDialog.title}
           >
             <p className="text-[13px] leading-[1.6] text-muted">
-              {pendingDeletePost?.title ?? "This post"}
+              {pendingDeletePost?.title ?? messages.contentPage.deleteDialog.postFallback}
             </p>
           </DialogFrame>
         </CatalogModalOverlay>

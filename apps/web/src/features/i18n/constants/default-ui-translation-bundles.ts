@@ -142,6 +142,70 @@ const defaultUiMessagesEnUs = {
     resetDashboardFilters: "Reset dashboard filters",
     skipToMainContent: "Skip to main content",
   },
+  contentPage: {
+    actions: {
+      delete: "Delete",
+      edit: "Edit",
+      newPost: "New post",
+      viewPublicBlog: "View public blog",
+    },
+    breadcrumbs: ["Dashboard", "Content"],
+    deleteDialog: {
+      cancel: "Cancel",
+      delete: "Delete post",
+      deleting: "Deleting...",
+      description: "This post will be permanently deleted and removed from the public blog.",
+      postFallback: "This post",
+      title: "Delete post?",
+    },
+    description:
+      "Manage published and draft blog posts. Changes are reflected on the public blog immediately.",
+    editor: {
+      cancel: "Cancel",
+      create: "Create post",
+      editDescription: "Edit the post details below.",
+      editTitle: "Edit post",
+      newDescription: "Fill in the fields below to create a new post.",
+      newTitle: "New post",
+      saveChanges: "Save changes",
+      saving: "Saving...",
+    },
+    emptyState: {
+      description: "Create your first post to get started.",
+      title: "No blog posts yet",
+    },
+    fields: {
+      author: "Author",
+      body: "Body (Markdown)",
+      slug: "Slug",
+      status: "Status",
+      summary: "Summary",
+      title: "Title",
+    },
+    loading: "Loading posts...",
+    placeholders: {
+      author: "PulseOps Team",
+      body: "Write the full post body here. Markdown is supported.",
+      slug: "cash-flow-mistakes",
+      summary: "One-paragraph summary shown in listing views.",
+      title: "e.g. 5 Cash Flow Mistakes",
+    },
+    publicBlogDescription:
+      "Opens /blog, the public-facing blog page powered by this content workflow.",
+    statusLabels: {
+      draft: "Draft",
+      published: "Published",
+    },
+    tableHeaders: {
+      actions: "Actions",
+      author: "Author",
+      date: "Date",
+      status: "Status",
+      title: "Title",
+    },
+    title: "Blog posts",
+    toggleStatusTitle: "Click to toggle status",
+  },
   dataLabels: {
     documentFamilies: {
       all: {
@@ -1203,6 +1267,71 @@ const defaultUiMessagesEs: UiMessages = {
     localeLabel: "Idioma",
     resetDashboardFilters: "Restablecer filtros del panel",
     skipToMainContent: "Saltar al contenido principal",
+  },
+  contentPage: {
+    actions: {
+      delete: "Eliminar",
+      edit: "Editar",
+      newPost: "Nueva publicacion",
+      viewPublicBlog: "Ver blog publico",
+    },
+    breadcrumbs: ["Panel", "Contenido"],
+    deleteDialog: {
+      cancel: "Cancelar",
+      delete: "Eliminar publicacion",
+      deleting: "Eliminando...",
+      description:
+        "Esta publicacion se eliminara permanentemente y dejara de aparecer en el blog publico.",
+      postFallback: "Esta publicacion",
+      title: "Eliminar publicacion?",
+    },
+    description:
+      "Administra publicaciones publicadas y en borrador. Los cambios se reflejan de inmediato en el blog publico.",
+    editor: {
+      cancel: "Cancelar",
+      create: "Crear publicacion",
+      editDescription: "Edita los detalles de la publicacion.",
+      editTitle: "Editar publicacion",
+      newDescription: "Completa los campos de abajo para crear una nueva publicacion.",
+      newTitle: "Nueva publicacion",
+      saveChanges: "Guardar cambios",
+      saving: "Guardando...",
+    },
+    emptyState: {
+      description: "Crea tu primera publicacion para comenzar.",
+      title: "Todavia no hay publicaciones",
+    },
+    fields: {
+      author: "Autor",
+      body: "Contenido (Markdown)",
+      slug: "Slug",
+      status: "Estado",
+      summary: "Resumen",
+      title: "Titulo",
+    },
+    loading: "Cargando publicaciones...",
+    placeholders: {
+      author: "Equipo PulseOps",
+      body: "Escribe aqui el contenido completo. Se admite Markdown.",
+      slug: "errores-de-flujo-de-caja",
+      summary: "Resumen de un parrafo que se muestra en las vistas de listado.",
+      title: "p. ej. 5 errores de flujo de caja",
+    },
+    publicBlogDescription:
+      "Abre /blog, la pagina publica del blog gestionada por este flujo de contenido.",
+    statusLabels: {
+      draft: "Borrador",
+      published: "Publicado",
+    },
+    tableHeaders: {
+      actions: "Acciones",
+      author: "Autor",
+      date: "Fecha",
+      status: "Estado",
+      title: "Titulo",
+    },
+    title: "Publicaciones del blog",
+    toggleStatusTitle: "Haz clic para alternar el estado",
   },
   dataLabels: {
     documentFamilies: {
