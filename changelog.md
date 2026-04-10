@@ -17,12 +17,23 @@
 ### Content and Marketing
 - Added a blog content workflow with public and workspace routes, CRUD API handlers, in-memory blog storage, and structured website contact details managed from settings.
 - Wired website details into the home and contact marketing pages, restored blog admin copy and shell fallbacks, and added Playwright coverage for public blog, content admin, and website-detail flows.
+- Replaced modal blog editing with a full-page authoring workflow, dedicated content editor routes, markdown preview and toolbar controls, and image uploads for rich post drafts.
+- Moved the public `/blog` experience onto the API-backed marketing shell so published posts render through the shared marketing layout instead of a standalone page.
+
+### Extraction and Uploads
+- Improved generic tabular extraction prompts with computed business summaries, date-range and top-contributor profiling, and tighter guidance for high-value business observations.
+- Added manual PDF upload support, resolved the local `pdfjs` worker path for server-side parsing, and backfilled duplicate upload jobs when an extracted document exists without recorded ingestion state.
 
 ### Settings Localization
 - Localized organization profile controls and added the matching UI bundle labels so the settings surface stays consistent across supported locales.
+- Persisted theme preference through cookies and client hydration, normalized default UI bundle fallback merging, and wired more settings headings and descriptions through seeded translation content.
 
 ### Research
 - Added an extraction prompt optimization runner plus representative XLSX and PDF fixtures for evaluating structured fact extraction quality against expected business facts.
+- Added a focused supermarket-sales research fixture, made prompt-optimization rounds resumable, and checked in browser upload asset variants used for manual and Playwright upload flows.
+
+### Quality
+- Stabilized the cookie-backed auth actor test against time-sensitive session expiry and removed unused prototype images from the docs folder.
 
 ## 2026-04-09
 
