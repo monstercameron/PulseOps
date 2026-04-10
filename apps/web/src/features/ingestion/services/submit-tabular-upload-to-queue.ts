@@ -4,6 +4,7 @@ import {
   attachStoredObjectToDocument,
   createUploadedDocument,
   markDocumentFailed,
+  type DocumentSource,
   type DocumentRecord,
 } from "@/features/documents/domain/document";
 import { type DocumentRepository } from "@/features/documents/repositories/document-repository";
@@ -35,6 +36,7 @@ import {
 } from "@/features/storage/lib/object-storage";
 
 export type SubmitTabularUploadToQueueInput = {
+  archiveAfterDays?: number;
   body: Buffer;
   contentType?: string;
   documentRepository: DocumentRepository;
@@ -48,6 +50,7 @@ export type SubmitTabularUploadToQueueInput = {
   queue: IngestionQueue;
   retainSourceFile?: boolean;
   requestId?: string;
+  source?: DocumentSource;
   storage: ObjectStorage;
 };
 
@@ -175,7 +178,9 @@ export async function submitTabularUploadToQueue(
 
   const documentId = generateId();
   const jobId = generateId();
-  const lifecyclePolicy = resolveUploadLifecyclePolicy("upload", {
+  const source = input.source ?? "upload";
+  const lifecyclePolicy = resolveUploadLifecyclePolicy(source, {
+    archiveAfterDays: input.archiveAfterDays,
     retainSourceFile: input.retainSourceFile,
   });
   let document = createUploadedDocument(
@@ -186,6 +191,7 @@ export async function submitTabularUploadToQueue(
       id: documentId,
       orgId: input.orgId,
       retentionPolicyKey: lifecyclePolicy.retentionPolicyKey,
+      source,
     },
     createdAt,
   );

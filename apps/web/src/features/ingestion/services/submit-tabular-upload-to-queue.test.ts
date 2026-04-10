@@ -272,4 +272,52 @@ describe("submitTabularUploadToQueue", () => {
     expect(emittedLogs[0]).toContain("\"kind\":\"object_key\"");
     expect(emittedLogs[0]).toContain("\"kind\":\"digest\"");
   });
+
+  it("applies caller-provided source and archive retention overrides", async () => {
+    const rootDirectory = await mkdtemp(
+      path.join(os.tmpdir(), "bizopsaccelerator-submit-queue-retention-"),
+    );
+    temporaryDirectories.push(rootDirectory);
+
+    const storage = createLocalObjectStorage({
+      now: () => "2026-04-09T18:00:00.000Z",
+      rootDirectory: path.join(rootDirectory, "storage"),
+    });
+    const documentRepository = createLocalDocumentRepository({
+      rootDirectory: path.join(rootDirectory, "records"),
+    });
+    const ingestionEventRepository = createLocalIngestionEventRepository({
+      rootDirectory: path.join(rootDirectory, "records"),
+    });
+    const ingestionJobRepository = createLocalIngestionJobRepository({
+      rootDirectory: path.join(rootDirectory, "records"),
+    });
+    const queue = createInMemoryIngestionQueue();
+
+    const result = await submitTabularUploadToQueue({
+      archiveAfterDays: 21,
+      body: Buffer.from("Invoice Number,Amount Due\nINV-001,4200", "utf8"),
+      documentRepository,
+      fileName: "forwarded-invoice.csv",
+      ingestionEventRepository,
+      ingestionJobRepository,
+      now: () => "2026-04-09T18:00:00.000Z",
+      orgId: "org_123",
+      queue,
+      retainSourceFile: false,
+      source: "email",
+      storage,
+    });
+
+    expect(result.document).toMatchObject({
+      archiveAfterDays: 21,
+      retentionPolicyKey: "email-hot-21d-purge-source",
+      source: "email",
+    });
+    expect(result.ingestionEvent).toMatchObject({
+      archiveAfterDays: 21,
+      retentionPolicyKey: "email-hot-21d-purge-source",
+      source: "email",
+    });
+  });
 });

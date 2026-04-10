@@ -143,8 +143,10 @@ describe("handleFileUpload", () => {
     expect(response.status).toBe(200);
     expect(submitTabularUpload).toHaveBeenCalledWith(
       expect.objectContaining({
+        archiveAfterDays: settingsRecord.dataPolicy.sourceRetentionDays.upload,
         orgId: "org_123",
         retainSourceFile: false,
+        source: "upload",
       }),
     );
   });

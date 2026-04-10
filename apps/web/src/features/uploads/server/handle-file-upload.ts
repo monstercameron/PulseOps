@@ -78,8 +78,10 @@ export async function handleFileUpload(
   const retainSourceFile = shouldRetainUploadedSourceFiles(
     settingsRecord.preferences,
   );
+  const uploadRetentionDays = settingsRecord.dataPolicy.sourceRetentionDays.upload;
 
   const upload = await dependencies.submitTabularUpload({
+    archiveAfterDays: uploadRetentionDays,
     body,
     contentType: routing.detectedContentType,
     documentRepository: dependencies.documentRepository,
@@ -90,6 +92,7 @@ export async function handleFileUpload(
     queue: dependencies.queue,
     retainSourceFile,
     storage: dependencies.storage,
+    source: "upload",
   });
   const processedUpload = await dependencies.processQueuedUpload?.();
   const persistedDocument =

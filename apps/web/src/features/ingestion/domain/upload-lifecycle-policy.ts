@@ -28,20 +28,36 @@ const rawUploadPurgeSuffix = "-purge-source";
 export function resolveUploadLifecyclePolicy(
   source: DocumentSource,
   options?: Readonly<{
+    archiveAfterDays?: number;
     retainSourceFile?: boolean;
   }>,
 ): UploadLifecyclePolicy {
   const resolvedSource = documentSourceSchema.parse(source);
   const basePolicy = lifecyclePolicyBySource[resolvedSource];
+  const archiveAfterDays = options?.archiveAfterDays ?? basePolicy.archiveAfterDays;
+
+  if (!Number.isInteger(archiveAfterDays) || archiveAfterDays <= 0) {
+    throw new Error("Upload lifecycle policy requires a positive archive window.");
+  }
+
+  const sourceKeyPrefix =
+    resolvedSource === "upload" ? "manual-upload" : resolvedSource;
+  const retentionPolicyKey =
+    archiveAfterDays === basePolicy.archiveAfterDays
+      ? basePolicy.retentionPolicyKey
+      : `${sourceKeyPrefix}-hot-${archiveAfterDays}d`;
 
   if (options?.retainSourceFile === false) {
     return {
-      ...basePolicy,
-      retentionPolicyKey: `${basePolicy.retentionPolicyKey}${rawUploadPurgeSuffix}`,
+      archiveAfterDays,
+      retentionPolicyKey: `${retentionPolicyKey}${rawUploadPurgeSuffix}`,
     };
   }
 
-  return basePolicy;
+  return {
+    archiveAfterDays,
+    retentionPolicyKey,
+  };
 }
 
 export function shouldRetainRawUpload(retentionPolicyKey?: string): boolean {

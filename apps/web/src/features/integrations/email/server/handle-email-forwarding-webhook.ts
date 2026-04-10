@@ -71,6 +71,7 @@ export async function handleEmailForwardingWebhook(
   const retainSourceFile = shouldRetainUploadedSourceFiles(
     settingsRecord.preferences,
   );
+  const emailRetentionDays = settingsRecord.dataPolicy.sourceRetentionDays.email;
   const acceptedUploads = [];
   const rejectedAttachments = [];
 
@@ -91,6 +92,7 @@ export async function handleEmailForwardingWebhook(
     }
 
     const upload = await dependencies.submitTabularUpload({
+      archiveAfterDays: emailRetentionDays,
       body,
       contentType: routing.detectedContentType,
       documentRepository: dependencies.documentRepository,
@@ -101,6 +103,7 @@ export async function handleEmailForwardingWebhook(
       queue: dependencies.queue,
       retainSourceFile,
       storage: dependencies.storage,
+      source: "email",
     });
 
     acceptedUploads.push({
