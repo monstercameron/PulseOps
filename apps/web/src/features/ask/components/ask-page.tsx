@@ -16,6 +16,16 @@ import {
 } from "@/features/catalog/components/catalog-primitives";
 import { type AskHistoryThread } from "@/features/query/server/handle-ask-history-request";
 import { AskWidgetRenderer } from "@/features/ask/components/ask-widget-renderer";
+import { AskMessageRichText } from "@/features/ask/components/ask-message-rich-text";
+import {
+  getAskMessageActionIds,
+  hasAskMessageContext,
+} from "@/features/ask/lib/ask-message-actions";
+import {
+  appendAskThreadMessages,
+  sliceAskThreadMessages,
+  type AskMessage,
+} from "@/features/ask/lib/ask-thread-messages";
 import { type AskWidget } from "@/features/ask/lib/ask-widget-types";
 import {
   SEED_DEFAULT_THREAD_ID,
@@ -29,13 +39,10 @@ type AskPageProps = Readonly<{
   orgId: string;
 }>;
 
-type AskMessage = Readonly<{
-  citations: readonly string[];
-  clarificationQuestions: readonly string[];
-  id: string;
-  role: "assistant" | "user";
-  text: string;
-  widget?: AskWidget | null;
+type AskForkState = Readonly<{
+  baseMessages: readonly AskMessage[];
+  draft: string;
+  sourceMessagePreview: string;
 }>;
 
 // SeedMessage is structurally identical — assign freely
@@ -74,9 +81,13 @@ export function AskPage({ initialHistory, orgId }: AskPageProps) {
     ...initialHistory.filter((t) => !(t.id in SEED_THREAD_MESSAGES)),
   ]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [threadMessagesById, setThreadMessagesById] = useState<
+    Record<string, readonly AskMessage[]>
+  >(() => ({ ...SEED_THREAD_MESSAGES }));
   // Show the first seed thread's messages on initial load.
   const [messages, setMessages] = useState<readonly AskMessage[]>(
-    (SEED_THREAD_MESSAGES[SEED_DEFAULT_THREAD_ID] as readonly SeedMessage[]) ?? [],
+    (SEED_THREAD_MESSAGES[SEED_DEFAULT_THREAD_ID] as readonly SeedMessage[]) ??
+      [],
   );
   const [pendingDeleteThreadId, setPendingDeleteThreadId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -85,7 +96,7 @@ export function AskPage({ initialHistory, orgId }: AskPageProps) {
     title: string;
   } | null>(null);
   const [selectedThreadId, setSelectedThreadId] = useState<string | null>(SEED_DEFAULT_THREAD_ID);
-  const [forkDraft, setForkDraft] = useState<string | null>(null);
+  const [forkState, setForkState] = useState<AskForkState | null>(null);
   const composerRef = useRef<HTMLTextAreaElement | null>(null);
 
   function openPlaceholderAction(title: string, description?: string) {
@@ -93,12 +104,21 @@ export function AskPage({ initialHistory, orgId }: AskPageProps) {
     setPlaceholderAction({ description, title });
   }
 
-  async function submitQuestion(question: string, saveQuestion: boolean) {
+  async function submitQuestion(
+    question: string,
+    saveQuestion: boolean,
+    options?: Readonly<{
+      baseMessages?: readonly AskMessage[];
+      threadId?: string;
+    }>,
+  ) {
     const trimmedQuestion = question.trim();
 
     if (trimmedQuestion.length === 0 || isSubmitting) {
       return;
     }
+
+    const baseMessages = options?.baseMessages ?? messages;
 
     const userMessage: AskMessage = {
       citations: [],
@@ -108,7 +128,7 @@ export function AskPage({ initialHistory, orgId }: AskPageProps) {
       text: trimmedQuestion,
     };
     setIsSubmitting(true);
-    setMessages([userMessage]);
+    setMessages(appendAskThreadMessages(baseMessages, [userMessage]));
 
     try {
       const response = await fetch("/api/ask", {
@@ -139,28 +159,38 @@ export function AskPage({ initialHistory, orgId }: AskPageProps) {
             : payload.answer.answerText,
         widget: payload.widget ?? null,
       };
+      const nextMessages = appendAskThreadMessages(baseMessages, [
+        userMessage,
+        assistantMessage,
+      ]);
+      const nextThreadId =
+        options?.threadId ??
+        (saveQuestion ? `local-${Date.now()}` : undefined);
 
-      setMessages([userMessage, assistantMessage]);
+      setMessages(nextMessages);
 
-      if (saveQuestion) {
-        const threadId = `local-${Date.now()}`;
+      if (nextThreadId !== undefined) {
+        setThreadMessagesById((current) => ({
+          ...current,
+          [nextThreadId]: nextMessages,
+        }));
+      }
 
-        setSelectedThreadId(threadId);
+      if (saveQuestion && nextThreadId !== undefined) {
+        setSelectedThreadId(nextThreadId);
         setHistory((current) => [
           {
             createdAt: new Date().toISOString(),
-            id: threadId,
+            id: nextThreadId,
             needsClarification: payload.answer.status === "needs-clarification",
             question: trimmedQuestion,
             retrievalMode: payload.plan.retrievalMode,
           },
-          ...current.filter((thread) => thread.question !== trimmedQuestion),
+          ...current.filter((thread) => thread.id !== nextThreadId),
         ]);
       }
     } catch (error) {
-      setMessages([
-        userMessage,
-        {
+      const errorAssistantMessage: AskMessage = {
           citations: [],
           clarificationQuestions: [],
           id: `assistant-error-${Date.now()}`,
@@ -169,8 +199,27 @@ export function AskPage({ initialHistory, orgId }: AskPageProps) {
             error instanceof Error
               ? error.message
               : "The ask request could not be completed.",
-        },
+        };
+      const nextMessages = appendAskThreadMessages(baseMessages, [
+        userMessage,
+        errorAssistantMessage,
       ]);
+      const nextThreadId =
+        options?.threadId ??
+        (saveQuestion ? `local-${Date.now()}` : undefined);
+
+      setMessages(nextMessages);
+
+      if (nextThreadId !== undefined) {
+        setThreadMessagesById((current) => ({
+          ...current,
+          [nextThreadId]: nextMessages,
+        }));
+      }
+
+      if (saveQuestion && nextThreadId !== undefined) {
+        setSelectedThreadId(nextThreadId);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -179,27 +228,42 @@ export function AskPage({ initialHistory, orgId }: AskPageProps) {
   async function handleThreadSelection(thread: AskHistoryThread) {
     setSelectedThreadId(thread.id);
     setDraft(thread.question);
+    const cachedMessages = threadMessagesById[thread.id];
+
+    if (cachedMessages !== undefined) {
+      setMessages(cachedMessages);
+      return;
+    }
+
     // Seed threads have pre-built messages — no API call needed.
     if (isSeedId(thread.id)) {
       setMessages(SEED_THREAD_MESSAGES[thread.id] as readonly SeedMessage[]);
       return;
     }
-    await submitQuestion(thread.question, false);
+
+    await submitQuestion(thread.question, false, {
+      baseMessages: [],
+      threadId: thread.id,
+    });
   }
 
   async function handleForkConfirm() {
-    const question = (forkDraft ?? "").trim();
+    const question = (forkState?.draft ?? "").trim();
     if (!question || isSubmitting) return;
-    setForkDraft(null);
+    const baseMessages = forkState?.baseMessages ?? [];
+    setForkState(null);
     setSelectedThreadId(null);
     setDraft(question);
-    await submitQuestion(question, true);
+    await submitQuestion(question, true, {
+      baseMessages,
+    });
   }
 
   function startNewThread() {
     setDraft("");
     setMessages([]);
     setSelectedThreadId(null);
+    setForkState(null);
     composerRef.current?.focus();
   }
 
@@ -213,10 +277,25 @@ export function AskPage({ initialHistory, orgId }: AskPageProps) {
       if (selectedThreadId === threadId) {
         startNewThread();
       }
+      setThreadMessagesById((current) => {
+        if (!(threadId in current)) {
+          return current;
+        }
+
+        const nextThreadMessages = { ...current };
+
+        delete nextThreadMessages[threadId];
+
+        return nextThreadMessages;
+      });
     } finally {
       setIsDeleting(false);
       setPendingDeleteThreadId(null);
     }
+  }
+
+  function copyMessageToClipboard(text: string) {
+    void navigator.clipboard.writeText(text);
   }
 
   return (
@@ -359,91 +438,110 @@ export function AskPage({ initialHistory, orgId }: AskPageProps) {
               </CatalogCard>
             ) : (
               <div className="space-y-5">
-                {messages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={message.role === "user" ? "group/msg flex flex-col items-end gap-1.5" : ""}
-                  >
+                {messages.map((message) => {
+                  const hasContext = hasAskMessageContext({
+                    citationsCount: message.citations.length,
+                    clarificationQuestionsCount:
+                      message.clarificationQuestions.length,
+                  });
+                  const actionIds = getAskMessageActionIds(message.role);
+
+                  return (
+                    <div
+                      key={message.id}
+                      className={
+                        message.role === "user"
+                          ? "flex flex-col items-end gap-1.5"
+                          : ""
+                      }
+                    >
                   <ConversationBubble
                     avatarLabel={message.role === "assistant" ? "PO" : "JR"}
                     footer={
-                      message.role === "assistant" &&
-                      (message.citations.length > 0 ||
-                        message.clarificationQuestions.length > 0) ? (
-                        <div className="space-y-3">
-                          {message.citations.length > 0 ? (
-                            <div>
-                              <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">
-                                Based on
-                              </span>
-                              <div className="mt-2">
-                                <CitationList items={message.citations} />
+                      <div className="space-y-3">
+                        {hasContext ? (
+                          <div className="space-y-3">
+                            {message.citations.length > 0 ? (
+                              <div>
+                                <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">
+                                  Based on
+                                </span>
+                                <div className="mt-2">
+                                  <CitationList items={message.citations} />
+                                </div>
                               </div>
-                            </div>
-                          ) : null}
-                          {message.clarificationQuestions.length > 0 ? (
-                            <div>
-                              <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">
-                                Clarify next
-                              </span>
-                              <ul className="mt-2 space-y-1 text-sm text-foreground">
-                                {message.clarificationQuestions.map((question) => (
-                                  <li key={question}>{question}</li>
-                                ))}
-                              </ul>
-                            </div>
-                          ) : null}
-                          <div className="flex items-center gap-1 border-t border-border pt-3">
-                            <button
-                              className="rounded-md px-2 py-1 text-[11px] font-medium text-muted transition-colors hover:bg-surface-subtle hover:text-foreground"
-                              onClick={() => void navigator.clipboard.writeText(message.text)}
-                              type="button"
-                            >
-                              Copy
-                            </button>
-                            <button
-                              className="rounded-md px-2 py-1 text-[11px] font-medium text-muted transition-colors hover:bg-surface-subtle hover:text-foreground"
-                              onClick={() =>
-                                openPlaceholderAction("Save to pack", "Ask insights can be saved to packs once that workflow is implemented.")
-                              }
-                              type="button"
-                            >
-                              Save to pack
-                            </button>
+                            ) : null}
+                            {message.clarificationQuestions.length > 0 ? (
+                              <div>
+                                <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">
+                                  Clarify next
+                                </span>
+                                <ul className="mt-2 space-y-1 text-sm text-foreground">
+                                  {message.clarificationQuestions.map((question) => (
+                                    <li key={question}>{question}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            ) : null}
                           </div>
+                        ) : null}
+                        <div
+                          className={[
+                            "flex flex-wrap items-center gap-1 pt-3",
+                            hasContext ? "border-t border-border" : "",
+                          ].join(" ")}
+                        >
+                          {actionIds.map((actionId) => (
+                            <button
+                              key={`${message.id}-${actionId}`}
+                              className="rounded-md px-2 py-1 text-[11px] font-medium text-muted transition-colors hover:bg-surface-subtle hover:text-foreground"
+                              onClick={() => {
+                                if (actionId === "copy") {
+                                  copyMessageToClipboard(message.text);
+                                  return;
+                                }
+
+                                if (actionId === "fork-thread") {
+                                  setForkState({
+                                    baseMessages: sliceAskThreadMessages(
+                                      messages,
+                                      message.id,
+                                    ),
+                                    draft: "",
+                                    sourceMessagePreview: message.text,
+                                  });
+                                  return;
+                                }
+
+                                openPlaceholderAction(
+                                  "Save to pack",
+                                  "Ask insights can be saved to packs once that workflow is implemented.",
+                                );
+                              }}
+                              type="button"
+                            >
+                              {actionId === "copy"
+                                ? "Copy"
+                                : actionId === "fork-thread"
+                                  ? "Fork thread"
+                                  : "Save to pack"}
+                            </button>
+                          ))}
                         </div>
-                      ) : undefined
+                      </div>
                     }
                     role={message.role}
                   >
-                    <div className="space-y-2">
-                      {message.text.split("\n").map((line, index) => (
-                        <p key={`${message.id}-${index}`}>{line}</p>
-                      ))}
-                    </div>
+                    <AskMessageRichText
+                      content={message.text}
+                      role={message.role}
+                    />
                     {message.role === "assistant" && message.widget ? (
                       <AskWidgetRenderer widget={message.widget} />
                     ) : null}
                   </ConversationBubble>
-                  {message.role === "user" ? (
-                    <button
-                      className="flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-medium text-muted/60 opacity-0 transition-opacity hover:bg-surface-subtle hover:text-foreground group-hover/msg:opacity-100 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                      onClick={() => setForkDraft(message.text)}
-                      title="Fork a new thread from this question"
-                      type="button"
-                    >
-                      <svg fill="none" height="11" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.75" viewBox="0 0 16 16" width="11">
-                        <circle cx="4" cy="4" r="1.5" />
-                        <circle cx="4" cy="12" r="1.5" />
-                        <circle cx="12" cy="4" r="1.5" />
-                        <path d="M4 5.5v5M4 5.5C4 8 6 9 8 9h2.4" />
-                        <path d="M10.5 5.5L12 4l1.5 1.5" />
-                      </svg>
-                      Fork thread
-                    </button>
-                  ) : null}
                   </div>
-                ))}
+                )})}
               </div>
             )}
           </div>
@@ -495,20 +593,20 @@ export function AskPage({ initialHistory, orgId }: AskPageProps) {
         />
       ) : null}
 
-      {forkDraft !== null ? (
+      {forkState !== null ? (
         <CatalogModalOverlay>
           <DialogFrame
-            description="Edit the question if needed, then fork it into a new saved thread."
+            description="The new thread will keep every prior message through the selected point, then continue from there with a new question."
             footer={
               <>
                 <CatalogButton
-                  onClick={() => setForkDraft(null)}
+                  onClick={() => setForkState(null)}
                   variant="secondary"
                 >
                   Cancel
                 </CatalogButton>
                 <CatalogButton
-                  disabled={forkDraft.trim().length === 0 || isSubmitting}
+                  disabled={forkState.draft.trim().length === 0 || isSubmitting}
                   onClick={() => void handleForkConfirm()}
                   variant="primary"
                 >
@@ -516,18 +614,38 @@ export function AskPage({ initialHistory, orgId }: AskPageProps) {
                 </CatalogButton>
               </>
             }
-            onClose={() => setForkDraft(null)}
+            onClose={() => setForkState(null)}
             title="Fork thread"
           >
+            <div className="rounded-[8px] border border-border bg-surface-subtle px-3 py-2.5 text-[12px] leading-[1.6] text-muted">
+              <span className="font-semibold text-foreground">Fork point</span>
+              <p className="mt-1">
+                {forkState.sourceMessagePreview.length > 180
+                  ? `${forkState.sourceMessagePreview.slice(0, 180)}...`
+                  : forkState.sourceMessagePreview}
+              </p>
+              <p className="mt-2">
+                Prior messages carried into the new thread:{" "}
+                <span className="font-semibold text-foreground">
+                  {forkState.baseMessages.length}
+                </span>
+              </p>
+            </div>
             <textarea
               autoFocus
               className="min-h-[96px] w-full resize-none rounded-[8px] border border-border bg-surface-subtle px-3 py-2.5 text-[13px] leading-[1.7] text-foreground outline-none transition-[border-color,box-shadow] placeholder:text-muted focus:border-accent focus:shadow-[0_0_0_3px_var(--accent-glow)]"
-              onChange={(e) => setForkDraft(e.target.value)}
-              placeholder="Enter the forked question…"
-              value={forkDraft}
+              onChange={(e) =>
+                setForkState((current) =>
+                  current === null
+                    ? null
+                    : { ...current, draft: e.target.value },
+                )
+              }
+              placeholder="Ask the next question in the forked thread…"
+              value={forkState.draft}
             />
             <p className="mt-2 text-[11.5px] text-muted">
-              The forked question will be submitted as a new thread and saved to history.
+              The forked thread will preserve the prior conversation and save the new branch to history.
             </p>
           </DialogFrame>
         </CatalogModalOverlay>

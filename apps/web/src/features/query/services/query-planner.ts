@@ -60,7 +60,7 @@ export function planDatasetQuestion(
     keywords.some((keyword) => normalizedQuestion.includes(keyword)),
   );
 
-  if (normalizedQuestion.length < 8 || matches.length === 0) {
+  if (matches.length === 0) {
     return createQueryPlan({
       canonicalFactTypeIds: [],
       entityTypes: [],

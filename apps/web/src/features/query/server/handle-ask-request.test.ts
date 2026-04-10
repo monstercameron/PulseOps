@@ -12,6 +12,7 @@ import { createExtractionContract } from "@/features/extraction/domain/extractio
 import { createLocalFactRepository } from "@/features/facts/repositories/local-fact-repository";
 import { materializeExtractionFacts } from "@/features/facts/services/materialize-extraction-facts";
 import { createLocalSavedQuestionRepository } from "@/features/query/repositories/local-saved-question-repository";
+import { type SavedQuestion } from "@/features/query/domain/saved-question";
 import { handleAskRequest } from "@/features/query/server/handle-ask-request";
 import { createCitation } from "@/features/trust/domain/citation";
 
@@ -129,4 +130,112 @@ describe("handleAskRequest", () => {
       1,
     );
   });
+
+  it("returns a conversational clarification reply for vague prompts without hitting retrieval", async () => {
+    const response = await handleAskRequest(
+      new Request("http://localhost/api/ask", {
+        body: JSON.stringify({
+          orgId: "org_123",
+          question: "hi",
+          saveQuestion: false,
+        }),
+        headers: {
+          "content-type": "application/json",
+        },
+        method: "POST",
+      }),
+      {
+        askConversationService: {
+          replyToClarifyingQuestion: async ({ question }) => {
+            expect(question).toBe("hi");
+
+            return "Hi. I can help with invoices, cash, jobs, and margins. Try asking what deserves attention this week.";
+          },
+        },
+        chunkRepository: createThrowingChunkRepository(),
+        embedder: createThrowingEmbedder(),
+        factRepository: createThrowingFactRepository(),
+        savedQuestionRepository: createInMemorySavedQuestionRepository(),
+      },
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      answer: {
+        answerText: expect.stringContaining("Hi."),
+        citations: [],
+        status: "needs-clarification",
+      },
+      plan: {
+        needsClarification: true,
+        retrievalMode: "clarify",
+      },
+      widget: null,
+    });
+  });
 });
+
+function createThrowingChunkRepository() {
+  return {
+    async getById() {
+      throw new Error("Clarification prompts should not fetch chunks.");
+    },
+    async listByDocumentId() {
+      throw new Error("Clarification prompts should not fetch chunks.");
+    },
+    async listByEntityId() {
+      throw new Error("Clarification prompts should not fetch chunks.");
+    },
+    async listByOrgId() {
+      throw new Error("Clarification prompts should not fetch chunks.");
+    },
+    async put() {
+      throw new Error("Clarification prompts should not write chunks.");
+    },
+  };
+}
+
+function createThrowingFactRepository() {
+  return {
+    async getById() {
+      throw new Error("Clarification prompts should not fetch facts.");
+    },
+    async listByDocumentId() {
+      throw new Error("Clarification prompts should not fetch facts.");
+    },
+    async listByEntityId() {
+      throw new Error("Clarification prompts should not fetch facts.");
+    },
+    async listByOrgId() {
+      throw new Error("Clarification prompts should not fetch facts.");
+    },
+    async put() {
+      throw new Error("Clarification prompts should not write facts.");
+    },
+  };
+}
+
+function createThrowingEmbedder() {
+  return {
+    dimensions: 8,
+    embedText() {
+      throw new Error("Clarification prompts should not embed text.");
+    },
+    modelId: "test-embedder",
+  };
+}
+
+function createInMemorySavedQuestionRepository() {
+  return {
+    async deleteById() {},
+    async getById() {
+      return null;
+    },
+    async listByOrgId() {
+      return [];
+    },
+    async put(savedQuestion: SavedQuestion) {
+      return savedQuestion;
+    },
+  };
+}

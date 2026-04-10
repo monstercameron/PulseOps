@@ -9,6 +9,7 @@ describe("server env", () => {
   it("provides local defaults for backend services", () => {
     expect(loadServerEnv({ NODE_ENV: "test" })).toMatchObject({
       BIZOPS_AUTH_SECRET: "dev-auth-secret",
+      BIZOPS_OPENAI_ASK_MODEL: "gpt-5-mini",
       BIZOPS_OPENAI_EXTRACTION_MODEL: "gpt-5-mini",
       BIZOPS_RECORDS_ROOT: ".local-data/records",
       BIZOPS_RUNTIME_STORAGE: "local",
@@ -18,6 +19,7 @@ describe("server env", () => {
     expect(
       resolveServerPaths({
         BIZOPS_AUTH_SECRET: "auth-secret-1234",
+        BIZOPS_OPENAI_ASK_MODEL: "gpt-5.4-mini",
         BIZOPS_OPENAI_EXTRACTION_MODEL: "gpt-5.4-mini",
         BIZOPS_RECORDS_ROOT: ".tmp/records",
         BIZOPS_STORAGE_ROOT: ".tmp/storage",
@@ -30,6 +32,7 @@ describe("server env", () => {
       authSecret: "auth-secret-1234",
       databaseUrl: "postgres://localhost:5432/custom",
       openAiApiKey: "sk-test-123",
+      openAiAskModel: "gpt-5.4-mini",
       openAiExtractionModel: "gpt-5.4-mini",
       runtimeStorage: "local",
       webhookSecret: "secret-1234",

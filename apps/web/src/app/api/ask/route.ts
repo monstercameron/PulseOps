@@ -16,6 +16,7 @@ export const POST = createLoggedRouteHandler({
   feature: "query",
   handler: async (request) =>
     handleAskRequest(request, {
+      askConversationService: localIngestionRuntime.askConversationService,
       chunkRepository: localIngestionRuntime.chunkRepository,
       embedder: localIngestionRuntime.embedder,
       factRepository: localIngestionRuntime.factRepository,

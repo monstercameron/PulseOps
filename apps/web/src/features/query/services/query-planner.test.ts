@@ -24,4 +24,16 @@ describe("planDatasetQuestion", () => {
       retrievalMode: "clarify",
     });
   });
+
+  it("does not block short questions when the business object is clear", () => {
+    expect(planDatasetQuestion("cash", "org_123")).toMatchObject({
+      canonicalFactTypeIds: [
+        "bank_transaction.amount",
+        "bank_transaction.posted_at",
+      ],
+      entityTypes: ["bank_transaction"],
+      needsClarification: false,
+      retrievalMode: "facts",
+    });
+  });
 });

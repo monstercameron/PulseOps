@@ -499,7 +499,7 @@ function PaginationBtn({
 }) {
   return (
     <button
-      className="rounded-md px-2 py-1 text-[11px] font-medium text-muted transition-colors hover:bg-surface-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+      className="cursor-pointer rounded-md px-2 py-1 text-[11px] font-medium text-muted transition-colors hover:bg-surface-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
       disabled={disabled}
       onClick={onClick}
       type="button"

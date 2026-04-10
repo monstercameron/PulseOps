@@ -119,6 +119,12 @@ export function createOpenAiTabularExtractionRunner(
   llmCostTracker?: LlmCostTracker,
 ): RunTabularExtractionPlan {
   return async ({ input, instructions, model, trackingContext }) => {
+    if (trackingContext !== undefined) {
+      await llmCostTracker?.assertWithinUsageCap({
+        context: trackingContext,
+      });
+    }
+
     const response = await client.responses.parse({
       instructions,
       input,
