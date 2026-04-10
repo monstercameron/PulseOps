@@ -17,3 +17,19 @@
 ### Fixes
 - Fixed app-wide TypeScript issues in dashboard request handling and account seed helpers so the full workspace typecheck passes.
 - Updated dashboard request tests to match the current filtered KPI and signal behavior.
+
+### Platform Follow-up
+- Added UI locale infrastructure, translation bundle storage, locale switcher routes, and localized app and marketing shell content.
+- Added current-actor resolution for authenticated workspace surfaces and threaded that context into the app shell.
+
+### Settings Follow-up
+- Added actor-aware account authorization rules, team account update flows, and richer settings state for current-user and team-member permissions.
+- Added billing usage caps, masked payment method storage, updated billing summaries, and the supporting Postgres schema and repository changes.
+
+### Ask Follow-up
+- Added a conversational Ask fallback path for vague prompts, including a dedicated OpenAI Ask conversation service and model configuration.
+- Added richer Ask message rendering with markdown support, thread actions, and thread message helpers for copy, fork, and clarification flows.
+
+### UI Follow-up
+- Improved explorer record selection with a responsive detail pane and explicit close behavior.
+- Added small accessibility and interaction fixes across error surfaces, tables, buttons, dashboard actions, and workspace controls.
