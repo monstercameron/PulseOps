@@ -7,7 +7,9 @@ Commands
 - `npm run db:install:vector`
   Builds and installs pgvector `v0.8.2` into the local PostgreSQL 16 install on Windows.
 - `npm run db:init`
-  Creates the `bizopsaccelerator` database if needed and applies the hardened local schema.
+  Creates the `bizopsaccelerator` database if needed, applies the hardened local schema, and seeds UI translation bundles for every supported locale.
+- `npm run db:seed:ui-translations`
+  Backfills the `ui_translation_bundles` table from the TypeScript default message catalog for every supported locale while preserving existing overrides.
 - `npm run db:check`
   Verifies required tables, indexes, the `embedding_vector` column, and extension capabilities.
 - `npm run db:test`
@@ -34,5 +36,6 @@ Override env vars
 Notes
 
 - `db:init` now requires pgvector. It will fail fast with an explicit install hint instead of silently continuing without vector support.
+- `db:init` now also runs the UI translation seeder, so fresh local databases start with `en-US`, `en-GB`, `es-MX`, and `es-ES` bundles already loaded.
 - The schema keeps the canonical `embedding` array and also syncs `retrieval_chunks.embedding_vector` through a trigger for Postgres-native vector operations.
 - The app default `DATABASE_URL` now matches the local database: `postgres://postgres@localhost:5432/bizopsaccelerator`

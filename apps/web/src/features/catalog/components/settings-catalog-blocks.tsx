@@ -35,10 +35,15 @@ export function FieldGroup({ children, hint, label }: FieldGroupProps) {
   );
 }
 
+type SelectFieldOption = Readonly<{
+  label: string;
+  value: string;
+}>;
+
 type SelectFieldProps = Readonly<{
   disabled?: boolean;
   onChange?: (value: string) => void;
-  options: readonly string[];
+  options: readonly (SelectFieldOption | string)[];
   value: string;
 }>;
 
@@ -48,6 +53,12 @@ export function SelectField({
   options,
   value,
 }: SelectFieldProps) {
+  const normalizedOptions = options.map((option) =>
+    typeof option === "string"
+      ? { label: option, value: option }
+      : option,
+  );
+
   return (
     <select
       className={cx(
@@ -60,9 +71,9 @@ export function SelectField({
       onChange={(e) => onChange?.(e.target.value)}
       value={value}
     >
-      {options.map((opt) => (
-        <option key={opt} value={opt}>
-          {opt}
+      {normalizedOptions.map((option) => (
+        <option key={option.value} value={option.value}>
+          {option.label}
         </option>
       ))}
     </select>
@@ -73,11 +84,17 @@ type PillGroupProps = Readonly<{
   multi?: boolean;
   onChange?: (value: string) => void;
   onToggle?: (value: string) => void;
-  options: readonly string[];
+  options: readonly (SelectFieldOption | string)[];
   selected: string | readonly string[];
 }>;
 
 export function PillGroup({ multi = false, onChange, onToggle, options, selected }: PillGroupProps) {
+  const normalizedOptions = options.map((option) =>
+    typeof option === "string"
+      ? { label: option, value: option }
+      : option,
+  );
+
   function isSelected(opt: string) {
     return Array.isArray(selected) ? selected.includes(opt) : selected === opt;
   }
@@ -92,19 +109,19 @@ export function PillGroup({ multi = false, onChange, onToggle, options, selected
 
   return (
     <div className="flex flex-wrap gap-[7px]">
-      {options.map((opt) => (
+      {normalizedOptions.map((option) => (
         <button
-          key={opt}
+          key={option.value}
           className={cx(
             "cursor-pointer rounded-[6px] border px-3 py-[5px] text-[12px] font-medium tracking-[-0.01em] transition active:scale-[.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent",
-            isSelected(opt)
+            isSelected(option.value)
               ? "border-accent bg-accent-dim font-semibold text-accent"
               : "border-border-strong bg-surface-subtle text-muted hover:border-foreground/22 hover:bg-surface-muted hover:text-foreground",
           )}
-          onClick={() => handleClick(opt)}
+          onClick={() => handleClick(option.value)}
           type="button"
         >
-          {opt}
+          {option.label}
         </button>
       ))}
     </div>

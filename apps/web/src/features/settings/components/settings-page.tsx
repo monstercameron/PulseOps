@@ -25,10 +25,10 @@ import {
 } from "@/features/catalog/components/settings-catalog-blocks";
 import { WorkspaceHeader } from "@/features/catalog/components/workspace-catalog-blocks";
 import {
-  settingsPageLabels,
   type SettingsPageData,
   type SettingsTabId,
 } from "@/features/settings/constants/settings-page-content";
+import { settingsPreferenceIds } from "@/features/settings/domain/settings-preferences";
 import {
   mergeSettingsMutationResponse,
   type SettingsMutationResponse,
@@ -82,6 +82,12 @@ type BillingUsageCapProgress = Readonly<{
   caption: string;
   summary: string;
 }>;
+type SelectOption = Readonly<{
+  label: string;
+  value: string;
+}>;
+type SettingsMessages = ReturnType<typeof useUiI18n>["messages"];
+type TranslateMessage = ReturnType<typeof useUiI18n>["t"];
 
 const INDUSTRY_OPTIONS = [
   "HVAC / Field service",
@@ -114,6 +120,16 @@ const ALL_GOALS = [
 const INVITE_ROLE_OPTIONS = ["Admin", "Operator", "Analyst", "Viewer"] as const;
 const ACCOUNT_STATUS_OPTIONS = ["Active", "Invited"] as const;
 
+function toSelectOptions(
+  values: readonly string[],
+  labels: readonly string[],
+): readonly SelectOption[] {
+  return values.map((value, index) => ({
+    label: labels[index] ?? value,
+    value,
+  }));
+}
+
 const settingsTabIcons: Record<SettingsTabId, React.ReactNode> = {
   organization: <svg fill="currentColor" height="14" viewBox="0 0 18 18" width="14"><path clipRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" fillRule="evenodd" /></svg>,
   team: <svg fill="currentColor" height="14" viewBox="0 0 18 18" width="14"><path d="M9 6a3 3 0 100-6 3 3 0 000 6zM17 6a3 3 0 10-6 0 3 3 0 006 0zM12.93 17H4.07c.08-3.08 2.44-5 4.93-5s4.85 1.92 4.93 5zM14.5 11a3 3 0 10-3 2.83A4.97 4.97 0 0114.5 17H17a3 3 0 000-6z" /></svg>,
@@ -129,13 +145,38 @@ type SettingsRequestError = Readonly<{
 }>;
 
 export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
-  const { messages } = useUiI18n();
-  const industryOptions = messages.settingsPage.options.industry as readonly string[];
-  const revenueModelOptions = messages.settingsPage.options.revenueModel as readonly string[];
-  const invoiceCycleOptions = messages.settingsPage.options.invoiceCycle as readonly string[];
-  const teamSizeOptions = messages.settingsPage.options.teamSize as readonly string[];
-  const goalOptions = messages.settingsPage.options.goals as readonly string[];
-  const inviteRoleOptions = messages.settingsPage.options.inviteRoles as readonly InviteRoleLabel[];
+  const { locale, messages, t } = useUiI18n();
+  const industryOptions = toSelectOptions(
+    INDUSTRY_OPTIONS,
+    messages.settingsPage.options.industry as readonly string[],
+  );
+  const revenueModelOptions = toSelectOptions(
+    REVENUE_MODEL_OPTIONS,
+    messages.settingsPage.options.revenueModel as readonly string[],
+  );
+  const invoiceCycleOptions = toSelectOptions(
+    INVOICE_CYCLE_OPTIONS,
+    messages.settingsPage.options.invoiceCycle as readonly string[],
+  );
+  const inviteRoleOptions = toSelectOptions(
+    INVITE_ROLE_OPTIONS,
+    messages.settingsPage.options.inviteRoles as readonly string[],
+  );
+  const accountStatusOptions = toSelectOptions(
+    ACCOUNT_STATUS_OPTIONS,
+    [
+      messages.settingsPage.accountDialog.statusActive,
+      messages.settingsPage.accountDialog.statusInvited,
+    ],
+  );
+  const teamSizeOptions = toSelectOptions(
+    TEAM_SIZE_OPTIONS,
+    messages.settingsPage.options.teamSize as readonly string[],
+  );
+  const goalOptions = toSelectOptions(
+    ALL_GOALS,
+    messages.settingsPage.options.goals as readonly string[],
+  );
   const [activeTab, setActiveTab] = useState<SettingsTabId>("organization");
   const [activeDialog, setActiveDialog] = useState<DialogId>(null);
   const [placeholderAction, setPlaceholderAction] = useState<PlaceholderAction>(null);
@@ -197,21 +238,30 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
     pageData.billing.paymentMethods,
     "backup",
   );
-  const flatFeeUsage = getBillingUsageItem(pageData.billing.usage, "flat_fee");
-  const usageThisPeriodUsage = getBillingUsageItem(
-    pageData.billing.usage,
-    "usage_this_period",
+  const flatFeeUsage = localizeBillingUsageRecord(
+    getBillingUsageItem(pageData.billing.usage, "flat_fee", messages),
+    messages,
+    t,
   );
-  const currentTotalUsage = getBillingUsageItem(
-    pageData.billing.usage,
-    "current_total",
+  const usageThisPeriodUsage = localizeBillingUsageRecord(
+    getBillingUsageItem(pageData.billing.usage, "usage_this_period", messages),
+    messages,
+    t,
+  );
+  const currentTotalUsage = localizeBillingUsageRecord(
+    getBillingUsageItem(pageData.billing.usage, "current_total", messages),
+    messages,
+    t,
   );
   const usageGraphCapCents = getBillingGraphUsageCapCents({
     billingCapDraft,
+    messages,
     savedUsageCapCents: pageData.billing.usageCapCents,
   });
   const isPreviewingUsageCap = usageGraphCapCents !== pageData.billing.usageCapCents;
   const usageCapProgress = getBillingUsageCapProgress({
+    locale,
+    messages,
     usageCapCents: usageGraphCapCents,
     usageThisPeriodCents: pageData.billing.graphMetrics.usageThisPeriodCents,
   });
@@ -273,7 +323,9 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
 
     if (!response.ok || "error" in payload) {
       throw new Error(
-        "error" in payload ? payload.error : "The request could not be completed.",
+        "error" in payload
+          ? payload.error
+          : messages.settingsPage.errors.requestFailed,
       );
     }
 
@@ -371,8 +423,8 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
       closeAccountDialog();
     } catch (error) {
       openPlaceholderAction(
-        "Could not update account",
-        error instanceof Error ? error.message : "The request could not be completed.",
+        messages.settingsPage.errors.accountUpdateFailed,
+        getSettingsErrorMessage(error, messages.settingsPage.errors.requestFailed),
       );
     } finally {
       setIsSavingAccount(false);
@@ -434,8 +486,8 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
       });
     } catch (error) {
       openPlaceholderAction(
-        "Could not send invite",
-        error instanceof Error ? error.message : "The request could not be completed.",
+        messages.settingsPage.errors.inviteFailed,
+        getSettingsErrorMessage(error, messages.settingsPage.errors.requestFailed),
       );
     } finally {
       setIsSendingInvite(false);
@@ -462,8 +514,8 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
       applyMutationResponse(payload);
     } catch (error) {
       openPlaceholderAction(
-        "Could not save profile",
-        error instanceof Error ? error.message : "The request could not be completed.",
+        messages.settingsPage.errors.profileSaveFailed,
+        getSettingsErrorMessage(error, messages.settingsPage.errors.requestFailed),
       );
     } finally {
       setIsSavingProfile(false);
@@ -495,8 +547,8 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
       applyMutationResponse(payload);
     } catch (error) {
       openPlaceholderAction(
-        "Could not save website details",
-        error instanceof Error ? error.message : "The request could not be completed.",
+        messages.settingsPage.errors.websiteDetailsSaveFailed,
+        getSettingsErrorMessage(error, messages.settingsPage.errors.requestFailed),
       );
     } finally {
       setIsSavingWebsiteDetails(false);
@@ -528,8 +580,8 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
       applyMutationResponse(payload);
     } catch (error) {
       openPlaceholderAction(
-        "Could not save notifications",
-        error instanceof Error ? error.message : "The request could not be completed.",
+        messages.settingsPage.errors.notificationsSaveFailed,
+        getSettingsErrorMessage(error, messages.settingsPage.errors.requestFailed),
       );
     } finally {
       setIsSavingNotifications(false);
@@ -570,8 +622,8 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
       applyMutationResponse(payload);
     } catch (error) {
       openPlaceholderAction(
-        "Could not save preferences",
-        error instanceof Error ? error.message : "The request could not be completed.",
+        messages.settingsPage.errors.preferencesSaveFailed,
+        getSettingsErrorMessage(error, messages.settingsPage.errors.requestFailed),
       );
     } finally {
       setIsSavingPreferences(false);
@@ -586,11 +638,11 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
     let usageCapCents: number | null;
 
     try {
-      usageCapCents = parseBillingCapInput(billingCapDraft);
+      usageCapCents = parseBillingCapInput(billingCapDraft, messages);
     } catch (error) {
       openPlaceholderAction(
-        "Could not save usage cap",
-        error instanceof Error ? error.message : "Enter a valid dollar amount.",
+        messages.settingsPage.errors.usageCapSaveFailed,
+        getSettingsErrorMessage(error, messages.settingsPage.errors.validDollarAmount),
       );
       return;
     }
@@ -612,8 +664,8 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
       applyMutationResponse(payload);
     } catch (error) {
       openPlaceholderAction(
-        "Could not save usage cap",
-        error instanceof Error ? error.message : "The request could not be completed.",
+        messages.settingsPage.errors.usageCapSaveFailed,
+        getSettingsErrorMessage(error, messages.settingsPage.errors.requestFailed),
       );
     } finally {
       setIsSavingBilling(false);
@@ -667,11 +719,13 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
     let paymentMethodInput: ReturnType<typeof parsePaymentMethodDraft>;
 
     try {
-      paymentMethodInput = parsePaymentMethodDraft(draft);
+      paymentMethodInput = parsePaymentMethodDraft(draft, messages);
     } catch (error) {
       openPlaceholderAction(
-        `Could not save ${role === "primary" ? "business" : "backup"} card`,
-        error instanceof Error ? error.message : "Enter valid card details.",
+        role === "primary"
+          ? messages.settingsPage.errors.paymentMethodPrimaryFailed
+          : messages.settingsPage.errors.paymentMethodBackupFailed,
+        getSettingsErrorMessage(error, messages.settingsPage.errors.requestFailed),
       );
       return;
     }
@@ -694,8 +748,10 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
       applyMutationResponse(payload);
     } catch (error) {
       openPlaceholderAction(
-        `Could not save ${role === "primary" ? "business" : "backup"} card`,
-        error instanceof Error ? error.message : "The request could not be completed.",
+        role === "primary"
+          ? messages.settingsPage.errors.paymentMethodPrimaryFailed
+          : messages.settingsPage.errors.paymentMethodBackupFailed,
+        getSettingsErrorMessage(error, messages.settingsPage.errors.requestFailed),
       );
     } finally {
       setSavingPaymentMethodRole(null);
@@ -724,8 +780,8 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
       applyMutationResponse(payload);
     } catch (error) {
       openPlaceholderAction(
-        "Could not remove backup card",
-        error instanceof Error ? error.message : "The request could not be completed.",
+        messages.settingsPage.errors.backupCardRemoveFailed,
+        getSettingsErrorMessage(error, messages.settingsPage.errors.requestFailed),
       );
     } finally {
       setSavingPaymentMethodRole(null);
@@ -752,8 +808,8 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
       applyMutationResponse(payload);
     } catch (error) {
       openPlaceholderAction(
-        "Could not revoke session",
-        error instanceof Error ? error.message : "The request could not be completed.",
+        messages.settingsPage.errors.sessionRevokeFailed,
+        getSettingsErrorMessage(error, messages.settingsPage.errors.requestFailed),
       );
     } finally {
       setRevokingSessionTitle(null);
@@ -782,8 +838,8 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
       setPendingApiKeyName(null);
     } catch (error) {
       openPlaceholderAction(
-        "Could not revoke API key",
-        error instanceof Error ? error.message : "The request could not be completed.",
+        messages.settingsPage.errors.apiKeyRevokeFailed,
+        getSettingsErrorMessage(error, messages.settingsPage.errors.requestFailed),
       );
     } finally {
       setRevokingApiKeyName(null);
@@ -811,8 +867,8 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
         applyMutationResponse(payload);
       } catch (error) {
         openPlaceholderAction(
-          "Could not disconnect",
-          error instanceof Error ? error.message : "The request could not be completed.",
+          messages.settingsPage.errors.integrationDisconnectFailed,
+          getSettingsErrorMessage(error, messages.settingsPage.errors.requestFailed),
         );
       } finally {
         setIsConnectingIntegration(false);
@@ -820,7 +876,10 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
       return;
     }
 
-    openPlaceholderAction(integration.actionLabel, integration.title);
+    openPlaceholderAction(
+      translateIntegrationActionLabel(integration.actionLabel, messages),
+      integration.title,
+    );
   }
 
   async function handleIntegrationConnect() {
@@ -837,8 +896,8 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
       setConnectApiKeyDraft("");
     } catch (error) {
       openPlaceholderAction(
-        "Could not connect integration",
-        error instanceof Error ? error.message : "The request could not be completed.",
+        messages.settingsPage.errors.integrationConnectFailed,
+        getSettingsErrorMessage(error, messages.settingsPage.errors.requestFailed),
       );
     } finally {
       setIsConnectingIntegration(false);
@@ -863,7 +922,7 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
                 key={tab.id}
                 active={activeTab === tab.id}
                 icon={settingsTabIcons[tab.id]}
-                label={tab.label}
+                label={getSettingsTabLabel(tab.id, messages)}
                 onClick={() => setActiveTab(tab.id)}
               />
             ))}
@@ -925,16 +984,16 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
                     <div className="mt-1 flex flex-col gap-1">
                       {goalOptions.map((goal) => (
                         <label
-                          key={goal}
+                          key={goal.value}
                           className="flex cursor-pointer items-center gap-[10px] rounded-[6px] py-[5px] text-[13px] text-foreground transition-colors"
                         >
                             <input
-                              checked={organizationDraft.goals.includes(goal)}
+                              checked={organizationDraft.goals.includes(goal.value)}
                               className="h-[14px] w-[14px] shrink-0 cursor-pointer rounded accent-accent"
-                              onChange={() => toggleGoal(goal)}
+                              onChange={() => toggleGoal(goal.value)}
                               type="checkbox"
                             />
-                            {goal}
+                            {goal.label}
                           </label>
                         ))}
                       </div>
@@ -954,32 +1013,34 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
               </PreferencePanel>
 
               <PreferencePanel
-                description="Structured public contact details for the marketing home and contact pages. Update these fields without touching page copy or a WYSIWYG editor."
-                title="Website details"
+                description={messages.settingsPage.actionDescriptions.websiteDetails}
+                title={messages.settingsPage.actionTitles.websiteDetails}
               >
                 <div className="grid gap-[14px] md:grid-cols-2">
-                  <FieldGroup label="Support email">
+                  <FieldGroup label={messages.settingsPage.websiteDetails.fields.supportEmail}>
                     <TextField
                       onChange={(value) => updateWebsiteDetailsField("supportEmail", value)}
                       type="email"
                       value={websiteDetailsDraft.supportEmail}
                     />
                   </FieldGroup>
-                  <FieldGroup label="Sales email">
+                  <FieldGroup label={messages.settingsPage.websiteDetails.fields.salesEmail}>
                     <TextField
                       onChange={(value) => updateWebsiteDetailsField("salesEmail", value)}
                       type="email"
                       value={websiteDetailsDraft.salesEmail}
                     />
                   </FieldGroup>
-                  <FieldGroup label="Press email">
+                  <FieldGroup label={messages.settingsPage.websiteDetails.fields.pressEmail}>
                     <TextField
                       onChange={(value) => updateWebsiteDetailsField("pressEmail", value)}
                       type="email"
                       value={websiteDetailsDraft.pressEmail}
                     />
                   </FieldGroup>
-                  <FieldGroup label="Partnerships email">
+                  <FieldGroup
+                    label={messages.settingsPage.websiteDetails.fields.partnershipsEmail}
+                  >
                     <TextField
                       onChange={(value) =>
                         updateWebsiteDetailsField("partnershipsEmail", value)
@@ -988,13 +1049,13 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
                       value={websiteDetailsDraft.partnershipsEmail}
                     />
                   </FieldGroup>
-                  <FieldGroup label="Main phone">
+                  <FieldGroup label={messages.settingsPage.websiteDetails.fields.mainPhone}>
                     <TextField
                       onChange={(value) => updateWebsiteDetailsField("mainPhone", value)}
                       value={websiteDetailsDraft.mainPhone}
                     />
                   </FieldGroup>
-                  <FieldGroup label="Support phone">
+                  <FieldGroup label={messages.settingsPage.websiteDetails.fields.supportPhone}>
                     <TextField
                       onChange={(value) => updateWebsiteDetailsField("supportPhone", value)}
                       value={websiteDetailsDraft.supportPhone}
@@ -1005,9 +1066,11 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
                   onPrimaryAction={handleSaveWebsiteDetails}
                   onSecondaryAction={handleResetWebsiteDetails}
                   primaryLabel={
-                    isSavingWebsiteDetails ? "Saving..." : "Save website details"
+                    isSavingWebsiteDetails
+                      ? messages.settingsPage.actions.saving
+                      : messages.settingsPage.actions.saveWebsiteDetails
                   }
-                  secondaryLabel="Reset"
+                  secondaryLabel={messages.settingsPage.actions.reset}
                 />
               </PreferencePanel>
             </div>
@@ -1022,7 +1085,9 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
                       {messages.settingsPage.actionTitles.teamMembers}
                     </h3>
                     <span className="rounded-full bg-white/[0.06] px-2 py-[2px] text-[10.5px] font-bold text-muted">
-                      {pageData.team.members.length} members
+                      {t("settingsPage.team.membersCount", "{{count}} members", {
+                        count: pageData.team.members.length,
+                      })}
                     </span>
                   </div>
                   {pageData.currentUser.canInviteMembers ? (
@@ -1030,28 +1095,31 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
                       onClick={() => setActiveDialog("invite")}
                       variant="primary"
                     >
-                      + Invite member
+                      + {messages.settingsPage.actions.inviteMember}
                     </CatalogButton>
                   ) : null}
                 </div>
                 <div className="border-b border-border bg-surface-subtle/60 px-[18px] py-[10px] text-[11.5px] text-muted">
-                  Signed in as <span className="font-semibold text-foreground">{pageData.currentUser.name}</span> ({pageData.currentUser.role}).{" "}
+                  {t("settingsPage.team.signedInSummary", "Signed in as {{name}} ({{role}}).", {
+                    name: pageData.currentUser.name,
+                    role: translateRoleLabel(pageData.currentUser.role, messages),
+                  })}{" "}
                   {pageData.currentUser.canManageAccounts
-                    ? "You can manage team accounts and access policy."
-                    : "You can only adjust your own account profile and password."}
+                    ? messages.settingsPage.actionDescriptions.manageAccounts
+                    : messages.settingsPage.actionDescriptions.manageOwnProfile}
                   {pageData.currentUser.isFallbackSession
-                    ? " This local workspace is currently using the fallback development session."
+                    ? ` ${messages.settingsPage.actionDescriptions.fallbackSessionNotice}`
                     : null}
                 </div>
                 <div>
                   {pageData.team.members.map((member) => (
                     <TeamMemberRow
-                      accessSummary={member.accessSummary}
+                      accessSummary={translateAccessSummary(member.accessSummary, messages)}
                       actionLabel={
                         member.canOpenAccountControls
                           ? member.isCurrentUser
-                            ? "My account"
-                            : "Manage"
+                            ? messages.settingsPage.team.myAccount
+                            : messages.settingsPage.team.manage
                           : undefined
                       }
                       key={member.id}
@@ -1063,9 +1131,9 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
                           ? () => openAccountDialog(member)
                           : undefined
                       }
-                      role={member.role}
+                      role={translateRoleLabel(member.role, messages)}
                       status={member.status}
-                      statusLabel={member.statusLabel}
+                      statusLabel={translateAccountStatus(member.status, messages)}
                     />
                   ))}
                 </div>
@@ -1086,7 +1154,13 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
                   <table className="min-w-full border-collapse text-[12.5px]">
                     <thead>
                       <tr className="border-b border-border">
-                        {["Permission", "Admin", "Operator", "Analyst", "Viewer"].map((header) => (
+                        {[
+                          messages.settingsPage.team.permissionHeaders.permission,
+                          messages.settingsPage.team.permissionHeaders.admin,
+                          messages.settingsPage.team.permissionHeaders.operator,
+                          messages.settingsPage.team.permissionHeaders.analyst,
+                          messages.settingsPage.team.permissionHeaders.viewer,
+                        ].map((header) => (
                           <th
                             key={header}
                             className="px-[14px] py-2 text-left text-[10.5px] font-bold uppercase tracking-[0.07em] text-muted"
@@ -1099,7 +1173,9 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
                     <tbody>
                       {pageData.team.permissions.map((permission) => (
                         <tr key={permission.permission} className="border-b border-border last:border-b-0 transition-colors hover:bg-white/[0.02]">
-                          <td className="px-[14px] py-2 font-medium text-foreground">{permission.permission}</td>
+                          <td className="px-[14px] py-2 font-medium text-foreground">
+                            {translatePermissionLabel(permission.permission, messages)}
+                          </td>
                           {[
                             permission.admin,
                             permission.operator,
@@ -1143,17 +1219,39 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
               {pageData.integrations.map((integration) => (
                 <IntegrationListItem
                   key={integration.title}
-                  actionLabel={integration.actionLabel}
-                  description={integration.description}
+                  actionLabel={translateIntegrationActionLabel(
+                    integration.actionLabel,
+                    messages,
+                  )}
+                  description={translateIntegrationDescription(
+                    integration.title,
+                    integration.description,
+                    messages,
+                  )}
                   onAction={() => void handleIntegrationAction(integration)}
                   onSecondaryAction={() =>
                     openPlaceholderAction(
-                      integration.secondaryActionLabel ?? "Configure",
+                      translateIntegrationActionLabel(
+                        integration.secondaryActionLabel ??
+                          messages.settingsPage.actions.configure,
+                        messages,
+                      ),
                       integration.title,
                     )
                   }
-                  secondaryActionLabel={integration.secondaryActionLabel}
-                  statusLabel={integration.statusLabel}
+                  secondaryActionLabel={
+                    integration.secondaryActionLabel
+                      ? translateIntegrationActionLabel(
+                          integration.secondaryActionLabel,
+                          messages,
+                        )
+                      : undefined
+                  }
+                  statusLabel={translateIntegrationStatusLabel(
+                    integration.statusLabel,
+                    messages,
+                    t,
+                  )}
                   statusTone={integration.statusTone}
                   title={integration.title}
                 />
@@ -1197,7 +1295,9 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
                     }}
                     variant="primary"
                   >
-                    {isSavingNotifications ? "Saving..." : "Save preferences"}
+                    {isSavingNotifications
+                      ? messages.settingsPage.actions.saving
+                      : messages.settingsPage.actions.saveChanges}
                   </CatalogButton>
                 </div>
               </CatalogCard>
@@ -1208,43 +1308,59 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
             <div className="space-y-5">
               <PreferencePanel
                 description={messages.settingsPage.actionDescriptions.authentication}
-                title="Authentication"
+                title={messages.settingsPage.actionTitles.authentication}
               >
                 <div className="space-y-3">
-                  {pageData.security.authRows.map((row) => (
-                    <div
-                      key={row.title}
-                      className="flex flex-col gap-3 border-b border-border pb-4 last:border-b-0 last:pb-0 md:flex-row md:items-center md:justify-between"
-                    >
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{row.title}</p>
-                        <p className="mt-1 text-xs text-muted">{row.description}</p>
-                      </div>
-                      <button
-                        className="rounded-[7px] border border-border-strong bg-surface-subtle px-4 py-2 text-[12.5px] font-semibold text-foreground transition-[border-color,background] hover:bg-surface-muted hover:border-foreground/20"
-                        onClick={() =>
-                          row.title === "Two-factor authentication"
-                            ? setActiveDialog("two-factor")
-                            : openPlaceholderAction(row.actionLabel, row.title)
-                        }
-                        type="button"
+                  {pageData.security.authRows.map((row) => {
+                    const translatedRow = translateSecurityAuthRow(row, messages);
+                    const rowKind = getSecurityAuthRowKind(row.title);
+
+                    return (
+                      <div
+                        key={row.title}
+                        className="flex flex-col gap-3 border-b border-border pb-4 last:border-b-0 last:pb-0 md:flex-row md:items-center md:justify-between"
                       >
-                        {row.actionLabel}
-                      </button>
-                    </div>
-                  ))}
+                        <div>
+                          <p className="text-sm font-medium text-foreground">
+                            {translatedRow.title}
+                          </p>
+                          <p className="mt-1 text-xs text-muted">
+                            {translatedRow.description}
+                          </p>
+                        </div>
+                        <button
+                          className="rounded-[7px] border border-border-strong bg-surface-subtle px-4 py-2 text-[12.5px] font-semibold text-foreground transition-[border-color,background] hover:bg-surface-muted hover:border-foreground/20"
+                          onClick={() =>
+                            rowKind === "twoFactor"
+                              ? setActiveDialog("two-factor")
+                              : openPlaceholderAction(
+                                  translatedRow.actionLabel,
+                                  translatedRow.title,
+                                )
+                          }
+                          type="button"
+                        >
+                          {translatedRow.actionLabel}
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               </PreferencePanel>
 
               <PreferencePanel
-                description="Review active sessions and revoke stale device access."
-                title="Active sessions"
+                description={messages.settingsPage.actionDescriptions.activeSessions}
+                title={messages.settingsPage.actionTitles.activeSessions}
               >
                 <div className="divide-y divide-border overflow-hidden rounded-2xl border border-border">
                   {pageData.security.sessions.map((session) => (
                     <SessionRow
                       key={session.title}
-                      actionLabel={session.actionLabel}
+                      actionLabel={
+                        session.actionLabel === undefined
+                          ? undefined
+                          : messages.settingsPage.actions.revoke
+                      }
                       detail={session.detail}
                       isCurrent={session.isCurrent}
                       onAction={() => {
@@ -1261,14 +1377,14 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
               </PreferencePanel>
 
               <PreferencePanel
-                description="Programmatic access keys for server-side integrations only."
-                title="API keys"
+                description={messages.settingsPage.actionDescriptions.apiKeys}
+                title={messages.settingsPage.actionTitles.apiKeys}
               >
                 <div className="divide-y divide-border overflow-hidden rounded-2xl border border-border">
                   {pageData.security.apiKeys.map((apiKey) => (
                     <ApiKeyRow
                       key={apiKey.name}
-                      actionLabel="Revoke"
+                      actionLabel={messages.settingsPage.actions.revokeKey}
                       createdLabel={apiKey.createdLabel}
                       keyLabel={apiKey.keyLabel}
                       name={apiKey.name}
@@ -1289,7 +1405,7 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
                     <span className="inline-flex items-center rounded-full bg-[rgba(34,197,94,.1)] px-2 py-[2px] text-[10.5px] font-bold uppercase tracking-[0.06em] text-green-400">
-                      Active plan
+                      {messages.settingsPage.billing.activePlanBadge}
                     </span>
                     <h2 className="mt-[10px] text-[20px] font-extrabold tracking-[-0.03em] text-foreground">
                       {pageData.billing.planTitle}
@@ -1298,13 +1414,13 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
                   </div>
                   <div className="text-right">
                     <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-muted">
-                      Billing model
+                      {messages.settingsPage.actionTitles.billingModel}
                     </p>
                     <p className="mt-1 text-[13px] font-semibold text-foreground">
-                      Platform access + usage
+                      {messages.settingsPage.billing.billingModelValue}
                     </p>
                     <p className="mt-1 text-[11.5px] text-muted">
-                      Totals update automatically from tracked AI usage.
+                      {messages.settingsPage.actionDescriptions.billingModel}
                     </p>
                   </div>
                 </div>
@@ -1336,10 +1452,10 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
                       </div>
                       <div className="text-left md:text-right">
                         <p className="text-[11px] font-bold uppercase tracking-[0.07em] text-muted">
-                          Monthly cap
+                          {messages.settingsPage.billing.monthlyCapLabel}
                         </p>
                         <p className="mt-1 text-[16px] font-semibold text-foreground">
-                          {formatBillingCapSummary(usageGraphCapCents)}
+                          {formatBillingCapSummary(usageGraphCapCents, locale, messages)}
                         </p>
                         <p className="mt-1 text-[11.5px] text-muted">
                           {usageCapProgress.summary}
@@ -1351,7 +1467,7 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
                         <span>{usageCapProgress.caption}</span>
                         {isPreviewingUsageCap ? (
                           <span className="font-medium text-accent">
-                            Previewing unsaved cap
+                            {messages.settingsPage.billing.previewingUnsavedCap}
                           </span>
                         ) : null}
                       </div>
@@ -1367,31 +1483,37 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
               </CatalogCard>
               <CatalogCard className="overflow-hidden">
                 <div className="border-b border-border px-[18px] py-[13px]">
-                  <h3 className="text-[13px] font-semibold tracking-[-0.015em] text-foreground">Usage cap</h3>
+                  <h3 className="text-[13px] font-semibold tracking-[-0.015em] text-foreground">
+                    {messages.settingsPage.actionTitles.usageCap}
+                  </h3>
                   <p className="mt-[2px] text-[11.5px] leading-[1.4] text-muted">
-                    Optional monthly cap on AI usage. Leave blank for no cap.
+                    {messages.settingsPage.actionDescriptions.usageCap}
                   </p>
                 </div>
                 <div className="grid gap-4 p-[18px] md:grid-cols-[minmax(0,1fr)_220px] md:items-end">
                   <FieldGroup
-                    hint="New AI runs pause once the current billing cycle reaches this amount."
-                    label="Monthly cap (USD)"
+                    hint={messages.settingsPage.billing.usageCapHint}
+                    label={messages.settingsPage.billing.usageCapFieldLabel}
                   >
                     <TextField
                       onChange={setBillingCapDraft}
-                      placeholder="No cap"
+                      placeholder={messages.settingsPage.billing.noCap}
                       value={billingCapDraft}
                     />
                   </FieldGroup>
                   <div className="rounded-[10px] border border-border bg-surface-subtle px-4 py-3">
                     <p className="text-[11px] font-bold uppercase tracking-[0.07em] text-muted">
-                      Current cap
+                      {messages.settingsPage.billing.currentCapLabel}
                     </p>
                     <p className="mt-1 text-[16px] font-semibold text-foreground">
-                      {formatBillingCapSummary(pageData.billing.usageCapCents)}
+                      {formatBillingCapSummary(
+                        pageData.billing.usageCapCents,
+                        locale,
+                        messages,
+                      )}
                     </p>
                     <p className="mt-1 text-[11.5px] text-muted">
-                      Applies to the current workspace billing cycle.
+                      {messages.settingsPage.actionDescriptions.currentCap}
                     </p>
                   </div>
                 </div>
@@ -1403,22 +1525,26 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
                     }}
                     variant="primary"
                   >
-                    {isSavingBilling ? "Saving..." : "Save cap"}
+                    {isSavingBilling
+                      ? messages.settingsPage.actions.saving
+                      : messages.settingsPage.actions.saveCap}
                   </CatalogButton>
                   <CatalogButton
                     disabled={isSavingBilling}
                     onClick={handleResetBilling}
                     variant="secondary"
                   >
-                    Reset
+                    {messages.settingsPage.actions.reset}
                   </CatalogButton>
                 </div>
               </CatalogCard>
               <CatalogCard className="overflow-hidden">
                 <div className="border-b border-border px-[18px] py-[13px]">
-                  <h3 className="text-[13px] font-semibold tracking-[-0.015em] text-foreground">Payment methods</h3>
+                  <h3 className="text-[13px] font-semibold tracking-[-0.015em] text-foreground">
+                    {messages.settingsPage.actionTitles.paymentMethods}
+                  </h3>
                   <p className="mt-[2px] text-[11.5px] leading-[1.4] text-muted">
-                    Add a business card for the service and an optional backup card. Only masked card details are stored.
+                    {messages.settingsPage.actionDescriptions.paymentMethods}
                   </p>
                 </div>
                 <div className="grid gap-4 p-[18px] lg:grid-cols-2">
@@ -1464,15 +1590,23 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
             <div className="space-y-5">
               <PreferencePanel
                 description={messages.settingsPage.actionDescriptions.preferences}
-                title="Preferences"
+                title={messages.settingsPage.actionTitles.preferences}
               >
                 {preferenceItems.map((preference) => (
                   <ToggleRow
                     key={preference.id}
-                    description={preference.description}
+                    description={translatePreferenceDescription(
+                      preference.id,
+                      preference.description,
+                      messages,
+                    )}
                     enabled={preference.enabled}
                     onToggle={() => togglePreference(preference.id)}
-                    title={preference.title}
+                    title={translatePreferenceTitle(
+                      preference.id,
+                      preference.title,
+                      messages,
+                    )}
                   />
                 ))}
               </PreferencePanel>
@@ -1482,17 +1616,23 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
                 }}
                 variant="primary"
               >
-                {isSavingPreferences ? "Saving..." : "Save preferences"}
+                {isSavingPreferences
+                  ? messages.settingsPage.actions.saving
+                  : messages.settingsPage.actions.savePreferences}
               </CatalogButton>
 
               <PreferencePanel
-                description="Mirror the settings design controls and persist the workspace color mode in local storage."
-                title="Appearance"
+                description={messages.settingsPage.actionDescriptions.appearance}
+                title={messages.settingsPage.actionTitles.appearance}
               >
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <p className="text-sm font-medium text-foreground">Color mode</p>
-                    <p className="mt-1 text-xs leading-6 text-muted">Persisted across sessions.</p>
+                    <p className="text-sm font-medium text-foreground">
+                      {messages.settingsPage.appearance.colorMode}
+                    </p>
+                    <p className="mt-1 text-xs leading-6 text-muted">
+                      {messages.settingsPage.actionDescriptions.colorModePersisted}
+                    </p>
                   </div>
                   <div className="inline-flex rounded-lg border border-border bg-surface-subtle p-1">
                     <button
@@ -1535,7 +1675,9 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
             footer={
               <>
                 <CatalogButton onClick={handleInviteSubmit} variant="primary">
-                  {isSendingInvite ? "Sending..." : "Send invite"}
+                  {isSendingInvite
+                    ? messages.settingsPage.actions.sendingInvite
+                    : messages.settingsPage.actions.inviteMember}
                 </CatalogButton>
                 <CatalogButton
                   onClick={() => {
@@ -1544,7 +1686,7 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
                   }}
                   variant="secondary"
                 >
-                  Cancel
+                  {messages.settingsPage.actions.cancel}
                 </CatalogButton>
               </>
             }
@@ -1591,8 +1733,8 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
           <DialogFrame
             description={
               selectedTeamMember.isCurrentUser
-                ? "Update your account email and password. Role and access controls remain admin-governed."
-                : "Update account identity, password, and access settings for this team member."
+                ? messages.settingsPage.accountDialog.currentDescription
+                : messages.settingsPage.accountDialog.manageDescription
             }
             footer={
               <>
@@ -1601,41 +1743,50 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
                   onClick={handleSaveAccount}
                   variant="primary"
                 >
-                  {isSavingAccount ? "Saving..." : "Save changes"}
+                  {isSavingAccount
+                    ? messages.settingsPage.actions.saving
+                    : messages.settingsPage.actions.saveChanges}
                 </CatalogButton>
                 <CatalogButton
                   onClick={closeAccountDialog}
                   variant="secondary"
                 >
-                  Cancel
+                  {messages.settingsPage.actions.cancel}
                 </CatalogButton>
               </>
             }
             onClose={closeAccountDialog}
-            title={selectedTeamMember.isCurrentUser ? "My account" : "Manage account"}
+            title={
+              selectedTeamMember.isCurrentUser
+                ? messages.settingsPage.team.myAccount
+                : messages.settingsPage.team.manageAccount
+            }
           >
             <div className="rounded-2xl border border-border bg-surface-subtle/60 px-4 py-3 text-[11.5px] leading-[1.5] text-muted">
               <p>
-                Role: <span className="font-semibold text-foreground">{selectedTeamMember.role}</span>
+                {messages.settingsPage.dialogs.invite.role}:{" "}
+                <span className="font-semibold text-foreground">{selectedTeamMember.role}</span>
               </p>
               <p className="mt-1">
-                Access buckets:{" "}
+                {messages.settingsPage.team.accessBucketsLabel}:{" "}
                 <span className="font-semibold text-foreground">
                   {selectedTeamMember.accessSummary}
                 </span>
               </p>
               {selectedTeamMember.isCurrentUser ? (
-                <p className="mt-1">This is the currently signed-in account.</p>
+                <p className="mt-1">
+                  {messages.settingsPage.accountDialog.currentAccountNotice}
+                </p>
               ) : null}
             </div>
-            <FieldGroup label="Name">
+            <FieldGroup label={messages.settingsPage.accountDialog.name}>
               <TextField
                 disabled={!selectedTeamMember.canEditIdentity}
                 onChange={(value) => updateAccountDraftField("name", value)}
                 value={accountDraft.name}
               />
             </FieldGroup>
-            <FieldGroup label="Email">
+            <FieldGroup label={messages.settingsPage.accountDialog.email}>
               <TextField
                 disabled={!selectedTeamMember.canEditIdentity}
                 onChange={(value) => updateAccountDraftField("email", value)}
@@ -1645,8 +1796,12 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
             </FieldGroup>
             {selectedTeamMember.canResetPassword ? (
               <FieldGroup
-                hint="Leave blank to keep the current password."
-                label={selectedTeamMember.isCurrentUser ? "New password" : "Reset password"}
+                hint={messages.settingsPage.accountDialog.passwordHint}
+                label={
+                  selectedTeamMember.isCurrentUser
+                    ? messages.settingsPage.accountDialog.newPassword
+                    : messages.settingsPage.accountDialog.resetPassword
+                }
               >
                 <TextField
                   onChange={(value) => updateAccountDraftField("password", value)}
@@ -1657,7 +1812,7 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
             ) : null}
             {selectedTeamMember.canEditAuthorization ? (
               <>
-                <FieldGroup label="Role">
+                <FieldGroup label={messages.settingsPage.dialogs.invite.role}>
                   <SelectField
                     onChange={(value) =>
                       updateAccountDraftField(
@@ -1665,11 +1820,11 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
                         value as InviteRoleLabel,
                       )
                     }
-                    options={INVITE_ROLE_OPTIONS}
+                    options={inviteRoleOptions}
                     value={accountDraft.roleLabel}
                   />
                 </FieldGroup>
-                <FieldGroup label="Status">
+                <FieldGroup label={messages.settingsPage.accountDialog.status}>
                   <SelectField
                     onChange={(value) =>
                       updateAccountDraftField(
@@ -1677,14 +1832,14 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
                         value as AccountStatusLabel,
                       )
                     }
-                    options={ACCOUNT_STATUS_OPTIONS}
+                    options={accountStatusOptions}
                     value={accountDraft.statusLabel}
                   />
                 </FieldGroup>
-                <FieldGroup label="Access policy">
+                <FieldGroup label={messages.settingsPage.accountDialog.accessPolicy}>
                   <div className="rounded-2xl border border-border px-4 py-2">
                     <ToggleRow
-                      description="Can connect approved sources and ingestion scope."
+                      description={messages.settingsPage.accessPolicy.setupDescription}
                       disabled={!selectedTeamMember.canEditAuthorization}
                       enabled={accountDraft.setupAccess}
                       onToggle={() =>
@@ -1693,10 +1848,10 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
                           !accountDraft.setupAccess,
                         )
                       }
-                      title="Setup access"
+                      title={messages.settingsPage.accessPolicy.setupTitle}
                     />
                     <ToggleRow
-                      description="Can review ingestion queues, parse issues, and file operations."
+                      description={messages.settingsPage.accessPolicy.operationsDescription}
                       disabled={!selectedTeamMember.canEditAuthorization}
                       enabled={accountDraft.operationsAccess}
                       onToggle={() =>
@@ -1705,10 +1860,10 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
                           !accountDraft.operationsAccess,
                         )
                       }
-                      title="Operations access"
+                      title={messages.settingsPage.accessPolicy.operationsTitle}
                     />
                     <ToggleRow
-                      description="Can view dashboards, briefs, and approved insight outputs."
+                      description={messages.settingsPage.accessPolicy.reportDescription}
                       disabled={!selectedTeamMember.canEditAuthorization}
                       enabled={accountDraft.reportAccess}
                       onToggle={() =>
@@ -1717,7 +1872,7 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
                           !accountDraft.reportAccess,
                         )
                       }
-                      title="Report access"
+                      title={messages.settingsPage.accessPolicy.reportTitle}
                     />
                   </div>
                 </FieldGroup>
@@ -1725,7 +1880,7 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
             ) : null}
             {!selectedTeamMember.canEditAuthorization ? (
               <div className="rounded-2xl border border-border bg-surface-subtle/60 px-4 py-3 text-[11.5px] leading-[1.5] text-muted">
-                Only another active admin can change role, status, or the setup, data-ops, and report access buckets for this account.
+                {messages.settingsPage.accountDialog.lockedNotice}
               </div>
             ) : null}
           </DialogFrame>
@@ -1735,34 +1890,36 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
       {activeDialog === "two-factor" ? (
         <CatalogModalOverlay>
           <DialogFrame
-            description={settingsPageLabels.dialogs.twoFactorDescription}
+            description={messages.settingsPage.labels.dialogs.twoFactorDescription}
             footer={
               <>
                 <CatalogButton
                   onClick={() => {
                     setActiveDialog(null);
                     openPlaceholderAction(
-                      "Continue",
-                      "Two-factor setup handoff is not implemented yet.",
+                      messages.settingsPage.actions.continue,
+                      messages.settingsPage.securityRows.twoFactor.setupUnavailable,
                     );
                   }}
                   variant="primary"
                 >
-                  Continue
+                  {messages.settingsPage.actions.continue}
                 </CatalogButton>
                 <CatalogButton onClick={() => setActiveDialog(null)} variant="secondary">
-                  Cancel
+                  {messages.settingsPage.actions.cancel}
                 </CatalogButton>
               </>
             }
             onClose={() => setActiveDialog(null)}
-            title={settingsPageLabels.dialogs.twoFactorTitle}
+            title={messages.settingsPage.labels.dialogs.twoFactorTitle}
           >
             <p className="text-sm leading-7 text-muted">
-              Scan the QR code in your authenticator app, confirm the six-digit code, and store the backup codes securely.
+              {messages.settingsPage.dialogs.twoFactorDescription}
             </p>
             <CatalogCard className="flex h-48 items-center justify-center border-dashed bg-surface-subtle p-4 shadow-none">
-              <span className="text-sm font-medium text-muted">Authenticator QR placeholder</span>
+              <span className="text-sm font-medium text-muted">
+                {messages.settingsPage.dialogs.twoFactorQrPlaceholder}
+              </span>
             </CatalogCard>
           </DialogFrame>
         </CatalogModalOverlay>
@@ -1771,7 +1928,7 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
       {activeDialog === "revoke-key" ? (
         <CatalogModalOverlay>
           <DialogFrame
-            description={settingsPageLabels.dialogs.revokeDescription}
+            description={messages.settingsPage.labels.dialogs.revokeDescription}
             footer={
               <>
                 <button
@@ -1781,10 +1938,12 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
                   }}
                   type="button"
                 >
-                  {revokingApiKeyName === null ? "Revoke key" : "Revoking..."}
+                  {revokingApiKeyName === null
+                    ? messages.settingsPage.actions.revokeKey
+                    : messages.settingsPage.actions.revoking}
                 </button>
                 <CatalogButton onClick={() => setActiveDialog(null)} variant="secondary">
-                  Cancel
+                  {messages.settingsPage.actions.cancel}
                 </CatalogButton>
               </>
             }
@@ -1792,10 +1951,10 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
               setActiveDialog(null);
               setPendingApiKeyName(null);
             }}
-            title={settingsPageLabels.dialogs.revokeTitle}
+            title={messages.settingsPage.labels.dialogs.revokeTitle}
           >
             <p className="text-sm leading-7 text-muted">
-              Any service using this key will lose access immediately and will need a replacement key before the integration can recover.
+              {messages.settingsPage.dialogs.revokeKeyWarning}
             </p>
           </DialogFrame>
         </CatalogModalOverlay>
@@ -1812,7 +1971,7 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
       {pendingConnectIntegration ? (
         <CatalogModalOverlay>
           <DialogFrame
-            description={`Enter the API key for ${pendingConnectIntegration} to activate the connection.`}
+            description={messages.settingsPage.dialogs.connect.description}
             footer={
               <>
                 <CatalogButton
@@ -1822,14 +1981,16 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
                   }}
                   variant="secondary"
                 >
-                  Cancel
+                  {messages.settingsPage.actions.cancel}
                 </CatalogButton>
                 <CatalogButton
                   disabled={connectApiKeyDraft.trim().length === 0 || isConnectingIntegration}
                   onClick={() => void handleIntegrationConnect()}
                   variant="primary"
                 >
-                  {isConnectingIntegration ? "Connecting…" : "Connect"}
+                  {isConnectingIntegration
+                    ? messages.settingsPage.actions.connecting
+                    : messages.settingsPage.actions.connect}
                 </CatalogButton>
               </>
             }
@@ -1837,19 +1998,20 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
               setPendingConnectIntegration(null);
               setConnectApiKeyDraft("");
             }}
-            title={`Connect ${pendingConnectIntegration}`}
+            title={t("settingsPage.dialogs.connect.title", "Connect {{integration}}", {
+              integration: pendingConnectIntegration,
+            })}
           >
-            <FieldGroup label="API key">
+            <FieldGroup label={messages.settingsPage.dialogs.connect.apiKeyLabel}>
               <TextField
                 onChange={setConnectApiKeyDraft}
-                placeholder="Paste your API key here"
+                placeholder={messages.settingsPage.placeholders.apiKey}
                 type="password"
                 value={connectApiKeyDraft}
               />
             </FieldGroup>
             <p className="text-[11.5px] leading-[1.5] text-muted">
-              The key is sent over HTTPS and stored in your workspace settings. You can
-              disconnect at any time.
+              {messages.settingsPage.dialogs.connect.description}
             </p>
           </DialogFrame>
         </CatalogModalOverlay>
@@ -1897,37 +2059,54 @@ function BillingPaymentMethodEditor({
   onSave,
   role,
 }: BillingPaymentMethodEditorProps) {
+  const { messages, t } = useUiI18n();
+
   return (
     <div className="rounded-[10px] border border-border bg-surface-subtle p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-[12px] font-semibold text-foreground">
-            {role === "primary" ? "Business card" : "Backup card"}
+            {role === "primary"
+              ? messages.settingsPage.billing.businessCard
+              : messages.settingsPage.billing.backupCard}
           </p>
           <p className="mt-1 text-[11.5px] leading-[1.5] text-muted">
             {currentPaymentMethod === null
-              ? "No card on file."
-              : `${currentPaymentMethod.brandLabel} ending in ${currentPaymentMethod.last4} • Expires ${formatExpiration(currentPaymentMethod.expMonth, currentPaymentMethod.expYear)}`}
+              ? messages.settingsPage.billing.noCardOnFile
+              : t(
+                  "settingsPage.billing.paymentMethodDescription",
+                  "{{brand}} ending in {{last4}} • Expires {{expiration}}",
+                  {
+                    brand: currentPaymentMethod.brandLabel,
+                    expiration: formatExpiration(
+                      currentPaymentMethod.expMonth,
+                      currentPaymentMethod.expYear,
+                    ),
+                    last4: currentPaymentMethod.last4,
+                  },
+                )}
           </p>
           {currentPaymentMethod?.postalCode ? (
             <p className="mt-1 text-[11.5px] leading-[1.5] text-muted">
-              Billing ZIP {currentPaymentMethod.postalCode}
+              {t("settingsPage.billing.billingZipValue", "Billing ZIP {{postalCode}}", {
+                postalCode: currentPaymentMethod.postalCode,
+              })}
             </p>
           ) : null}
         </div>
       </div>
       <div className="mt-4 grid gap-3 md:grid-cols-2">
         <div className="md:col-span-2">
-          <FieldGroup label="Cardholder name">
+          <FieldGroup label={messages.settingsPage.billing.cardholderName}>
             <TextField
               onChange={(value) => onChange("cardholderName", value)}
-              placeholder="Broward HVAC Co."
+              placeholder={messages.settingsPage.placeholders.cardholderName}
               value={draft.cardholderName}
             />
           </FieldGroup>
         </div>
         <div className="md:col-span-2">
-          <FieldGroup label="Card number">
+          <FieldGroup label={messages.settingsPage.billing.cardNumber}>
             <TextField
               onChange={(value) => onChange("cardNumber", value)}
               placeholder="4242 4242 4242 4242"
@@ -1935,28 +2114,28 @@ function BillingPaymentMethodEditor({
             />
           </FieldGroup>
         </div>
-        <FieldGroup label="Exp. month">
+        <FieldGroup label={messages.settingsPage.billing.expMonth}>
           <TextField
             onChange={(value) => onChange("expMonth", value)}
             placeholder="05"
             value={draft.expMonth}
           />
         </FieldGroup>
-        <FieldGroup label="Exp. year">
+        <FieldGroup label={messages.settingsPage.billing.expYear}>
           <TextField
             onChange={(value) => onChange("expYear", value)}
             placeholder="2028"
             value={draft.expYear}
           />
         </FieldGroup>
-        <FieldGroup label="Security code">
+        <FieldGroup label={messages.settingsPage.billing.securityCode}>
           <TextField
             onChange={(value) => onChange("cvc", value)}
             placeholder="123"
             value={draft.cvc}
           />
         </FieldGroup>
-        <FieldGroup label="Billing ZIP">
+        <FieldGroup label={messages.settingsPage.billing.billingZip}>
           <TextField
             onChange={(value) => onChange("postalCode", value)}
             placeholder="33301"
@@ -1965,18 +2144,20 @@ function BillingPaymentMethodEditor({
         </FieldGroup>
       </div>
       <p className="mt-3 text-[11.5px] leading-[1.5] text-muted">
-        Card number and security code are used only to update the card and are not stored in this local prototype.
+        {messages.settingsPage.billing.cardHelp}
       </p>
       <div className="mt-4 flex flex-wrap gap-3">
         <CatalogButton disabled={isSaving} onClick={onSave} variant="primary">
-          {isSaving ? "Saving..." : "Save card"}
+          {isSaving
+            ? messages.settingsPage.actions.saving
+            : messages.settingsPage.actions.saveCard}
         </CatalogButton>
         <CatalogButton disabled={isSaving} onClick={onReset} variant="secondary">
-          Reset
+          {messages.settingsPage.actions.reset}
         </CatalogButton>
         {onRemove ? (
           <CatalogButton disabled={isSaving} onClick={onRemove} variant="secondary">
-            Remove
+            {messages.settingsPage.actions.remove}
           </CatalogButton>
         ) : null}
       </div>
@@ -2014,16 +2195,23 @@ function formatBillingCapInput(usageCapCents: number | null): string {
   return (usageCapCents / 100).toFixed(2);
 }
 
-function formatBillingCapSummary(usageCapCents: number | null): string {
-  return usageCapCents === null ? "No cap" : formatUsdFromCents(usageCapCents);
+function formatBillingCapSummary(
+  usageCapCents: number | null,
+  locale: string,
+  messages: ReturnType<typeof useUiI18n>["messages"],
+): string {
+  return usageCapCents === null
+    ? messages.settingsPage.billing.noCap
+    : formatUsdFromCents(usageCapCents, locale);
 }
 
 function getBillingGraphUsageCapCents(input: Readonly<{
   billingCapDraft: string;
+  messages: SettingsMessages;
   savedUsageCapCents: number | null;
 }>): number | null {
   try {
-    return parseBillingCapInput(input.billingCapDraft);
+    return parseBillingCapInput(input.billingCapDraft, input.messages);
   } catch {
     return input.savedUsageCapCents;
   }
@@ -2032,26 +2220,56 @@ function getBillingGraphUsageCapCents(input: Readonly<{
 function getBillingUsageItem(
   usageRecords: SettingsPageData["billing"]["usage"],
   metricId: BillingUsageMetricId,
+  messages: SettingsMessages,
 ): BillingUsageRecord {
   return (
     usageRecords.find((usageRecord) => usageRecord.id === metricId) ?? {
       detail: "",
       id: metricId,
-      label: getBillingUsageLabel(metricId),
+      label: getBillingUsageLabel(metricId, messages),
       value: "$0.00",
     }
   );
 }
 
+function localizeBillingUsageRecord(
+  usage: BillingUsageRecord,
+  messages: SettingsMessages,
+  t: TranslateMessage,
+): BillingUsageRecord {
+  switch (usage.id) {
+    case "flat_fee":
+      return {
+        ...usage,
+        detail: messages.settingsPage.billing.usageDetails.monthlyRecurring,
+        label: messages.settingsPage.billing.usageLabels.platformAccess,
+      };
+    case "usage_this_period":
+      return {
+        ...usage,
+        detail: translateTrackedRunsDetail(usage.detail, t),
+        label: messages.settingsPage.billing.usageLabels.usageThisPeriod,
+      };
+    case "current_total":
+      return {
+        ...usage,
+        detail: translateRenewsDetail(usage.detail, t),
+        label: messages.settingsPage.billing.usageLabels.currentTotal,
+      };
+  }
+}
+
 function getBillingUsageCapProgress(input: Readonly<{
+  locale: string;
+  messages: ReturnType<typeof useUiI18n>["messages"];
   usageCapCents: number | null;
   usageThisPeriodCents: number;
 }>): BillingUsageCapProgress {
   if (input.usageCapCents === null) {
     return {
       barWidthPercent: 0,
-      caption: "Set a monthly cap to pause new AI runs automatically.",
-      summary: "No cap set.",
+      caption: input.messages.settingsPage.billing.setMonthlyCapCaption,
+      summary: input.messages.settingsPage.billing.noCapSet,
     };
   }
 
@@ -2060,8 +2278,16 @@ function getBillingUsageCapProgress(input: Readonly<{
 
     return {
       barWidthPercent: isCapReached ? 100 : 0,
-      caption: `${formatUsdFromCents(input.usageThisPeriodCents)} used of ${formatUsdFromCents(0)} cap`,
-      summary: isCapReached ? "Cap reached." : "No usage allowed at the current cap.",
+      caption: translateSettingTemplate(
+        input.messages.settingsPage.billing.usedOfCap,
+        {
+          cap: formatUsdFromCents(0, input.locale),
+          used: formatUsdFromCents(input.usageThisPeriodCents, input.locale),
+        },
+      ),
+      summary: isCapReached
+        ? input.messages.settingsPage.billing.capReached
+        : input.messages.settingsPage.billing.noUsageAllowed,
     };
   }
 
@@ -2073,22 +2299,36 @@ function getBillingUsageCapProgress(input: Readonly<{
 
   return {
     barWidthPercent: visiblePercent,
-    caption: `${formatUsdFromCents(input.usageThisPeriodCents)} used of ${formatUsdFromCents(input.usageCapCents)} cap`,
+    caption: translateSettingTemplate(
+      input.messages.settingsPage.billing.usedOfCap,
+      {
+        cap: formatUsdFromCents(input.usageCapCents, input.locale),
+        used: formatUsdFromCents(input.usageThisPeriodCents, input.locale),
+      },
+    ),
     summary:
       clampedPercent >= 100
-        ? "Cap reached."
-        : `${formatBillingUsagePercent(clampedPercent)} of monthly cap used`,
+        ? input.messages.settingsPage.billing.capReached
+        : translateSettingTemplate(
+            input.messages.settingsPage.billing.ofMonthlyCapUsed,
+            {
+              percent: formatBillingUsagePercent(clampedPercent),
+            },
+          ),
   };
 }
 
-function getBillingUsageLabel(metricId: BillingUsageMetricId): string {
+function getBillingUsageLabel(
+  metricId: BillingUsageMetricId,
+  messages: SettingsMessages,
+): string {
   switch (metricId) {
     case "flat_fee":
-      return "Platform access";
+      return messages.settingsPage.billing.usageLabels.platformAccess;
     case "usage_this_period":
-      return "Usage this period";
+      return messages.settingsPage.billing.usageLabels.usageThisPeriod;
     case "current_total":
-      return "Current total";
+      return messages.settingsPage.billing.usageLabels.currentTotal;
   }
 }
 
@@ -2124,8 +2364,8 @@ function formatBillingUsagePercent(value: number): string {
   return `${value.toFixed(0)}%`;
 }
 
-function formatUsdFromCents(value: number): string {
-  return new Intl.NumberFormat("en-US", {
+function formatUsdFromCents(value: number, locale: string): string {
+  return new Intl.NumberFormat(locale, {
     currency: "USD",
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
@@ -2133,7 +2373,17 @@ function formatUsdFromCents(value: number): string {
   }).format(value / 100);
 }
 
-function parseBillingCapInput(value: string): number | null {
+function translateSettingTemplate(
+  template: string,
+  values: Readonly<Record<string, string>>,
+) {
+  return template.replaceAll(/\{\{(\w+)\}\}/g, (_, key: string) => values[key] ?? "");
+}
+
+function parseBillingCapInput(
+  value: string,
+  messages: SettingsMessages,
+): number | null {
   const normalizedValue = value.replace(/[$,\s]/g, "");
 
   if (normalizedValue.length === 0) {
@@ -2141,13 +2391,13 @@ function parseBillingCapInput(value: string): number | null {
   }
 
   if (!/^\d+(\.\d{0,2})?$/.test(normalizedValue)) {
-    throw new Error("Enter a valid dollar amount with up to two decimal places.");
+    throw new Error(messages.settingsPage.errors.validDollarAmountPrecision);
   }
 
   const usageCapCents = Math.round(Number(normalizedValue) * 100);
 
   if (!Number.isFinite(usageCapCents) || usageCapCents < 0) {
-    throw new Error("Enter a valid non-negative dollar amount.");
+    throw new Error(messages.settingsPage.errors.validDollarAmountNonNegative);
   }
 
   return usageCapCents;
@@ -2178,21 +2428,30 @@ function formatExpiration(expMonth: number, expYear: number): string {
   return `${expMonth.toString().padStart(2, "0")}/${expYear}`;
 }
 
-function parsePaymentMethodDraft(draft: PaymentMethodDraft) {
-  const expMonth = parseIntegerField(draft.expMonth, "expiration month");
-  const expYear = parseIntegerField(draft.expYear, "expiration year");
+function parsePaymentMethodDraft(
+  draft: PaymentMethodDraft,
+  messages: SettingsMessages,
+) {
+  const expMonth = parseIntegerField(
+    draft.expMonth,
+    messages.settingsPage.errors.validExpirationMonth,
+  );
+  const expYear = parseIntegerField(
+    draft.expYear,
+    messages.settingsPage.errors.validExpirationYear,
+  );
   const cardholderName = draft.cardholderName.trim();
 
   if (cardholderName.length === 0) {
-    throw new Error("Enter the cardholder name.");
+    throw new Error(messages.settingsPage.errors.validCardholderName);
   }
 
   if (draft.cardNumber.trim().length === 0) {
-    throw new Error("Enter the card number.");
+    throw new Error(messages.settingsPage.errors.validCardNumber);
   }
 
   if (draft.cvc.trim().length === 0) {
-    throw new Error("Enter the security code.");
+    throw new Error(messages.settingsPage.errors.validSecurityCode);
   }
 
   return {
@@ -2205,12 +2464,279 @@ function parsePaymentMethodDraft(draft: PaymentMethodDraft) {
   };
 }
 
-function parseIntegerField(value: string, label: string): number {
+function parseIntegerField(value: string, errorMessage: string): number {
   const normalizedValue = value.trim();
 
   if (!/^\d+$/.test(normalizedValue)) {
-    throw new Error(`Enter a valid ${label}.`);
+    throw new Error(errorMessage);
   }
 
   return Number(normalizedValue);
+}
+
+function getSettingsErrorMessage(error: unknown, fallbackMessage: string) {
+  return error instanceof Error ? error.message : fallbackMessage;
+}
+
+function getSettingsTabLabel(tabId: SettingsTabId, messages: SettingsMessages) {
+  return messages.settingsPage.tabs[tabId];
+}
+
+function translateRoleLabel(roleLabel: string, messages: SettingsMessages) {
+  switch (roleLabel.trim().toLowerCase()) {
+    case "admin":
+      return messages.settingsPage.roles.admin;
+    case "operator":
+      return messages.settingsPage.roles.operator;
+    case "analyst":
+      return messages.settingsPage.roles.analyst;
+    case "viewer":
+      return messages.settingsPage.roles.viewer;
+    default:
+      return roleLabel;
+  }
+}
+
+function translateAccountStatus(
+  status: TeamMemberRecord["status"],
+  messages: SettingsMessages,
+) {
+  return status === "active"
+    ? messages.settingsPage.accountDialog.statusActive
+    : messages.settingsPage.accountDialog.statusInvited;
+}
+
+function translateAccessSummary(
+  accessSummary: string,
+  messages: SettingsMessages,
+) {
+  switch (accessSummary.trim().toLowerCase()) {
+    case "setup, ops, reports":
+      return messages.settingsPage.team.accessSummaries.setupOpsReports;
+    case "setup, ops":
+      return messages.settingsPage.team.accessSummaries.setupOps;
+    case "reports":
+      return messages.settingsPage.team.accessSummaries.reports;
+    case "access pending":
+      return messages.settingsPage.team.accessSummaries.pending;
+    default:
+      return accessSummary;
+  }
+}
+
+function translatePermissionLabel(
+  permissionLabel: string,
+  messages: SettingsMessages,
+) {
+  switch (permissionLabel) {
+    case "Connect approved sources and uploads":
+      return messages.settingsPage.permissions.connectSources;
+    case "Review parse issues and ingestion queues":
+      return messages.settingsPage.permissions.reviewParseIssues;
+    case "Run approved analyses and data exploration":
+      return messages.settingsPage.permissions.runAnalyses;
+    case "View dashboards and weekly briefs":
+      return messages.settingsPage.permissions.viewDashboards;
+    case "Expand source scope or AI processing":
+      return messages.settingsPage.permissions.expandScope;
+    case "Manage users and report visibility":
+      return messages.settingsPage.permissions.manageUsers;
+    default:
+      return permissionLabel;
+  }
+}
+
+function translatePreferenceTitle(
+  preferenceId: string,
+  title: string,
+  messages: SettingsMessages,
+) {
+  switch (preferenceId) {
+    case settingsPreferenceIds.compactDashboardDensity:
+      return messages.settingsPage.preferenceItems.compactDashboardDensity.title;
+    case settingsPreferenceIds.evidenceFirstRecommendationView:
+      return messages.settingsPage.preferenceItems.evidenceFirstRecommendationView.title;
+    case settingsPreferenceIds.experimentalPackDrafts:
+      return messages.settingsPage.preferenceItems.experimentalPackDrafts.title;
+    case settingsPreferenceIds.retainUploadedSourceFiles:
+      return messages.settingsPage.preferenceItems.retainUploadedSourceFiles.title;
+    default:
+      return title;
+  }
+}
+
+function translatePreferenceDescription(
+  preferenceId: string,
+  description: string,
+  messages: SettingsMessages,
+) {
+  switch (preferenceId) {
+    case settingsPreferenceIds.compactDashboardDensity:
+      return messages.settingsPage.preferenceItems.compactDashboardDensity.description;
+    case settingsPreferenceIds.evidenceFirstRecommendationView:
+      return messages.settingsPage.preferenceItems.evidenceFirstRecommendationView.description;
+    case settingsPreferenceIds.experimentalPackDrafts:
+      return messages.settingsPage.preferenceItems.experimentalPackDrafts.description;
+    case settingsPreferenceIds.retainUploadedSourceFiles:
+      return messages.settingsPage.preferenceItems.retainUploadedSourceFiles.description;
+    default:
+      return description;
+  }
+}
+
+function getSecurityAuthRowKind(title: string) {
+  switch (title) {
+    case "Email and password":
+      return "changePassword" as const;
+    case "Two-factor authentication":
+      return "twoFactor" as const;
+    case "Single sign-on":
+      return "singleSignOn" as const;
+    default:
+      return null;
+  }
+}
+
+function translateSecurityAuthRow(
+  row: SettingsPageData["security"]["authRows"][number],
+  messages: SettingsMessages,
+) {
+  const rowKind = getSecurityAuthRowKind(row.title);
+
+  switch (rowKind) {
+    case "changePassword":
+      return {
+        actionLabel: messages.settingsPage.securityRows.changePassword.actionLabel,
+        description: row.description,
+        title: messages.settingsPage.securityRows.changePassword.title,
+      };
+    case "twoFactor":
+      return {
+        actionLabel: messages.settingsPage.securityRows.twoFactor.actionLabel,
+        description: messages.settingsPage.securityRows.twoFactor.description,
+        title: messages.settingsPage.securityRows.twoFactor.title,
+      };
+    case "singleSignOn":
+      return {
+        actionLabel: messages.settingsPage.securityRows.singleSignOn.actionLabel,
+        description: messages.settingsPage.securityRows.singleSignOn.description,
+        title: messages.settingsPage.securityRows.singleSignOn.title,
+      };
+    default:
+      return row;
+  }
+}
+
+function translateIntegrationActionLabel(
+  actionLabel: string,
+  messages: SettingsMessages,
+) {
+  switch (actionLabel.trim().toLowerCase()) {
+    case "connect":
+      return messages.settingsPage.actions.connect;
+    case "configure":
+      return messages.settingsPage.actions.configure;
+    case "disconnect":
+      return messages.settingsPage.actions.disconnect;
+    case "manage":
+      return messages.settingsPage.actions.manage;
+    case "reconnect":
+      return messages.settingsPage.actions.reconnect;
+    case "review failures":
+      return messages.settingsPage.actions.reviewFailures;
+    case "sync now":
+      return messages.settingsPage.actions.syncNow;
+    default:
+      return actionLabel;
+  }
+}
+
+function translateIntegrationDescription(
+  title: string,
+  description: string,
+  messages: SettingsMessages,
+) {
+  switch (title) {
+    case "ServiceTitan":
+      return messages.settingsPage.integrations.descriptions.serviceTitan;
+    case "QuickBooks Online":
+      return messages.settingsPage.integrations.descriptions.quickBooksOnline;
+    case "Gmail / AP inbox":
+      return messages.settingsPage.integrations.descriptions.gmailApInbox;
+    case "Xero":
+      return messages.settingsPage.integrations.descriptions.xero;
+    default:
+      return description;
+  }
+}
+
+function translateIntegrationStatusLabel(
+  statusLabel: string,
+  messages: SettingsMessages,
+  t: TranslateMessage,
+) {
+  const normalizedLabel = statusLabel.trim().toLowerCase();
+  const failuresMatch = statusLabel.match(/^(\d+)\s+failures$/i);
+
+  if (failuresMatch) {
+    return t("settingsPage.integrations.status.failures", "{{count}} failures", {
+      count: failuresMatch[1] ?? "0",
+    });
+  }
+
+  switch (normalizedLabel) {
+    case "available":
+      return messages.settingsPage.integrations.status.available;
+    case "connected":
+      return messages.settingsPage.integrations.status.connected;
+    case "not connected":
+      return messages.settingsPage.integrations.status.notConnected;
+    default:
+      return statusLabel;
+  }
+}
+
+function translateTrackedRunsDetail(
+  detail: string,
+  t: TranslateMessage,
+) {
+  const settlingMatch = detail.match(
+    /^(\d+)\s+tracked runs,\s+(\d+)\s+settling$/i,
+  );
+
+  if (settlingMatch) {
+    return t(
+      "settingsPage.billing.usageDetails.trackedRunsSettling",
+      "{{count}} tracked runs, {{settlingCount}} settling",
+      {
+        count: settlingMatch[1] ?? "0",
+        settlingCount: settlingMatch[2] ?? "0",
+      },
+    );
+  }
+
+  const trackedMatch = detail.match(/^(\d+)\s+tracked runs$/i);
+
+  if (trackedMatch) {
+    return t("settingsPage.billing.usageDetails.trackedRuns", "{{count}} tracked runs", {
+      count: trackedMatch[1] ?? "0",
+    });
+  }
+
+  return detail;
+}
+
+function translateRenewsDetail(
+  detail: string,
+  t: TranslateMessage,
+) {
+  const renewsMatch = detail.match(/^Renews\s+(.+)$/i);
+
+  if (!renewsMatch) {
+    return detail;
+  }
+
+  return t("settingsPage.billing.usageDetails.renews", "Renews {{date}}", {
+    date: renewsMatch[1] ?? "",
+  });
 }

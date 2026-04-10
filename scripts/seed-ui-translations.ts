@@ -11,6 +11,7 @@ async function main() {
       {
         insertedLocales: result.insertedLocales,
         skippedLocales: result.skippedLocales,
+        updatedLocales: result.updatedLocales,
       },
       null,
       2,

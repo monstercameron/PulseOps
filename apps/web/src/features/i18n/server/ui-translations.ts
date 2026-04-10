@@ -31,6 +31,7 @@ async function seedGlobalUiTranslations() {
     await seedUiTranslationBundles({
       repository: localIngestionRuntime.uiTranslationBundleRepository,
     });
+    serverUiMessagesCache.clear();
   })();
 
   return seedGlobalUiTranslationsPromise;
