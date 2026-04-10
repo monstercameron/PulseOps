@@ -307,7 +307,7 @@ export function BlogEditorPage({ postId }: Readonly<{ postId: string | null }>) 
                   <span style={{ fontSize: 15, lineHeight: 1 }}>·</span>
                 </ToolbarBtn>
                 <ToolbarBtn onClick={() => insertAtCursor("> ")} title="Blockquote">
-                  <span style={{ fontSize: 13 }}>"</span>
+                  <span style={{ fontSize: 13 }}>&quot;</span>
                 </ToolbarBtn>
                 <ToolbarBtn
                   onClick={() => {

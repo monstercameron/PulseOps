@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { LocaleSwitcher } from "@/features/i18n/components/locale-switcher";
 import {
   persistAppTheme,
@@ -9,24 +9,19 @@ import {
 } from "@/features/shell/lib/theme-preference";
 
 export function TopBarControls() {
-  const [theme, setTheme] = useState<AppTheme | null>(null);
-
-  useEffect(() => {
-    setTheme(
-      document.documentElement.getAttribute("data-theme") === "light"
+  const [themeOverride, setThemeOverride] = useState<AppTheme | null>(null);
+  const theme =
+    themeOverride ??
+    (typeof document === "undefined"
+      ? null
+      : document.documentElement.getAttribute("data-theme") === "light"
         ? "light"
-        : "dark",
-    );
-  }, []);
+        : "dark");
 
   function handleThemeToggle() {
-    if (theme === null) {
-      return;
-    }
-
-    const next = toggleAppTheme(theme);
+    const next = toggleAppTheme(theme ?? "dark");
     persistAppTheme(next);
-    setTheme(next);
+    setThemeOverride(next);
   }
 
   const themeToggleLabel =
@@ -42,6 +37,7 @@ export function TopBarControls() {
         aria-label={themeToggleLabel}
         className="flex h-[26px] w-[26px] items-center justify-center rounded-[6px] border border-border-strong bg-surface-subtle text-muted transition hover:bg-surface-muted hover:text-foreground active:scale-[.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
         onClick={handleThemeToggle}
+        suppressHydrationWarning
         title={themeToggleLabel}
         type="button"
       >

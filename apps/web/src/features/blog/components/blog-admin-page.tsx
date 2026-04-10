@@ -9,7 +9,7 @@ import { DialogFrame } from "@/features/catalog/components/settings-catalog-bloc
 import type { BlogPost, BlogPostStatus } from "@/features/blog/domain/blog-post";
 import { useUiI18n } from "@/features/i18n/components/ui-i18n-provider";
 
-export function BlogAdminPage({ orgId: _orgId }: Readonly<{ orgId?: string }>) {
+export function BlogAdminPage() {
   const router = useRouter();
   const { locale, messages } = useUiI18n();
 
