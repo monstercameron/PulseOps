@@ -2,12 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { WorkspaceHeader } from "@/features/catalog/components/workspace-catalog-blocks";
-import { CatalogButton, StatusBadge, cx } from "@/features/catalog/components/catalog-primitives";
+import { CatalogButton, StatusBadge } from "@/features/catalog/components/catalog-primitives";
 import { CatalogModalOverlay, PlaceholderActionDialog } from "@/features/catalog/components/catalog-dialogs";
 import { DialogFrame } from "@/features/catalog/components/settings-catalog-blocks";
 import type { BlogPost, BlogPostStatus, CreateBlogPostInput } from "@/features/blog/domain/blog-post";
-
-type BlogAdminPageProps = Readonly<{ orgId: string }>;
+import { useUiI18n } from "@/features/i18n/components/ui-i18n-provider";
 
 type DraftState = Readonly<{
   id: string | null; // null = new post
@@ -19,13 +18,13 @@ type DraftState = Readonly<{
   status: BlogPostStatus;
 }>;
 
-const emptyDraft = (): DraftState => ({
+const emptyDraft = (author = "PulseOps Team"): DraftState => ({
   id: null,
   title: "",
   slug: "",
   summary: "",
   body: "",
-  author: "PulseOps Team",
+  author,
   status: "draft",
 });
 
@@ -38,7 +37,7 @@ function slugify(title: string): string {
     .slice(0, 80);
 }
 
-export function BlogAdminPage({ orgId: _orgId }: BlogAdminPageProps) {
+export function BlogAdminPage() {
   const [posts, setPosts] = useState<readonly BlogPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [draft, setDraft] = useState<DraftState | null>(null);

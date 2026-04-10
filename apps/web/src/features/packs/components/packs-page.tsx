@@ -51,7 +51,7 @@ type FeedbackState = Readonly<{
 }>;
 
 export function PacksPage({ initialData, orgId }: PacksPageProps) {
-  const { messages, t } = useUiI18n();
+  const { messages } = useUiI18n();
   const [packs, setPacks] = useState(initialData.packs);
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState<(typeof initialData.filters)[number]["id"]>("all");
@@ -465,7 +465,6 @@ function PackDetail({
                     onAction={(action) => {
                       void onRecommendationAction(
                         resolveCanonicalRecommendationAction(action, messages),
-                        action,
                         pack.id,
                         recommendation.id,
                         recommendation.title,
@@ -541,6 +540,43 @@ function matchesSearch(pack: PackItem, normalizedSearch: string) {
   return `${pack.title} ${pack.generatedAtLabel} ${pack.meta.join(" ")}`
     .toLowerCase()
     .includes(normalizedSearch);
+}
+
+function resolvePackFilterLabel(
+  filterId: PacksPageData["filters"][number]["id"],
+  messages: ReturnType<typeof useUiI18n>["messages"],
+) {
+  return messages.packsPage.filterLabels[filterId];
+}
+
+function localizeRecommendationAction(
+  action: string,
+  messages: ReturnType<typeof useUiI18n>["messages"],
+) {
+  if (action === "Accept") {
+    return messages.packsPage.recommendationActions.accept;
+  }
+
+  if (action === "Dismiss") {
+    return messages.packsPage.recommendationActions.dismiss;
+  }
+
+  return action;
+}
+
+function resolveCanonicalRecommendationAction(
+  action: string,
+  messages: ReturnType<typeof useUiI18n>["messages"],
+) {
+  if (action === messages.packsPage.recommendationActions.accept) {
+    return "Accept";
+  }
+
+  if (action === messages.packsPage.recommendationActions.dismiss) {
+    return "Dismiss";
+  }
+
+  return action;
 }
 
 async function downloadResponseAsFile(response: Response) {

@@ -34,7 +34,6 @@ import {
   type SettingsMutationResponse,
 } from "@/features/settings/lib/settings-page-state";
 import {
-  toggleAppTheme,
   type AppTheme,
 } from "@/features/shell/lib/theme-preference";
 
