@@ -44,6 +44,7 @@ describe("current app actor", () => {
         },
       },
       authSecret: "auth-secret-1234",
+      now: "2026-04-10T11:00:00.000Z",
       orgId: "org_123",
       request: new Request("http://localhost/settings", {
         headers: {
