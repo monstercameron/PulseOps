@@ -21,11 +21,13 @@
 - Moved the public `/blog` experience onto the API-backed marketing shell so published posts render through the shared marketing layout instead of a standalone page.
 - Expanded the public blog with reusable seed content, an editorial landing page, RSS metadata, load-more post browsing, and long-form article rendering components for richer marketing content.
 - Persisted authored posts to disk, added a public `/blog/[slug]` route backed by the blog repository, and let operators browse, reuse, and remove uploaded article images alongside seeded chart assets in the editor.
+- Repositioned the marketing site around a clearer field-service cash-and-margin narrative, refreshed hero and pricing sections, and tightened the auth and legal layouts to match the stronger product story.
 
 ### Document Review
 - Added fact-presentation helpers so explorer and document detail surfaces show business-friendly labels, formatted money and date values, evidence summaries, and source excerpts instead of raw canonical IDs.
 - Added explorer key findings, richer fact-review cards, and end-to-end review coverage so operators can scan the most important document takeaways before reading the full fact list.
 - Added review health summaries, review-order guidance, section jump links, and an explicit empty-search recovery state so Explorer is easier to use during document review.
+- Reworked Explorer around URL-backed search and type filters, lazy-loaded record browsing, scroll-reset behavior, and export handling that follows the visible record scope instead of a purely client-filtered list.
 
 ### Extraction and Uploads
 - Improved generic tabular extraction prompts with computed business summaries, date-range and top-contributor profiling, and tighter guidance for high-value business observations.
@@ -33,10 +35,16 @@
 - Reworked the upload modal with explicit progress steps, duplicate and review-ready outcomes, direct navigation into Explorer or Pipeline, localized status copy, and clearer validation error messages.
 - Added curated field-service invoice, vendor bill, and job-cost fixtures so the manual upload path can recognize distinct document families and route them into clearer review readouts.
 - Tightened the manual upload path around CSV and XLSX inputs with stronger binary-signature checks, richer error metadata, and explicit next-action guidance once classification or review state is known.
+- Rebuilt the dashboard, pipeline, and decision-pack surfaces around scoped next actions, clearer intake and review status language, pack preview concepts, and new Playwright coverage for the main workspace flows.
 
 ### Settings Localization
 - Localized organization profile controls and added the matching UI bundle labels so the settings surface stays consistent across supported locales.
 - Persisted theme preference through cookies and client hydration, normalized default UI bundle fallback merging, and wired more settings headings and descriptions through seeded translation content.
+- Localized account, billing, integration, security, and preference controls more deeply, and updated the settings UI helpers so select and pill inputs can carry translated labels without changing stored values.
+
+### Localization Ops
+- Updated UI translation seeding to backfill missing keys into existing bundles, report updated locales, and clear the server message cache after seeding so new defaults show up without wiping overrides.
+- Wired `db:init` to seed the default UI translation bundles into local Postgres and documented the new `db:seed:ui-translations` flow for fresh local environments.
 
 ### Research
 - Added an extraction prompt optimization runner plus representative XLSX and PDF fixtures for evaluating structured fact extraction quality against expected business facts.
