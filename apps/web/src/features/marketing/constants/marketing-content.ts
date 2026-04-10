@@ -43,7 +43,7 @@ export const marketingFooterGroups: readonly MarketingFooterGroup[] = [
 
 export const marketingShellContent = {
   ctaHref: "/signup",
-  ctaLabel: "Start Free",
+  ctaLabel: "Get Started Free",
   footerDescription:
     "Weekly cash and margin clarity for local service businesses with no analysts, no dashboards, and no guesswork.",
   footerTagline: "Built for local service businesses everywhere.",
@@ -51,51 +51,51 @@ export const marketingShellContent = {
 
 export const homePageContent = {
   hero: {
-    eyebrow: "Cash and Margin Intelligence",
-    title: "Your service business runs on gut feel. Start running it on facts.",
+    eyebrow: "Cash & Margin Intelligence · Built for Trades & Local Services",
+    title: "Your service business runs on gut feelings. Start running it on facts.",
     description:
-      "PulseOps delivers a plain-language weekly brief that tells you where money is leaking, which invoices to chase, and what to fix before Friday.",
+      "PulseOps delivers a plain-language weekly brief that tells you exactly where your money is leaking, which invoices to chase, and what to fix before Friday — built for HVAC, plumbing, landscaping, cleaning, and every other project-based service business.",
     actions: [
-      { href: "/signup", label: "Start Free", variant: "primary" },
+      { href: "/signup", label: "Start Free — No Card Needed", variant: "primary" },
       { href: "/#how-it-works", label: "See How It Works", variant: "secondary" },
     ],
     stats: [
-      { value: "56%", detail: "of small businesses carry overdue invoices" },
-      { value: "$17.5K", detail: "average outstanding balance per business" },
-      { value: "75%", detail: "cite rising costs as the top challenge" },
-      { value: "#1", detail: "margin clarity is the most common blind spot" },
+      { value: "56%", detail: "of small businesses\nowed unpaid invoices" },
+      { value: "$17.5K", detail: "average outstanding\nper business" },
+      { value: "75%", detail: "cite rising costs\nas top challenge" },
+      { value: "#1", detail: "challenge: accurately\npredicting job margins" },
     ],
-    footerNote: "Sources: Fed small business credit survey and Intuit SMB research.",
+    footerNote: "Sources: Fed Small Business Credit Survey 2025, Intuit SMB Surveys 2025–2026",
   },
   pain: {
     eyebrow: "The Real Problem",
-    title: "The numbers are already there. They just are not usable fast enough to act on.",
+    title: "The numbers are already there. You just can't see them clearly enough to act.",
     description:
-      "Sales live in one system, costs in another, schedules in a spreadsheet, and invoices in an inbox. Problems pile up quietly until they are painful.",
+      "Your sales are in one system. Your costs are in another. Your schedule is in a spreadsheet. Your invoices are in an email thread. None of it talks to anything else — so you're making pricing, staffing, and cash decisions on gut feel, and the problems pile up quietly until they're painful.",
     items: [
       {
-        icon: "Cash",
+        icon: "💸",
         title: "Underpriced jobs",
         description:
-          "Labor runs over estimate, materials creep up, and pricing never catches up.",
+          "Labor runs 11% over estimate. Materials crept up. But the quote hasn't changed in two years.",
       },
       {
-        icon: "AR",
-        title: "Invoices nobody is chasing",
+        icon: "🧾",
+        title: "Invoices no one is chasing",
         description:
-          "Cash is earned, but collections slip because the right accounts never get surfaced early.",
+          "47% of small businesses have invoices overdue more than 30 days. The cash was earned — it's just sitting with the customer.",
       },
       {
-        icon: "Margin",
-        title: "Line-item leakage",
+        icon: "📉",
+        title: "Margin leaking by line item",
         description:
-          "One service type or one supplier can quietly erase margin without showing up in a dashboard summary.",
+          "One job type is quietly unprofitable. One crew costs 18% more per hour once you count callbacks and drive time. The answer is already in your data — it just isn't visible yet.",
       },
       {
-        icon: "Timing",
+        icon: "⏳",
         title: "Cash flow whiplash",
         description:
-          "Vendors want cash before customers pay, and the shortfall only becomes obvious when it is too late.",
+          "28% of firms collect after delivery. So you're financing your customers with your own working capital and only finding out late.",
       },
     ],
   },
@@ -103,84 +103,84 @@ export const homePageContent = {
     eyebrow: "How It Works",
     title: "Connected in a day. Actionable by Monday.",
     description:
-      "We do the messy integration and normalization work so the owner gets a short, useful brief instead of another report to maintain.",
+      "We handle the messy part — pulling your numbers together from wherever they live — so you never have to clean a spreadsheet or build a report again.",
     steps: [
       {
         step: "1",
-        title: "Connect the systems you already use",
+        title: "Connect your existing systems",
         description:
-          "QuickBooks, ServiceTitan, spreadsheets, inbox attachments, and manual uploads all flow into one intake surface.",
+          "Link your POS, QuickBooks, job management software, or scheduling tool — or just upload a bank export or spreadsheet. We handle inconsistent and incomplete data on our end. No cleanup required from you.",
       },
       {
         step: "2",
-        title: "Build one clean business picture",
+        title: "We build one clear picture of your business",
         description:
-          "PulseOps reconciles jobs, costs, payments, and documents into a single operating view.",
+          "PulseOps pulls together everything from all your sources and works out what's actually happening with your jobs, costs, payments, and margins — not just what one system is telling you.",
       },
       {
         step: "3",
-        title: "Show the source evidence",
+        title: "You always know why we're flagging it",
         description:
-          "Every recommendation includes provenance, confidence, and the exact records behind it.",
+          "Every recommendation tells you what's behind it — which jobs, which costs, how confident we are — so you can make the call yourself with full context, not just take our word for it.",
       },
       {
         step: "4",
-        title: "Deliver the weekly brief",
+        title: "Your Weekly Brief arrives Monday",
         description:
-          "The owner gets six decision-focused answers in plain English with the next best actions ranked by impact.",
+          "Six questions answered in plain English. Ranked by financial impact. Specific, actionable, and takes under five minutes. No dashboard to open. No report to run.",
       },
     ],
     connectors: [
       "QuickBooks",
       "Jobber",
       "ServiceTitan",
+      "Square / Clover",
+      "Excel & Google Sheets",
+      "Bank Exports",
       "Housecall Pro",
-      "Google Sheets",
-      "Excel",
-      "Bank exports",
     ],
   },
   questions: {
     eyebrow: "The Weekly Brief",
     title: "Six questions. Answered every Monday.",
     description:
-      "These are the questions owners already ask. PulseOps makes sure someone is answering them with evidence.",
+      "These are the questions every service business owner is already asking. PulseOps makes sure someone is actually answering them — with data, not instinct.",
     items: [
       {
-        icon: "?",
+        icon: "💰",
         title: "Which jobs are underpriced?",
         description:
-          "Find the services where actual cost consistently outruns quoted price.",
+          "See where your prices no longer cover your real costs. We compare what jobs were supposed to cost against what they actually cost — and flag every service type where you're leaving money on the table.",
       },
       {
-        icon: "?",
+        icon: "🔍",
         title: "Where is margin leaking?",
         description:
-          "Callbacks, overtime, and material variance get ranked by their dollar impact.",
+          "Find out where money is quietly walking out the door — callbacks, overtime, materials that came in over budget — ranked by how much each one is actually costing you.",
       },
       {
-        icon: "?",
-        title: "Which invoices should we chase today?",
+        icon: "🧾",
+        title: "Which invoices to chase today?",
         description:
-          "Get a short, urgent list of who owes cash and what to do first.",
+          "A short list of who owes you money, how long they've owed it, and exactly what to do first — so the right calls get made before the week is over.",
       },
       {
-        icon: "?",
+        icon: "🛡️",
         title: "Which customers need deposits?",
         description:
-          "Flag slow-paying accounts and large upcoming work that should require cash upfront.",
+          "Flag slow-paying customers and large upcoming jobs where requiring a deposit upfront would protect your cash flow.",
       },
       {
-        icon: "?",
+        icon: "📆",
         title: "What bills are timing-sensitive?",
         description:
-          "Surface purchases and vendor payments that need to be timed against cash inflows.",
+          "Surface upcoming purchases and vendor payments that should be timed against your incoming cash — so you're never caught short.",
       },
       {
-        icon: "?",
-        title: "What deserves attention most?",
+        icon: "🚦",
+        title: "What deserves your attention most?",
         description:
-          "Get one ranked list of the highest-impact actions for the week.",
+          "One ranked list of the highest-impact actions for the week, so you know exactly where to start when you sit down Monday morning.",
       },
     ],
   },
@@ -188,66 +188,72 @@ export const homePageContent = {
     eyebrow: "What It Looks Like",
     title: "Advice, not a report.",
     description:
-      "Each recommendation tells you what changed, what it means in dollars, and what to do next.",
+      "Every item in your brief tells you what changed, what it means in dollars, and what to do. You'll know exactly why something is being flagged before you decide whether to act on it.",
     checklist: [
-      "Only highlights what changed or needs action.",
-      "Shows source evidence and confidence for every recommendation.",
-      "Ranks issues by dollar impact so you start with what matters most.",
-      "Works in email or in-app with the same clear decision surface.",
-      "Takes under five minutes to read and act on.",
+      "Highlights only what changed or needs action — no noise",
+      "Every recommendation shows its source data and confidence level",
+      "Issues ranked by dollar impact — so you start with what matters most",
+      "Delivered to your email — no dashboard to log into",
+      "Under five minutes to read and act on",
     ],
     recommendations: [
       {
-        title: "Pricing gap on water heater installs",
+        title: "Water heater installs are underpriced by ~$140 per job.",
         summary:
-          "Labor averaged 3.4 hours versus a 2.5 hour estimate across 17 recent jobs.",
-        detail: "Estimated recovery: $2,400 per month.",
+          "Labor averaged 3.4 hrs vs. 2.5 hr estimate across 17 jobs this quarter. Materials rose 6% since last price update.",
+        detail: "Based on 17 jobs · Confidence: High · $2,400/mo",
       },
       {
-        title: "Three overdue invoices need escalation",
+        title: "3 invoices are 32–45 days overdue.",
         summary:
-          "Riverdale Commercial and two other accounts now represent the largest concentration of open receivables.",
-        detail: "Cash at risk: $8,750.",
+          "Riverdale Commercial (52 days, $4,200) has the worst pattern. Recommend requiring a 30% deposit on all future commercial work.",
+        detail: "Matched against your invoices and payment history · Confidence: High · $8,750 owed",
       },
       {
-        title: "Supplier bill timing creates a cash pinch on Friday",
+        title: "Drain cleaning margin improved 9 pts this month.",
         summary:
-          "A supplier invoice is due before expected receivables land, leaving a shortfall unless collections clear early.",
-        detail: "Projected gap: $1,400.",
+          "Technician route density is up — you're fitting 1.4 more jobs per day without overtime.",
+        detail: "Scheduling + payroll data · Confidence: Medium",
+      },
+      {
+        title: "Supplier invoice of $6,100 due Friday.",
+        summary:
+          "Current receivable collections projected to leave a $1,400 shortfall unless the Riverdale payment clears by Thursday.",
+        detail: "Matched against your outstanding invoices and bank balance · Confidence: Medium",
       },
     ],
   },
   difference: {
     eyebrow: "What Sets Us Apart",
-    title: "Other tools show data. We tell you what to do about it.",
+    title: "Other tools show you data. We tell you what to do about it.",
     description:
-      "Most products read one clean system and hand you a chart. PulseOps reconciles the messy reality and turns it into a decision.",
+      "Most software reads one clean system and hands you a chart. PulseOps reconciles everything you have — messy as it is — and delivers a specific decision. That's a fundamentally different product, and an advantage that grows the longer you use it.",
     items: [
       {
-        icon: "Merge",
-        title: "One clear picture",
+        icon: "🔀",
+        title: "One clear picture, no matter the mess",
         description:
-          "Bank data, job systems, spreadsheets, and inbox files are reconciled into a single operational view.",
+          "Your bank, your job system, your schedule, and your spreadsheets rarely agree with each other. PulseOps pulls them all together and tells you what's actually happening in your business — even when your numbers don't line up.",
       },
       {
-        icon: "Proof",
-        title: "Show your work",
+        icon: "🔎",
+        title: "You always know why we flagged it",
         description:
-          "Recommendations include the jobs, invoices, and calculations behind them so the user can judge the advice.",
+          "We don't just say \"raise your price 8%.\" We show you the 17 jobs behind it, how much labor ran over estimate, how much materials went up, and how confident we are. You make the call — we give you the full picture first.",
       },
       {
-        icon: "Learn",
-        title: "Learns your business",
+        icon: "🧠",
+        title: "The system learns your business",
         description:
-          "Corrections, approvals, and rejected recommendations tune the system toward how the business actually runs.",
+          "Every correction you make — changing how a cost is categorized, updating how a job type is named, rejecting a suggestion that doesn't fit — gets remembered. Over time, PulseOps doesn't just know your industry. It knows how your specific business works.",
       },
     ],
   },
   industries: {
     eyebrow: "Built For",
-    title: "Project-based local service businesses with 5 to 50 employees.",
+    title: "Project-based local service businesses. 5\u201350 employees.",
     description:
-      "The first decision pack is optimized for field-service and trade businesses that live with the same cash and margin questions every week.",
+      "These businesses deal with the same frustrations: numbers split across too many tools, decisions that need to happen fast, customers who pay late, and profitable improvements sitting unnoticed in data they already have.",
     items: [
       "HVAC",
       "Plumbing",
@@ -260,32 +266,32 @@ export const homePageContent = {
       "Light Construction",
       "Appliance Repair",
     ],
-    note: "Additional decision packs for other verticals come later, after the cash and margin brief works end to end.",
+    note: "Restaurants, med spas, salons, and retail coming soon as additional Decision Packs.",
   },
   testimonials: {
     eyebrow: "From the Field",
-    title: "Owners who stopped flying blind.",
+    title: "Trades owners who stopped flying blind.",
     items: [
       {
         quote:
-          "PulseOps showed us that maintenance calls cost more than they bill once you count drive time and callbacks. We changed pricing and margin recovered in six weeks.",
+          "I've been doing HVAC for 16 years. I knew some calls were more profitable than others, but I couldn't prove it. PulseOps showed me that maintenance calls cost us more than they bill when you count drive time and callbacks. We restructured the plan tier pricing and margin recovered in six weeks.",
         name: "Marcus R.",
-        company: "HVAC - 14 technicians",
-        initials: "MR",
+        company: "HVAC \u00b7 14 technicians",
+        initials: "M",
       },
       {
         quote:
-          "The first brief gave me a list of three invoices to chase that morning. We collected most of the backlog that same week.",
+          "We had $22,000 sitting in overdue invoices and I didn't really know which ones to prioritize. The first brief gave me a list of three to call that morning. We collected $14,000 of it that week. I don't know how I ran this business without it.",
         name: "Diana V.",
-        company: "Plumbing - 9 employees",
-        initials: "DV",
+        company: "Plumbing & Drain \u00b7 9 employees",
+        initials: "D",
       },
       {
         quote:
-          "We fixed the estimating process, not the crew, because the system showed exactly where the margin problem started.",
+          "I run a landscaping company with two crews. The brief showed me that one crew's jobs consistently ran over on labor while the other's didn't — and it traced it back to which crew lead was running estimates. Fixed the estimating process, not the crew. Huge difference.",
         name: "Tariq B.",
-        company: "Landscaping - 11 employees",
-        initials: "TB",
+        company: "Landscaping \u00b7 2 crews, 11 employees",
+        initials: "T",
       },
     ],
   },
@@ -293,19 +299,19 @@ export const homePageContent = {
     eyebrow: "Pricing",
     title: "Flat-rate. No analysts. No surprises.",
     description:
-      "Everything is included. No per-seat fees, no hidden implementation contract, and no surprise usage pricing on the first product.",
+      "Everything included. No per-seat fees, no data limits, no implementation costs hidden in a services contract.",
     tiers: [
       {
-        name: "Cash and Margin Brief",
+        name: "Cash & Margin Brief",
         price: "$149",
         priceSuffix: "/mo",
         description:
           "For owner-operated service businesses ready to stop guessing on cash and margin.",
         points: [
-          "1 business and up to 4 data sources",
-          "Weekly cash and margin brief",
+          "1 business \u00b7 up to 4 data sources",
+          "Weekly Cash & Margin Brief",
           "Job profitability analysis",
-          "Invoice and receivables tracking",
+          "Invoice & receivables tracking",
           "Industry benchmarks",
           "Email support",
         ],
@@ -316,13 +322,14 @@ export const homePageContent = {
         price: "$299",
         priceSuffix: "/mo",
         description:
-          "For growing operators who need cash, margin, staffing, and exception visibility in one surface.",
+          "For growing service businesses that need full visibility across jobs, cash, and team performance.",
         points: [
-          "Up to 3 locations and unlimited sources",
-          "Daily snapshots plus weekly brief",
-          "Crew and job profitability tracking",
+          "Up to 3 locations \u00b7 unlimited sources",
+          "Daily snapshots + Weekly Brief",
+          "Crew & job profitability tracking",
+          "Staffing demand estimates",
           "Customer deposit recommendations",
-          "Exception-based alerts",
+          "Exception-based SMS alerts",
           "Priority support",
         ],
         ctaLabel: "Start Free Trial",
@@ -330,17 +337,17 @@ export const homePageContent = {
         featuredLabel: "Most Popular",
       },
       {
-        name: "Multi-location",
+        name: "Multi-Location / Franchise",
         price: "Custom",
         priceSuffix: "",
         description:
-          "For groups and franchises that need consolidated visibility and benchmarking.",
+          "For groups, franchises, and operators running 4+ locations who need consolidated intelligence and cross-site benchmarking.",
         points: [
           "Unlimited locations",
           "Cross-location benchmarking",
-          "Custom connectors",
-          "Dedicated onboarding support",
-          "White-label option",
+          "Custom connectors for legacy systems",
+          "Dedicated onboarding specialist",
+          "White-label available",
           "SLA-backed support",
         ],
         ctaLabel: "Contact Sales",
@@ -350,8 +357,8 @@ export const homePageContent = {
   cta: {
     title: "Start knowing your numbers this week.",
     description:
-      "Connect your first data source in under 10 minutes. Your first brief arrives Monday.",
-    primaryAction: "Start Free",
+      "Connect your first data source in under 10 minutes. Your first Cash & Margin Brief arrives Monday. No credit card required.",
+    primaryAction: "Start Free — No Card Needed",
     secondaryAction: "Talk to Sales",
   },
 } as const;

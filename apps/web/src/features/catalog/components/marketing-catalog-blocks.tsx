@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
 
 import {
@@ -104,15 +105,15 @@ export function WorkflowStepCard({
   title,
 }: WorkflowStepProps) {
   return (
-    <CatalogCard className="flex gap-4 p-6">
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-accent text-sm font-bold text-slate-950">
+    <CatalogCard className="flex gap-5 rounded-2xl border-[#e4edf5] bg-white p-7">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent text-base font-extrabold text-[#0d1b2a]">
         {step}
       </div>
       <div>
-        <h3 className="text-base font-semibold tracking-tight text-foreground">
+        <h3 className="text-[.95rem] font-bold tracking-tight text-[#0d1b2a]">
           {title}
         </h3>
-        <p className="mt-2 text-sm leading-7 text-muted">{description}</p>
+        <p className="mt-2 text-[.88rem] leading-relaxed text-[#4e6278]">{description}</p>
       </div>
     </CatalogCard>
   );
@@ -126,16 +127,13 @@ type QuestionCardProps = Readonly<{
 
 export function QuestionCard({ description, icon, title }: QuestionCardProps) {
   return (
-    <CatalogCard
-      className="border-white/[0.08] bg-[#112338] p-6 text-white shadow-none"
-      tone="shell"
-    >
-      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-accent/12 text-lg text-accent">
+    <div className="rounded-2xl border border-white/[.08] bg-white/[.05] p-6 transition hover:bg-white/[.08]">
+      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent/[.15] text-lg text-accent">
         {icon}
       </div>
-      <h3 className="mt-4 text-base font-semibold tracking-tight">{title}</h3>
-      <p className="mt-2 text-sm leading-7 text-[#84a0ba]">{description}</p>
-    </CatalogCard>
+      <h3 className="mt-4 text-[.95rem] font-bold text-white">{title}</h3>
+      <p className="mt-2 text-[.83rem] leading-relaxed text-[#6a8faa]">{description}</p>
+    </div>
   );
 }
 
@@ -161,51 +159,59 @@ export function PricingCard({
   priceSuffix,
 }: PricingCardProps) {
   return (
-    <CatalogCard
+    <div
       className={cx(
-        "relative p-7",
-        featured ? "bg-[#0d1b2a] text-white" : "bg-white",
+        "relative rounded-2xl p-7",
+        featured
+          ? "bg-[#0d1b2a] text-white shadow-[0_12px_48px_rgba(0,0,0,.22)]"
+          : "border border-[#dde8f0] bg-[#f4f6f9]",
       )}
-      tone={featured ? "shell" : "default"}
     >
       {featured && featuredLabel ? (
-        <span className="absolute -top-3 left-6 rounded-full bg-accent px-3 py-1 text-[11px] font-bold uppercase tracking-[0.08em] text-slate-950">
+        <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-accent px-4 py-1 text-[.7rem] font-extrabold uppercase tracking-[.06em] text-[#0d1b2a]">
           {featuredLabel}
         </span>
       ) : null}
       <p
         className={cx(
-          "text-xs font-bold uppercase tracking-[0.12em]",
-          featured ? "text-accent" : "text-muted",
+          "text-[.82rem] font-bold uppercase tracking-[.08em]",
+          featured ? "text-accent" : "text-[#4e6278]",
         )}
       >
         {name}
       </p>
       <div className="mt-4 flex items-end gap-1">
-        <span className="text-4xl font-semibold tracking-tight">{price}</span>
-        <span className={cx("pb-1 text-sm", featured ? "text-[#91a5b8]" : "text-muted")}>
+        <span className="text-[2.4rem] font-extrabold leading-none">{price}</span>
+        <span className={cx("pb-1 text-base font-normal", featured ? "text-[#91a5b8]" : "text-[#7a9ab4]")}>
           {priceSuffix}
         </span>
       </div>
-      <p className={cx("mt-4 text-sm leading-7", featured ? "text-[#91a5b8]" : "text-muted")}>
+      <p className={cx("mt-4 text-[.85rem] leading-relaxed", featured ? "text-[#91a5b8]" : "text-[#4e6278]")}>
         {description}
       </p>
       <ul className="mt-6 space-y-3">
         {points.map((point) => (
-          <li key={point} className="flex items-start gap-2.5 text-sm leading-6">
-            <span className={cx("mt-0.5 font-bold", featured ? "text-accent" : "text-accent")}>
-              +
-            </span>
-            <span>{point}</span>
+          <li key={point} className="flex items-start gap-2.5 text-[.85rem] leading-relaxed">
+            <span className="mt-0.5 font-bold text-accent">✓</span>
+            <span className={featured ? "text-[#c6d6e5]" : "text-[#4e6278]"}>{point}</span>
           </li>
         ))}
       </ul>
       <div className="mt-7">
-        <CatalogButton variant={featured ? "primary" : "secondary"}>
-          {ctaLabel}
-        </CatalogButton>
+        <Link href="/signup">
+          <span
+            className={cx(
+              "block w-full rounded-xl py-3 text-center text-[.88rem] font-semibold transition",
+              featured
+                ? "bg-accent text-[#0d1b2a] hover:bg-[#00b898]"
+                : "border border-[#c8d8e6] text-[#0d1b2a] hover:border-accent hover:text-accent",
+            )}
+          >
+            {ctaLabel}
+          </span>
+        </Link>
       </div>
-    </CatalogCard>
+    </div>
   );
 }
 
@@ -223,19 +229,19 @@ export function TestimonialCard({
   quote,
 }: TestimonialCardProps) {
   return (
-    <CatalogCard className="flex h-full flex-col p-7">
-      <p className="text-sm tracking-[0.24em] text-amber-500">*****</p>
-      <p className="mt-4 flex-1 text-sm leading-7 text-foreground-soft">{quote}</p>
-      <div className="mt-6 flex items-center gap-3 border-t border-border pt-5">
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0d1b2a] text-sm font-bold text-accent">
+    <div className="flex h-full flex-col rounded-2xl border border-[#e4edf5] bg-white p-7">
+      <p className="text-sm tracking-[0.24em] text-[#f5a623]">★★★★★</p>
+      <p className="mt-4 flex-1 text-[.9rem] leading-relaxed text-[#334455]">{quote}</p>
+      <div className="mt-6 flex items-center gap-3 border-t border-[#e4edf5] pt-5">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0d1b2a] text-sm font-extrabold text-accent">
           {initials}
         </div>
         <div>
-          <div className="text-sm font-semibold text-foreground">{name}</div>
-          <div className="text-xs text-muted">{company}</div>
+          <div className="text-[.88rem] font-bold text-[#0d1b2a]">{name}</div>
+          <div className="text-[.78rem] text-[#7a9ab4]">{company}</div>
         </div>
       </div>
-    </CatalogCard>
+    </div>
   );
 }
 

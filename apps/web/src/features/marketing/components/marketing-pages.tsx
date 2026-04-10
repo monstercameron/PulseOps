@@ -7,7 +7,6 @@ import remarkGfm from "remark-gfm";
 
 import { CatalogCard } from "@/features/catalog/components/catalog-primitives";
 import {
-  CallToActionBanner,
   PricingCard,
   QuestionCard,
   TestimonialCard,
@@ -41,7 +40,6 @@ import {
   AuthSplitLayout,
   LegalDocument,
   MarketingChecklist,
-  MarketingFaqGroup,
   MarketingInfoCard,
   MarketingPageHero,
   MarketingSection,
@@ -104,7 +102,12 @@ export function MarketingHomePage({
         eyebrow={content.hero.eyebrow}
         footerNote={content.hero.footerNote}
         stats={content.hero.stats}
-        title={content.hero.title}
+        title={
+          <>
+            Your service business runs on gut feelings.{" "}
+            <span className="text-accent">Start running it on facts.</span>
+          </>
+        }
       />
 
       <MarketingSection
@@ -149,7 +152,7 @@ export function MarketingHomePage({
           {content.workflow.connectors.map((connector) => (
             <span
               key={connector}
-              className="rounded-xl border border-border bg-white px-3 py-1.5 text-sm font-medium text-muted"
+              className="rounded-lg border border-[#dde8f0] bg-white px-3.5 py-1.5 text-[.8rem] font-semibold text-[#4e6278]"
             >
               {connector}
             </span>
@@ -186,35 +189,70 @@ export function MarketingHomePage({
           <div>
             <MarketingChecklist items={content.preview.checklist} />
           </div>
-          <CatalogCard
-            className="bg-[linear-gradient(145deg,#0d1b2a_0%,#12304b_100%)] p-6 text-white"
-            tone="shell"
-          >
-            <div className="border-b border-white/[0.08] pb-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent">
-                {messages.marketing.shared.sampleBriefTitle}
-              </p>
-              <p className="mt-2 text-sm text-[#84a0ba]">
-                {messages.marketing.shared.sampleBriefSubtitle}
-              </p>
+          <div className="bg-[#0e1e30] rounded-2xl p-5 md:p-7 shadow-[0_8px_40px_rgba(0,0,0,.22)] border border-white/[.06]">
+            <div className="flex justify-between items-center mb-6 pb-4 border-b border-white/[.08]">
+              <div>
+                <span className="block text-[.75rem] font-semibold text-accent uppercase tracking-[.08em]">
+                  ⚡ {messages.marketing.shared.sampleBriefTitle}
+                </span>
+                <span className="block text-[.72rem] text-[#7a9ab4] mt-0.5">
+                  {messages.marketing.shared.sampleBriefSubtitle}
+                </span>
+              </div>
+              <span className="bg-white/[.06] text-[#7a9ab4] text-[.7rem] font-semibold px-2.5 py-1 rounded-lg">
+                {content.preview.recommendations.length} items
+              </span>
             </div>
-            <div className="mt-5 space-y-3">
-              {content.preview.recommendations.map((recommendation) => (
-                <div
-                  key={recommendation.title}
-                  className="rounded-2xl border border-white/[0.08] bg-white/[0.05] p-4"
-                >
-                  <p className="text-sm font-semibold text-white">{recommendation.title}</p>
-                  <p className="mt-2 text-sm leading-7 text-[#9db2c7]">
-                    {recommendation.summary}
-                  </p>
-                  <p className="mt-3 text-xs font-semibold uppercase tracking-[0.08em] text-accent">
-                    {recommendation.detail}
-                  </p>
-                </div>
-              ))}
+            <div className="space-y-3">
+              {content.preview.recommendations.map((rec, i) => {
+                const borderColors = ["#ff4d52", "#f5a623", "#00c9a7", "#f5a623"];
+                const borderColor = borderColors[i % borderColors.length];
+                const labels = [
+                  "🚨 Pricing Gap · High Impact",
+                  "🧾 Receivables · Chase Today",
+                  "✅ Margin Win · Keep Going",
+                  "📆 Cash Timing · Act This Week",
+                ];
+                const badges: { text: string; color: string; bg: string }[] = [
+                  { text: "$2,400/mo", color: "#ff8084", bg: "rgba(255,77,82,.15)" },
+                  { text: "$8,750 owed", color: "#f5a623", bg: "rgba(245,166,35,.15)" },
+                ];
+                const badge = badges[i];
+                const isWin = i === 2;
+                return (
+                  <div
+                    key={rec.title}
+                    className="rounded-xl bg-white/[.04] p-4"
+                    style={{ borderLeft: `3px solid ${borderColor}` }}
+                  >
+                    <div className="mb-1.5 flex items-start justify-between gap-2">
+                      <span className="text-[.7rem] uppercase tracking-[.07em] text-[#8fa8be] font-semibold">
+                        {labels[i] ?? `Item ${i + 1}`}
+                      </span>
+                      {badge ? (
+                        <span
+                          className="shrink-0 rounded px-2 py-0.5 text-[.68rem] font-semibold"
+                          style={{ color: badge.color, backgroundColor: badge.bg }}
+                        >
+                          {badge.text}
+                        </span>
+                      ) : null}
+                    </div>
+                    <div className="text-[.87rem] text-white leading-snug">
+                      <strong className={isWin ? "font-semibold text-accent" : "font-semibold"}>
+                        {rec.title}
+                      </strong>{" "}
+                      {rec.summary}
+                    </div>
+                    <div className="text-[.72rem] text-[#5a7a96] mt-2">{rec.detail}</div>
+                  </div>
+                );
+              })}
             </div>
-          </CatalogCard>
+            <div className="text-center text-[.72rem] text-[#4d6478] mt-5 pt-4 border-t border-white/[.06]">
+              Next brief Monday 7:00 AM · {content.preview.recommendations.length} items this week
+            </div>
+          </div>
         </div>
       </MarketingSection>
 
@@ -230,6 +268,7 @@ export function MarketingHomePage({
               key={item.title}
               description={item.description}
               icon={item.icon}
+              navyIconBox
               title={item.title}
             />
           ))}
@@ -242,13 +281,35 @@ export function MarketingHomePage({
         title={content.industries.title}
         tone="white"
       >
-        <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
-          {content.industries.items.map((item) => (
-            <CatalogCard key={item} className="p-4 text-center shadow-none">
-              <p className="text-sm font-semibold text-foreground">{item}</p>
-            </CatalogCard>
-          ))}
-        </div>
+        {(() => {
+          const industryEmoji: Record<string, string> = {
+            "HVAC": "🔧",
+            "Plumbing": "🚿",
+            "Electrical": "⚡",
+            "Landscaping": "🌿",
+            "Pool Service": "🏊",
+            "Cleaning": "🏠",
+            "Pest Control": "🐛",
+            "Garage Door": "🚪",
+            "Light Construction": "🏗️",
+            "Appliance Repair": "🔩",
+          };
+          return (
+            <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-5">
+              {content.industries.items.map((item) => (
+                <div
+                  key={item}
+                  className="rounded-xl border border-[#e4edf5] bg-[#f4f6f9] p-4 text-center transition hover:-translate-y-0.5"
+                >
+                  {industryEmoji[item] ? (
+                    <div className="text-2xl mb-2">{industryEmoji[item]}</div>
+                  ) : null}
+                  <p className="text-[.83rem] font-semibold text-[#0d1b2a]">{item}</p>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
         <p className="mt-6 text-sm text-muted">{content.industries.note}</p>
       </MarketingSection>
 
@@ -266,6 +327,11 @@ export function MarketingHomePage({
               quote={item.quote}
             />
           ))}
+        </div>
+        <div className="mt-8 text-center">
+          <Link className="text-accent text-[.9rem] font-semibold hover:underline" href="/blog">
+            Read case studies and practical guides on our blog →
+          </Link>
         </div>
       </MarketingSection>
 
@@ -293,18 +359,36 @@ export function MarketingHomePage({
             />
           ))}
         </div>
+        <p className="mt-10 text-center text-[.85rem] text-[#7a9ab4]">
+          Have questions?{" "}
+          <Link className="text-accent hover:underline" href="/help">Check the Help Center</Link>
+          {" "}or{" "}
+          <Link className="text-accent hover:underline" href="/contact">talk to us directly</Link>.
+        </p>
       </MarketingSection>
 
-      <div className="px-6 py-12 md:px-10 md:py-16">
-        <div className="mx-auto max-w-7xl">
-          <CallToActionBanner
-            description={content.cta.description}
-            primaryAction={content.cta.primaryAction}
-            secondaryAction={content.cta.secondaryAction}
-            title={content.cta.title}
-          />
+      <section
+        className="px-6 py-16 text-center md:px-12 md:py-24"
+        style={{ background: "linear-gradient(135deg, #00c9a7 0%, #00a0c8 100%)" }}
+      >
+        <div className="mx-auto max-w-[700px]">
+          <h2 className="mb-4 text-[clamp(1.8rem,4vw,2.6rem)] font-extrabold tracking-tight text-[#0d1b2a]">
+            {content.cta.title}
+          </h2>
+          <p className="mb-7 text-[.97rem] leading-relaxed text-[#0d1b2a]/75">
+            {content.cta.description}
+          </p>
+          <Link
+            className="inline-block rounded-xl bg-[#0d1b2a] px-9 py-4 text-[.97rem] font-bold text-white shadow-[0_4px_20px_rgba(13,27,42,.3)] transition hover:bg-[#0b1929]"
+            href="/signup"
+          >
+            {content.cta.primaryAction}
+          </Link>
+          <p className="mt-4 text-[.8rem] text-[#0d1b2a]/55">
+            30-day free trial · Cancel anytime · No implementation fees
+          </p>
         </div>
-      </div>
+      </section>
     </>,
     websiteDetails,
   );
@@ -328,20 +412,27 @@ export function AboutPage() {
         title={content.mission}
         tone="white"
       >
-        <div className="grid gap-4 md:grid-cols-3">
-          {content.stats.map((stat) => (
-            <CatalogCard key={stat.detail} className="p-6 shadow-none">
-              <p className="text-3xl font-semibold tracking-tight text-foreground">
-                {stat.value}
-              </p>
-              <p className="mt-2 text-sm leading-7 text-muted">{stat.detail}</p>
-            </CatalogCard>
-          ))}
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="text-[.97rem] leading-relaxed text-[#4e6278] space-y-4">
+            <p>{content.story}</p>
+          </div>
+          <div className="rounded-2xl border border-[#e4edf5] bg-[#f4f6f9] p-6">
+            <p className="mb-4 text-[11px] font-semibold uppercase tracking-[.09em] text-accent">By the numbers</p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {content.stats.map((stat) => (
+                <div key={stat.detail}>
+                  <p className="text-[2rem] font-extrabold leading-none text-accent">{stat.value}</p>
+                  <p className="mt-1 text-[.82rem] text-[#4e6278]">{stat.detail}</p>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </MarketingSection>
       <MarketingSection
         eyebrow={messages.marketing.shared.aboutValuesEyebrow}
         title={messages.marketing.shared.aboutValuesTitle}
+        tone="white"
       >
         <div className="grid gap-5 md:grid-cols-3">
           {content.values.map((value) => (
@@ -359,26 +450,35 @@ export function AboutPage() {
       >
         <div className="grid gap-5 md:grid-cols-3">
           {content.team.map((member) => (
-            <CatalogCard key={member.name} className="p-6 shadow-none">
-              <p className="text-lg font-semibold tracking-tight text-foreground">
+            <div key={member.name} className="rounded-2xl border border-[#e4edf5] bg-white p-6">
+              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#0d1b2a] text-lg font-extrabold text-accent">
+                {member.name.split(" ").map((n: string) => n[0]).join("")}
+              </div>
+              <p className="text-[.97rem] font-bold tracking-tight text-[#0d1b2a]">
                 {member.name}
               </p>
-              <p className="mt-1 text-sm font-medium text-accent">{member.role}</p>
-              <p className="mt-3 text-sm leading-7 text-muted">{member.description}</p>
-            </CatalogCard>
+              <p className="mt-1 text-[.82rem] font-semibold text-accent">{member.role}</p>
+              <p className="mt-3 text-[.85rem] leading-relaxed text-[#4e6278]">{member.description}</p>
+            </div>
           ))}
         </div>
       </MarketingSection>
-      <div className="px-6 py-12 md:px-10 md:py-16">
-        <div className="mx-auto max-w-7xl">
-          <CallToActionBanner
-            description={content.cta.description}
-            primaryAction={content.cta.primaryAction}
-            secondaryAction={content.cta.secondaryAction}
-            title={content.cta.title}
-          />
+      <section className="bg-[#0d1b2a] px-6 py-14 text-center md:px-12 md:py-20">
+        <div className="mx-auto max-w-[560px]">
+          <h2 className="mb-4 text-[clamp(1.5rem,3vw,2.2rem)] font-extrabold leading-[1.12] tracking-tight text-white">
+            {content.cta.title}
+          </h2>
+          <p className="mb-7 text-[.95rem] leading-relaxed text-[#7a9ab4]">
+            {content.cta.description}
+          </p>
+          <Link
+            className="inline-block rounded-xl bg-accent px-8 py-3.5 text-[.95rem] font-bold text-[#0d1b2a] transition hover:bg-[#00b898]"
+            href="/signup"
+          >
+            {content.cta.primaryAction}
+          </Link>
         </div>
-      </div>
+      </section>
     </>,
   );
 }
@@ -699,16 +799,20 @@ export function BlogPage() {
           ))}
         </div>
       </MarketingSection>
-      <div className="px-6 py-12 md:px-10 md:py-16">
-        <div className="mx-auto max-w-7xl">
-          <CallToActionBanner
-            description={content.cta.description}
-            primaryAction={content.cta.primaryAction}
-            secondaryAction={content.cta.secondaryAction}
-            title={content.cta.title}
-          />
+      <section className="bg-[#0d1b2a] px-6 py-14 text-center md:px-12 md:py-20">
+        <div className="mx-auto max-w-[520px]">
+          <h2 className="mb-3 text-[clamp(1.4rem,3vw,2rem)] font-extrabold leading-[1.15] tracking-tight text-white">
+            {content.cta.title}
+          </h2>
+          <p className="mb-7 text-[.95rem] leading-relaxed text-[#7a9ab4]">{content.cta.description}</p>
+          <Link
+            className="inline-block rounded-xl bg-accent px-8 py-3.5 text-[.95rem] font-bold text-[#0d1b2a] transition hover:bg-[#00b898]"
+            href="/signup"
+          >
+            {content.cta.primaryAction}
+          </Link>
         </div>
-      </div>
+      </section>
     </>,
   );
 }
@@ -728,6 +832,7 @@ export function CareersPage() {
       <MarketingSection
         eyebrow={messages.marketing.shared.careersWhyJoinEyebrow}
         title={messages.marketing.shared.careersWhyJoinTitle}
+        tone="white"
       >
         <div className="grid gap-5 md:grid-cols-3">
           {content.reasons.map((reason) => (
@@ -742,25 +847,38 @@ export function CareersPage() {
       <MarketingSection
         eyebrow={messages.marketing.shared.careersOpenRolesEyebrow}
         title={messages.marketing.shared.careersOpenRolesTitle}
-        tone="white"
       >
-        <div className="space-y-4">
-          {content.openings.map((opening) => (
-            <CatalogCard key={opening.title} className="p-6 shadow-none">
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                <div>
-                  <p className="text-lg font-semibold tracking-tight text-foreground">
-                    {opening.title}
-                  </p>
-                  <p className="mt-1 text-sm font-medium text-accent">{opening.meta}</p>
-                  <p className="mt-3 text-sm leading-7 text-muted">{opening.description}</p>
+        <div className="mx-auto max-w-[800px] space-y-4">
+          {content.openings.map((opening, i) => {
+            const badgeColors = [
+              "bg-accent/[.10] text-accent",
+              "bg-[#ffc947]/[.15] text-[#b38600]",
+              "bg-[#ff5a5f]/[.12] text-[#cc3338]",
+              "bg-accent/[.10] text-accent",
+            ];
+            const badgeColor = badgeColors[i % badgeColors.length] ?? badgeColors[0];
+            return (
+              <div key={opening.title} className="rounded-2xl border border-[#e4edf5] bg-white p-6">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="flex-1">
+                    <div className="mb-2 flex flex-wrap gap-2">
+                      <span className={`rounded-full px-2.5 py-0.5 text-[.72rem] font-semibold ${badgeColor}`}>
+                        {opening.meta}
+                      </span>
+                    </div>
+                    <p className="text-[.97rem] font-bold text-[#0d1b2a]">{opening.title}</p>
+                    <p className="mt-2 text-[.85rem] leading-relaxed text-[#4e6278]">{opening.description}</p>
+                  </div>
+                  <Link
+                    className="inline-block shrink-0 rounded-lg bg-accent px-5 py-2.5 text-[.85rem] font-semibold text-[#0d1b2a] transition hover:bg-[#00b898]"
+                    href="/contact"
+                  >
+                    {messages.marketing.shared.careersApplyInterest}
+                  </Link>
                 </div>
-                <Link className="text-sm font-semibold text-accent" href="/contact">
-                  {messages.marketing.shared.careersApplyInterest}
-                </Link>
               </div>
-            </CatalogCard>
-          ))}
+            );
+          })}
         </div>
       </MarketingSection>
     </>,
@@ -787,53 +905,58 @@ export function ContactPage({
         title={messages.marketing.shared.contactReachTitle}
         tone="white"
       >
-        <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
-          <div className="grid gap-4">
+        <div className="grid gap-6 lg:grid-cols-[1fr_1.6fr]">
+          <div className="space-y-4">
             {content.channels.map((channel, index) => {
               const route = contactRoutes[index] ?? contactRoutes[0];
 
               return (
-                <CatalogCard key={channel.title} className="p-6 shadow-none">
-                  <p className="text-lg font-semibold tracking-tight text-foreground">
-                    {channel.title}
-                  </p>
-                  <p className="mt-2 text-sm leading-7 text-muted">{channel.description}</p>
-                  <div className="mt-4 space-y-2">
+                <div key={channel.title} className="rounded-2xl border border-[#e4edf5] bg-[#f4f6f9] p-5">
+                  <p className="text-[.97rem] font-bold text-[#0d1b2a]">{channel.title}</p>
+                  <p className="mt-2 text-[.85rem] leading-relaxed text-[#4e6278]">{channel.description}</p>
+                  <div className="mt-3 space-y-1">
                     <a
-                      className="block text-sm font-semibold text-accent transition-colors hover:text-accent/80"
+                      className="block text-[.85rem] font-semibold text-accent transition-colors hover:underline"
                       href={`mailto:${route.email}`}
                     >
                       {route.email}
                     </a>
                     <a
-                      className="block text-sm font-medium text-foreground transition-colors hover:text-accent"
+                      className="block text-[.85rem] text-[#4e6278] transition-colors hover:text-accent"
                       href={`tel:${normalizeTelephoneHref(route.phone)}`}
                     >
                       {route.phone}
                     </a>
                   </div>
-                </CatalogCard>
+                </div>
               );
             })}
+            <div className="rounded-2xl border border-accent/20 bg-accent/[.07] p-5 text-[.85rem] leading-relaxed text-[#3a6268]">
+              Looking for quick answers? Check our{" "}
+              <Link className="font-semibold text-accent hover:underline" href="/help">
+                Help Center
+              </Link>
+              {" "}first — most answers are there.
+            </div>
           </div>
-          <CatalogCard className="p-7">
-            <p className="text-xl font-semibold tracking-tight text-foreground">
+          <div className="rounded-2xl border border-[#e4edf5] bg-[#f4f6f9] p-7">
+            <p className="text-[.97rem] font-bold text-[#0d1b2a]">
               {messages.marketing.shared.contactSendTitle}
             </p>
-            <div className="mt-6 space-y-4">
+            <div className="mt-5 space-y-4">
               {content.formFields.map((field) => (
                 <label key={field.label} className="block">
-                  <span className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
+                  <span className="mb-1.5 block text-[.82rem] font-semibold text-[#0d1b2a]">
                     {field.label}
                   </span>
                   {field.label === "Message" ? (
                     <textarea
-                      className="mt-2 min-h-[140px] w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted/55 focus:border-accent focus:ring-[3px] focus:ring-accent/12"
+                      className="min-h-[140px] w-full rounded-xl border border-[#ccdae6] bg-white px-4 py-3 text-[.9rem] text-[#0d1b2a] outline-none transition placeholder:text-[#8fa8be]/70 focus:border-accent focus:shadow-[0_0_0_2px_#00c9a7]"
                       placeholder={field.placeholder}
                     />
                   ) : (
                     <input
-                      className="mt-2 w-full rounded-xl border border-border bg-white px-3.5 py-2.5 text-sm text-foreground outline-none transition-colors placeholder:text-muted/55 focus:border-accent focus:ring-[3px] focus:ring-accent/12"
+                      className="w-full rounded-xl border border-[#ccdae6] bg-white px-4 py-3 text-[.9rem] text-[#0d1b2a] outline-none transition placeholder:text-[#8fa8be]/70 focus:border-accent focus:shadow-[0_0_0_2px_#00c9a7]"
                       placeholder={field.placeholder}
                       type={("type" in field ? field.type : undefined) ?? "text"}
                     />
@@ -842,13 +965,14 @@ export function ContactPage({
               ))}
             </div>
             <div className="mt-6">
-              <Link href="/contact">
-                <span className="inline-flex rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-slate-950">
-                  {messages.marketing.shared.contactSendAction}
-                </span>
-              </Link>
+              <button
+                className="w-full rounded-xl bg-accent px-6 py-3.5 text-[.93rem] font-bold text-[#0d1b2a] transition hover:bg-[#00b898]"
+                type="button"
+              >
+                {messages.marketing.shared.contactSendAction}
+              </button>
             </div>
-          </CatalogCard>
+          </div>
         </div>
       </MarketingSection>
     </>,
@@ -857,7 +981,7 @@ export function ContactPage({
 }
 
 export function HelpPage() {
-  const { messages, resolveTree } = useUiI18n();
+  const { resolveTree } = useUiI18n();
   const content = resolveTree("marketing.help", helpPageContent);
 
   return renderShell(
@@ -868,32 +992,58 @@ export function HelpPage() {
         eyebrow={content.hero.eyebrow}
         title={content.hero.title}
       />
-      <div className="mx-auto max-w-7xl px-6 py-8 md:px-10">
-        <CatalogCard className="p-4 shadow-none">
-          <label className="sr-only" htmlFor="help-search">
-            {messages.marketing.shared.helpSearchPlaceholder}
-          </label>
-          <input
-            id="help-search"
-            className="w-full border-none bg-transparent text-base text-foreground outline-none placeholder:text-muted"
-            placeholder={messages.marketing.shared.helpSearchPlaceholder}
-            type="text"
-          />
-        </CatalogCard>
+      <div className="bg-white px-6 py-10 md:px-12">
+        <div className="mx-auto max-w-[800px]">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            {content.groups.map((group) => (
+              <div
+                key={group.title}
+                className="group rounded-2xl border border-[#e4edf5] bg-[#f4f6f9] p-5 text-center transition-colors hover:border-accent"
+              >
+                <p className="text-[.88rem] font-semibold text-[#0d1b2a] group-hover:text-accent">
+                  {group.title}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
-      <div className="mx-auto grid max-w-7xl gap-5 px-6 pb-14 md:grid-cols-2 md:px-10 md:pb-20">
-        {content.groups.map((group) => (
-          <MarketingFaqGroup key={group.title} items={group.items} title={group.title} />
-        ))}
+      <div className="bg-white px-6 py-12 md:px-12 md:py-16">
+        <div className="mx-auto max-w-[800px] space-y-10">
+          {content.groups.map((group) => (
+            <div key={group.title}>
+              <h2 className="mb-4 text-[.97rem] font-bold text-[#0d1b2a]">{group.title}</h2>
+              <div className="space-y-3">
+                {group.items.map((item) => (
+                  <details key={item.question} className="overflow-hidden rounded-2xl border border-[#e4edf5] bg-[#f4f6f9]">
+                    <summary className="flex cursor-pointer list-none items-center justify-between p-5">
+                      <span className="text-[.93rem] font-semibold text-[#0d1b2a]">{item.question}</span>
+                      <svg className="h-5 w-5 shrink-0 text-[#7a9ab4]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" />
+                      </svg>
+                    </summary>
+                    <p className="px-5 pb-5 text-[.88rem] leading-relaxed text-[#4e6278]">{item.answer}</p>
+                  </details>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
-      <div className="px-6 py-12 md:px-10 md:py-16">
-        <div className="mx-auto max-w-7xl">
-          <CallToActionBanner
-            description={content.cta.description}
-            primaryAction={content.cta.primaryAction}
-            secondaryAction={content.cta.secondaryAction}
-            title={content.cta.title}
-          />
+      <div className="px-6 py-12 md:px-12 md:py-16">
+        <div className="mx-auto max-w-[800px]">
+          <div className="rounded-2xl bg-[#0d1b2a] p-7 text-center">
+            <h3 className="mb-3 text-[1.15rem] font-extrabold tracking-tight text-white">
+              {content.cta.title}
+            </h3>
+            <p className="mb-5 text-[.88rem] leading-relaxed text-[#7a9ab4]">{content.cta.description}</p>
+            <Link
+              className="inline-block rounded-xl bg-accent px-6 py-3 text-[.9rem] font-bold text-[#0d1b2a] transition hover:bg-[#00b898]"
+              href="/contact"
+            >
+              {content.cta.primaryAction}
+            </Link>
+          </div>
         </div>
       </div>
     </>,
@@ -917,18 +1067,16 @@ export function PressPage() {
         title={messages.marketing.shared.pressBoilerplateTitle}
         tone="white"
       >
-        <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
-          <CatalogCard className="p-7 shadow-none">
-            <p className="text-base leading-8 text-muted">{content.boilerplate}</p>
-          </CatalogCard>
-          <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-6 lg:grid-cols-[1fr_1.1fr]">
+          <div className="rounded-2xl border border-[#e4edf5] bg-[#f4f6f9] p-6 text-[.88rem] leading-relaxed text-[#4e6278]">
+            {content.boilerplate}
+          </div>
+          <div className="divide-y divide-[#e4edf5] rounded-2xl border border-[#e4edf5] bg-white">
             {content.facts.map((fact) => (
-              <CatalogCard key={fact.detail} className="p-6 shadow-none">
-                <p className="text-2xl font-semibold tracking-tight text-foreground">
-                  {fact.value}
-                </p>
-                <p className="mt-2 text-sm leading-7 text-muted">{fact.detail}</p>
-              </CatalogCard>
+              <div key={fact.detail} className="flex items-center justify-between px-5 py-4">
+                <span className="text-[.88rem] text-[#4e6278]">{fact.detail}</span>
+                <span className="text-[.97rem] font-bold text-[#0d1b2a]">{fact.value}</span>
+              </div>
             ))}
           </div>
         </div>
@@ -937,16 +1085,16 @@ export function PressPage() {
         eyebrow={messages.marketing.shared.pressBrandEyebrow}
         title={messages.marketing.shared.pressBrandTitle}
       >
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
           {content.colors.map((color) => (
-            <CatalogCard key={color.name} className="p-5 shadow-none">
+            <div key={color.name} className="rounded-2xl border border-[#e4edf5] bg-white p-5">
               <div
-                className="h-24 rounded-2xl"
+                className="h-16 rounded-xl"
                 style={{ backgroundColor: color.value }}
               />
-              <p className="mt-4 text-sm font-semibold text-foreground">{color.name}</p>
-              <p className="mt-1 font-mono text-xs text-muted">{color.value}</p>
-            </CatalogCard>
+              <p className="mt-4 text-[.88rem] font-semibold text-[#0d1b2a]">{color.name}</p>
+              <p className="mt-1 font-mono text-[.78rem] text-[#7a9ab4]">{color.value}</p>
+            </div>
           ))}
         </div>
       </MarketingSection>
@@ -955,22 +1103,30 @@ export function PressPage() {
         title={messages.marketing.shared.pressCoverageTitle}
         tone="white"
       >
-        <div className="grid gap-4 lg:grid-cols-3">
+        <div className="space-y-4">
           {content.coverage.map((quote) => (
-            <CatalogCard key={quote} className="p-6 shadow-none">
-              <p className="text-sm leading-7 text-foreground-soft">{quote}</p>
-            </CatalogCard>
+            <div key={quote} className="rounded-2xl border border-[#e4edf5] bg-[#f4f6f9] p-6">
+              <p className="text-[.88rem] leading-relaxed text-[#4e6278]">{quote}</p>
+            </div>
           ))}
         </div>
-        <div className="mt-8">
-          <CallToActionBanner
-            description={messages.marketing.shared.pressMediaDescription}
-            primaryAction={messages.marketing.shared.pressMediaPrimary}
-            secondaryAction={messages.marketing.shared.pressMediaSecondary}
-            title={messages.marketing.shared.pressMediaTitle}
-          />
-        </div>
       </MarketingSection>
+      <section className="bg-[#0d1b2a] px-6 py-14 text-center md:px-12 md:py-20">
+        <div className="mx-auto max-w-[560px]">
+          <h2 className="mb-4 text-[clamp(1.4rem,3vw,2rem)] font-extrabold leading-[1.15] tracking-tight text-white">
+            {messages.marketing.shared.pressMediaTitle}
+          </h2>
+          <p className="mb-7 text-[.95rem] leading-relaxed text-[#7a9ab4]">
+            {messages.marketing.shared.pressMediaDescription}
+          </p>
+          <a
+            className="inline-block rounded-xl bg-accent px-8 py-3.5 text-[.95rem] font-bold text-[#0d1b2a] transition hover:bg-[#00b898]"
+            href="mailto:press@pulseops.io"
+          >
+            {messages.marketing.shared.pressMediaPrimary}
+          </a>
+        </div>
+      </section>
     </>,
   );
 }
