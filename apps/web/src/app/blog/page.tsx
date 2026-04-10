@@ -1,7 +1,16 @@
+import type { Metadata } from "next";
 import type { BlogPost } from "@/features/blog/domain/blog-post";
 import { DynamicBlogPage } from "@/features/marketing/components/marketing-pages";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  alternates: {
+    types: {
+      "application/rss+xml": "/blog/rss.xml",
+    },
+  },
+};
 
 async function fetchPublishedPosts(): Promise<BlogPost[]> {
   const port = process.env.PORT ?? "3000";

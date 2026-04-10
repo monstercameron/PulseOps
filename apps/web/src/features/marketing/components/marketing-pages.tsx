@@ -1,7 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import rehypeSanitize from "rehype-sanitize";
 
 import { CatalogCard } from "@/features/catalog/components/catalog-primitives";
 import {
@@ -383,8 +386,9 @@ export function AboutPage() {
 
 // ─── Dynamic Blog Page (API-driven) ──────────────────────────────────────────
 
-type DynamicBlogPost = Readonly<{
+export type DynamicBlogPost = Readonly<{
   id: string;
+  slug: string;
   title: string;
   summary: string;
   body: string;
@@ -404,91 +408,259 @@ function formatDate(iso: string): string {
   }).format(new Date(iso));
 }
 
+const POSTS_PER_PAGE = 6;
+
 export function DynamicBlogPage({ posts }: DynamicBlogPageProps) {
-  const { messages } = useUiI18n();
-  const [featured, ...rest] = posts;
+  const [visible, setVisible] = useState(POSTS_PER_PAGE);
+
+  const [featured, ...grid] = posts;
+  const visibleGrid = grid.slice(0, visible - 1); // -1 because featured takes one slot
+  const hasMore = visible - 1 < grid.length;
 
   return renderShell(
     "/blog",
     <>
-      <MarketingPageHero
-        description="Practical thinking on cash flow, job margin, and running a tighter operation."
-        eyebrow="Blog"
-        title="Insights for field-service operators"
-      />
-      <MarketingSection
-        eyebrow={messages.marketing.shared.blogFeaturedEyebrow}
-        title="Latest from the team"
-        tone="white"
+      {/* Hero */}
+      <section
+        className="px-6 py-16 text-white md:px-12 md:py-20"
+        style={{
+          backgroundColor: "#0b1929",
+          backgroundImage:
+            "radial-gradient(circle at 1px 1px, rgba(255,255,255,.045) 1px, transparent 0), linear-gradient(150deg, #0b1929 0%, #0d1e30 60%, #0c2640 100%)",
+          backgroundSize: "32px 32px, cover",
+        }}
       >
-        {posts.length === 0 ? (
-          <CatalogCard className="p-8 text-center shadow-none">
-            <p className="text-sm text-muted">No posts published yet — check back soon.</p>
-          </CatalogCard>
-        ) : (
-          <>
-            {featured ? (
-              <CatalogCard className="p-7">
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent">
-                  Featured
-                </p>
-                <h2 className="mt-3 text-xl font-bold tracking-tight text-foreground">
-                  {featured.title}
-                </h2>
-                {featured.summary ? (
-                  <p className="mt-2 text-[13.5px] leading-[1.7] text-muted">{featured.summary}</p>
-                ) : null}
-                <div className="mt-3 flex items-center gap-2 text-xs text-muted">
-                  <span>{featured.author}</span>
-                  {featured.publishedAt ? (
-                    <>
-                      <span>·</span>
-                      <span>{formatDate(featured.publishedAt)}</span>
-                    </>
-                  ) : null}
-                </div>
-                {featured.body ? (
-                  <div className="mt-5 whitespace-pre-line text-[13.5px] leading-[1.8] text-foreground/80">
-                    {featured.body}
-                  </div>
-                ) : null}
-              </CatalogCard>
-            ) : null}
+        <div className="mx-auto max-w-[800px]">
+          <div className="mb-8 flex items-center gap-3">
+            <span className="inline-flex items-center gap-2 rounded-full border border-accent/25 bg-accent/[.08] px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[.09em] text-accent">
+              Blog
+            </span>
+            <a
+              aria-label="RSS feed"
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[.06] px-3 py-1.5 text-[11px] font-semibold text-[#94afc7] transition-colors hover:border-accent/40 hover:text-accent"
+              href="/blog/rss.xml"
+              rel="alternate"
+              title="Subscribe via RSS"
+              type="application/rss+xml"
+            >
+              <svg aria-hidden="true" fill="currentColor" height="13" viewBox="0 0 24 24" width="13" xmlns="http://www.w3.org/2000/svg">
+                <path d="M6.18 15.64a2.18 2.18 0 0 1 2.18 2.18C8.36 19.01 7.38 20 6.18 20C4.98 20 4 19.01 4 17.82a2.18 2.18 0 0 1 2.18-2.18M4 4.44A15.56 15.56 0 0 1 19.56 20h-2.83A12.73 12.73 0 0 0 4 7.27V4.44m0 5.66a9.9 9.9 0 0 1 9.9 9.9h-2.83A7.07 7.07 0 0 0 4 12.93V10.1z"/>
+              </svg>
+              RSS
+            </a>
+          </div>
+          <h1 className="mb-5 text-[clamp(2rem,5vw,3rem)] font-extrabold leading-[1.12] tracking-tight">
+            Practical thinking for service business owners.
+          </h1>
+          <p className="max-w-[520px] text-[1.05rem] leading-relaxed text-[#94afc7]">
+            Cash flow, job margin, pricing, and ops — written for field service businesses.
+          </p>
+        </div>
+      </section>
 
-            {rest.length > 0 ? (
-              <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {rest.map((post) => (
-                  <CatalogCard key={post.id} className="flex h-full flex-col p-6 shadow-none">
-                    <p className="text-[15px] font-semibold tracking-tight text-foreground">
+      {/* Featured post */}
+      {posts.length === 0 ? (
+        <section className="border-b border-[#e8eff5] bg-white px-6 py-10 md:px-12">
+          <div className="mx-auto max-w-[1080px]">
+            <p className="text-sm text-[#4e6278]">No posts published yet — check back soon.</p>
+          </div>
+        </section>
+      ) : featured ? (
+        <section className="border-b border-[#e8eff5] bg-white px-6 py-10 md:px-12">
+          <div className="mx-auto max-w-[1080px]">
+            <p className="mb-5 text-xs font-bold uppercase tracking-[.09em] text-accent">
+              Featured
+            </p>
+            <div className="flex flex-wrap gap-2 mb-3">
+              <span className="rounded-full bg-accent/[.10] px-3 py-1 text-[.75rem] font-semibold text-accent">
+                Blog
+              </span>
+              {featured.publishedAt ? (
+                <span className="text-[.75rem] font-medium text-[#7a9ab4]">
+                  {formatDate(featured.publishedAt)}
+                </span>
+              ) : null}
+            </div>
+            <Link href={`/blog/${featured.slug}`}>
+              <h2 className="mb-3 text-[clamp(1.55rem,3vw,2.2rem)] font-extrabold leading-[1.15] tracking-tight text-[#0d1b2a] hover:text-accent transition-colors">
+                {featured.title}
+              </h2>
+            </Link>
+            {featured.summary ? (
+              <p className="mb-5 max-w-[640px] text-[1rem] font-medium leading-relaxed text-[#4e6278]">
+                {featured.summary}
+              </p>
+            ) : null}
+            <Link
+              className="text-[.9rem] font-semibold text-accent hover:underline"
+              href={`/blog/${featured.slug}`}
+            >
+              Read the article →
+            </Link>
+          </div>
+        </section>
+      ) : null}
+
+      {/* Posts grid */}
+      {visibleGrid.length > 0 ? (
+        <section className="bg-white px-6 py-12 md:px-12 md:py-16">
+          <div className="mx-auto max-w-[1080px]">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {visibleGrid.map((post) => (
+                <Link key={post.id} className="group flex flex-col" href={`/blog/${post.slug}`}>
+                  <article className="flex h-full flex-col rounded-2xl border border-[#e4edf5] bg-[#f4f6f9] p-6 transition-shadow group-hover:shadow-md">
+                    <div className="mb-3 flex flex-wrap gap-2">
+                      <span className="rounded-full bg-accent/[.10] px-2.5 py-0.5 text-[.72rem] font-semibold text-accent">
+                        Blog
+                      </span>
+                      {post.publishedAt ? (
+                        <span className="text-[.72rem] text-[#7a9ab4]">
+                          {formatDate(post.publishedAt)}
+                        </span>
+                      ) : null}
+                    </div>
+                    <h3 className="mb-2 flex-1 text-[1.05rem] font-extrabold leading-snug text-[#0d1b2a] group-hover:text-accent transition-colors">
                       {post.title}
-                    </p>
+                    </h3>
                     {post.summary ? (
-                      <p className="mt-2 flex-1 text-[13px] leading-[1.65] text-muted">
+                      <p className="mb-4 text-[.875rem] leading-relaxed text-[#4e6278] line-clamp-3">
                         {post.summary}
                       </p>
                     ) : null}
-                    <div className="mt-4 flex items-center gap-2 text-[11.5px] text-muted">
-                      <span>{post.author}</span>
-                      {post.publishedAt ? (
-                        <>
-                          <span>·</span>
-                          <span>{formatDate(post.publishedAt)}</span>
-                        </>
-                      ) : null}
-                    </div>
-                  </CatalogCard>
-                ))}
+                    <span className="mt-auto text-[.84rem] font-semibold text-accent group-hover:underline">
+                      Read more →
+                    </span>
+                  </article>
+                </Link>
+              ))}
+            </div>
+
+            {hasMore ? (
+              <div className="mt-10 text-center">
+                <button
+                  className="inline-block rounded-xl border border-[#c8d8e6] px-6 py-3 text-[.9rem] font-semibold text-[#0d1b2a] transition-colors hover:border-accent hover:text-accent"
+                  type="button"
+                  onClick={() => { setVisible((v) => v + POSTS_PER_PAGE); }}
+                >
+                  Load more articles
+                </button>
               </div>
             ) : null}
-          </>
-        )}
+          </div>
+        </section>
+      ) : null}
 
-        <div className="mt-8 border-t border-border pt-6 text-center">
-          <Link className="text-sm font-semibold text-accent hover:underline" href="/signup">
-            Get weekly cash &amp; margin insights →
+      {/* Newsletter CTA */}
+      <section className="bg-[#0d1b2a] px-6 py-14 text-center md:px-12 md:py-20">
+        <div className="mx-auto max-w-[520px]">
+          <h2 className="mb-3 text-[clamp(1.4rem,3vw,2rem)] font-extrabold leading-[1.15] tracking-tight text-white">
+            Get the weekly brief — free for 30 days.
+          </h2>
+          <p className="mb-7 text-[.95rem] leading-relaxed text-[#7a9ab4]">
+            New articles and practical guides, directly to your inbox. No dashboards. No jargon.
+          </p>
+          <Link
+            className="inline-block rounded-xl bg-accent px-8 py-3.5 text-[.95rem] font-bold text-[#0d1b2a] transition-colors hover:bg-[#00a98e]"
+            href="/signup"
+          >
+            Start Free Trial
+          </Link>
+          <p className="mt-4 text-[.82rem] text-[#7a9ab4]">
+            Learn more:{" "}
+            <Link className="text-accent hover:underline" href="/about">
+              About PulseOps
+            </Link>
+            {" · "}
+            <Link className="text-accent hover:underline" href="/careers">
+              {"We're hiring"}
+            </Link>
+          </p>
+        </div>
+      </section>
+    </>,
+  );
+}
+
+// ─── Dynamic Blog Post Page (full post view) ─────────────────────────────────
+
+type DynamicBlogPostPageProps = Readonly<{
+  post: DynamicBlogPost;
+}>;
+
+export function DynamicBlogPostPage({ post }: DynamicBlogPostPageProps) {
+  return renderShell(
+    "/blog",
+    <>
+      {/* Title hero — matches blog.html dark header motif */}
+      <section
+        className="px-6 py-14 text-white md:px-12 md:py-20"
+        style={{
+          backgroundColor: "#0b1929",
+          backgroundImage:
+            "radial-gradient(circle at 1px 1px, rgba(255,255,255,.045) 1px, transparent 0), linear-gradient(150deg, #0b1929 0%, #0d1e30 60%, #0c2640 100%)",
+          backgroundSize: "32px 32px, cover",
+        }}
+      >
+        <div className="mx-auto max-w-[760px]">
+          <Link
+            className="mb-6 inline-flex items-center gap-1.5 text-[.85rem] font-semibold text-[#94afc7] hover:text-accent transition-colors"
+            href="/blog"
+          >
+            ← Back to blog
+          </Link>
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <span className="rounded-full bg-accent/[.12] px-3 py-1 text-[.75rem] font-semibold text-accent">
+              Blog
+            </span>
+            {post.publishedAt ? (
+              <span className="text-[.8rem] text-[#7a9ab4]">{formatDate(post.publishedAt)}</span>
+            ) : null}
+            {post.author ? (
+              <span className="text-[.8rem] text-[#7a9ab4]">· {post.author}</span>
+            ) : null}
+          </div>
+          <h1 className="mt-5 text-[clamp(1.7rem,4vw,2.6rem)] font-extrabold leading-[1.12] tracking-tight">
+            {post.title}
+          </h1>
+          {post.summary ? (
+            <p className="mt-4 max-w-[600px] text-[1rem] leading-relaxed text-[#94afc7]">
+              {post.summary}
+            </p>
+          ) : null}
+        </div>
+      </section>
+
+      {/* Article body */}
+      <section className="bg-white px-6 py-12 text-[#0d1b2a] md:px-12 md:py-16">
+        <div className="mx-auto max-w-[760px]">
+          <div className="blog-prose text-[#0d1b2a]">
+            <ReactMarkdown
+              rehypePlugins={[rehypeSanitize]}
+              remarkPlugins={[remarkGfm]}
+            >
+              {post.body}
+            </ReactMarkdown>
+          </div>
+        </div>
+      </section>
+
+      {/* Bottom CTA */}
+      <section className="bg-[#0d1b2a] px-6 py-14 text-center md:px-12 md:py-20">
+        <div className="mx-auto max-w-[520px]">
+          <h2 className="mb-3 text-[clamp(1.3rem,3vw,1.8rem)] font-extrabold leading-[1.15] tracking-tight text-white">
+            Get the weekly brief — free for 30 days.
+          </h2>
+          <p className="mb-7 text-[.95rem] leading-relaxed text-[#7a9ab4]">
+            Practical thinking delivered to your inbox. No dashboards. No jargon.
+          </p>
+          <Link
+            className="inline-block rounded-xl bg-accent px-8 py-3.5 text-[.95rem] font-bold text-[#0d1b2a] transition-colors hover:bg-[#00a98e]"
+            href="/signup"
+          >
+            Start Free Trial
           </Link>
         </div>
-      </MarketingSection>
+      </section>
     </>,
   );
 }

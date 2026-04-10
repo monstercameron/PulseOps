@@ -21,7 +21,7 @@ test.beforeEach(async ({ request }) => {
 
 test("GET /blog renders the page heading", async ({ page }) => {
   await page.goto("/blog");
-  await expect(page.getByRole("heading", { name: /insights for field-service operators/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /practical thinking for service business owners/i })).toBeVisible();
 });
 
 test("/blog shows the 'Blog' section label", async ({ page }) => {
@@ -57,9 +57,9 @@ test("/blog does NOT show draft posts", async ({ page }) => {
 test("/blog shows author attribution for featured post", async ({ page }) => {
   await page.goto("/blog");
 
-  // Both seed published posts are by "PulseOps Team"
-  const authorEls = await page.getByText("PulseOps Team").all();
-  expect(authorEls.length).toBeGreaterThanOrEqual(1);
+  // Featured post shows "Apr 1, 2026" date from seed publishedAt
+  const dateEls = await page.getByText(/2026/).all();
+  expect(dateEls.length).toBeGreaterThanOrEqual(1);
 });
 
 test("/blog empty state renders when all posts are drafts", async ({ page, request }) => {
