@@ -1,6 +1,7 @@
 import os from "node:os";
 import path from "node:path";
 import { mkdtemp, rm } from "node:fs/promises";
+import { setTimeout as delay } from "node:timers/promises";
 
 import { afterEach, describe, expect, it } from "vitest";
 
@@ -108,5 +109,69 @@ describe("ensureCuratedDocumentsSeeded", () => {
     ).toEqual(
       expect.arrayContaining([{ label: "Rows parsed", value: 1000 }]),
     );
+  });
+
+  it("deduplicates concurrent seed requests for the same org", async () => {
+    const rootDirectory = await mkdtemp(
+      path.join(os.tmpdir(), "bizopsaccelerator-seed-concurrent-"),
+    );
+    const storageRoot = await mkdtemp(
+      path.join(os.tmpdir(), "bizopsaccelerator-seed-concurrent-storage-"),
+    );
+    temporaryDirectories.push(rootDirectory, storageRoot);
+
+    const documentRepository = createLocalDocumentRepository({ rootDirectory });
+    const entityRepository = createLocalEntityRepository({ rootDirectory });
+    const factRepository = createLocalFactRepository({ rootDirectory });
+    const baseStorage = createLocalObjectStorage({ rootDirectory: storageRoot });
+    let putObjectCount = 0;
+    let releaseBlockedPutObject: (() => void) | undefined;
+    const blockFirstPutObject = new Promise<void>((resolve) => {
+      releaseBlockedPutObject = resolve;
+    });
+    const storage = {
+      ...baseStorage,
+      async putObject(input: Parameters<typeof baseStorage.putObject>[0]) {
+        putObjectCount += 1;
+
+        if (putObjectCount === 1) {
+          await blockFirstPutObject;
+        }
+
+        return baseStorage.putObject(input);
+      },
+    };
+
+    const firstRequest = ensureCuratedDocumentsSeeded({
+      documentRepository,
+      entityRepository,
+      factRepository,
+      orgId: "org_seed_concurrent",
+      storage,
+    });
+    const secondRequest = ensureCuratedDocumentsSeeded({
+      documentRepository,
+      entityRepository,
+      factRepository,
+      orgId: "org_seed_concurrent",
+      storage,
+    });
+
+    for (let attempt = 0; attempt < 50 && putObjectCount === 0; attempt += 1) {
+      await delay(10);
+    }
+
+    expect(putObjectCount).toBe(1);
+    releaseBlockedPutObject?.();
+
+    await Promise.all([firstRequest, secondRequest]);
+
+    expect(putObjectCount).toBe(2);
+    await expect(
+      documentRepository.listByOrgId("org_seed_concurrent"),
+    ).resolves.toHaveLength(2);
+    await expect(
+      factRepository.listByOrgId("org_seed_concurrent"),
+    ).resolves.toHaveLength(6);
   });
 });
