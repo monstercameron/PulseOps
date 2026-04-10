@@ -12,11 +12,8 @@ import {
   SourceDataRow,
   WorkspaceHeader,
 } from "@/features/catalog/components/workspace-catalog-blocks";
-import {
-  packsPageLabels,
-  type PackItem,
-  type PacksPageData,
-} from "@/features/packs/constants/packs-page-content";
+import { useUiI18n } from "@/features/i18n/components/ui-i18n-provider";
+import { type PackItem, type PacksPageData } from "@/features/packs/constants/packs-page-content";
 import { type PackRecord } from "@/features/packs/domain/pack-record";
 import {
   mergeUpdatedPackItem,
@@ -54,6 +51,7 @@ type FeedbackState = Readonly<{
 }>;
 
 export function PacksPage({ initialData, orgId }: PacksPageProps) {
+  const { messages, t } = useUiI18n();
   const [packs, setPacks] = useState(initialData.packs);
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState<(typeof initialData.filters)[number]["id"]>("all");
@@ -111,7 +109,9 @@ export function PacksPage({ initialData, orgId }: PacksPageProps) {
       const payload = (await response.json()) as PackMutationError | PackMutationResponse;
 
       if (!response.ok || "error" in payload) {
-        throw new Error("error" in payload ? payload.error : "Pack generation failed.");
+        throw new Error(
+          "error" in payload ? payload.error : messages.packsPage.errors.generationFailed,
+        );
       }
 
       const nextPack = packRecordToPackItem(payload.pack);
@@ -121,8 +121,8 @@ export function PacksPage({ initialData, orgId }: PacksPageProps) {
       setActiveFilter("all");
     } catch (error) {
       openActionDialog(
-        "Could not generate pack",
-        error instanceof Error ? error.message : "The request could not be completed.",
+        messages.packsPage.errors.generateTitle,
+        error instanceof Error ? error.message : messages.packsPage.errors.requestFailed,
       );
     } finally {
       setIsGeneratingPack(false);
@@ -147,7 +147,9 @@ export function PacksPage({ initialData, orgId }: PacksPageProps) {
       const payload = (await response.json()) as PackMutationError | PackMutationResponse;
 
       if (!response.ok || "error" in payload) {
-        throw new Error("error" in payload ? payload.error : "Pack review failed.");
+        throw new Error(
+          "error" in payload ? payload.error : messages.packsPage.errors.reviewFailed,
+        );
       }
 
       setPacks((currentPacks) =>
@@ -155,8 +157,8 @@ export function PacksPage({ initialData, orgId }: PacksPageProps) {
       );
     } catch (error) {
       openActionDialog(
-        "Could not update pack",
-        error instanceof Error ? error.message : "The request could not be completed.",
+        messages.packsPage.errors.reviewTitle,
+        error instanceof Error ? error.message : messages.packsPage.errors.requestFailed,
       );
     } finally {
       setReviewingPackId(null);
@@ -177,14 +179,14 @@ export function PacksPage({ initialData, orgId }: PacksPageProps) {
 
       if (!response.ok) {
         const payload = (await response.json()) as PackMutationError;
-        throw new Error(payload.error || "Pack export failed.");
+        throw new Error(payload.error || messages.packsPage.errors.exportFailed);
       }
 
       await downloadResponseAsFile(response);
     } catch (error) {
       openActionDialog(
-        "Could not export pack",
-        error instanceof Error ? error.message : "The request could not be completed.",
+        messages.packsPage.errors.exportTitle,
+        error instanceof Error ? error.message : messages.packsPage.errors.requestFailed,
       );
     } finally {
       setExportingPackId(null);
@@ -230,7 +232,7 @@ export function PacksPage({ initialData, orgId }: PacksPageProps) {
 
       if (!response.ok || "error" in payload) {
         throw new Error(
-          "error" in payload ? payload.error : "Recommendation feedback failed.",
+          "error" in payload ? payload.error : messages.packsPage.errors.feedbackFailed,
         );
       }
 
@@ -238,13 +240,13 @@ export function PacksPage({ initialData, orgId }: PacksPageProps) {
         ...currentState,
         [recommendationId]:
           payload.feedbackEvent.action === "accept"
-            ? { label: "Accepted", tone: "success" }
-            : { label: "Dismissed", tone: "warning" },
+            ? { label: messages.packsPage.feedbackAccepted, tone: "success" }
+            : { label: messages.packsPage.feedbackDismissed, tone: "warning" },
       }));
     } catch (error) {
       openActionDialog(
-        "Could not save feedback",
-        error instanceof Error ? error.message : "The request could not be completed.",
+        messages.packsPage.errors.feedbackTitle,
+        error instanceof Error ? error.message : messages.packsPage.errors.requestFailed,
       );
     } finally {
       setSubmittingRecommendationId(null);
@@ -256,16 +258,18 @@ export function PacksPage({ initialData, orgId }: PacksPageProps) {
       <WorkspaceHeader
         actions={[
           {
-            label: isGeneratingPack ? "Generating..." : "Generate brief",
+            label: isGeneratingPack
+              ? messages.packsPage.actions.generating
+              : messages.packsPage.actions.generate,
             onClick: () => {
               void handleGeneratePack();
             },
             variant: "primary",
           },
         ]}
-        breadcrumbs={packsPageLabels.breadcrumbs}
-        description={packsPageLabels.description}
-        title={packsPageLabels.title}
+        breadcrumbs={messages.packsPage.labels.breadcrumbs}
+        description={messages.packsPage.labels.description}
+        title={messages.packsPage.labels.title}
       />
 
       <div className="flex min-h-0 flex-1 overflow-hidden">
@@ -274,7 +278,7 @@ export function PacksPage({ initialData, orgId }: PacksPageProps) {
             <input
               className="w-full rounded-[8px] border border-border bg-surface-subtle px-3 py-2 text-[12.5px] text-foreground outline-none placeholder:text-muted"
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search packs"
+              placeholder={messages.packsPage.searchPlaceholder}
               type="text"
               value={search}
             />
@@ -283,7 +287,7 @@ export function PacksPage({ initialData, orgId }: PacksPageProps) {
                 <FilterChip
                   key={filter.id}
                   active={activeFilter === filter.id}
-                  label={filter.label}
+                  label={resolvePackFilterLabel(filter.id, messages)}
                   onClick={() => setActiveFilter(filter.id)}
                 />
               ))}
@@ -310,7 +314,7 @@ export function PacksPage({ initialData, orgId }: PacksPageProps) {
           {selectedPack === null ? (
             <CatalogCard className="p-6">
               <p className="text-lg font-semibold text-foreground">
-                No packs match the current filter.
+                {messages.packsPage.emptyPackList}
               </p>
             </CatalogCard>
           ) : (
@@ -363,13 +367,15 @@ function PackDetail({
   reviewingPackId: string | null;
   submittingRecommendationId: string | null;
 }>) {
+  const { messages } = useUiI18n();
+
   return (
     <div className="space-y-6">
       <CatalogCard className="p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">
-              Decision pack
+              {messages.packsPage.detailEyebrow}
             </p>
             <h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
               {pack.title}
@@ -394,7 +400,9 @@ function PackDetail({
               }}
               type="button"
             >
-              {exportingPackId === pack.id ? "Exporting..." : "Export PDF"}
+              {exportingPackId === pack.id
+                ? messages.packsPage.actions.exporting
+                : messages.packsPage.actions.export}
             </button>
             <button
               className="rounded-[9px] bg-accent px-[18px] py-[9px] text-[13px] font-bold text-[#0d1b2a]"
@@ -403,7 +411,9 @@ function PackDetail({
               }}
               type="button"
             >
-              {reviewingPackId === pack.id ? "Marking..." : "Mark reviewed"}
+              {reviewingPackId === pack.id
+                ? messages.packsPage.actions.markingReviewed
+                : messages.packsPage.actions.markReviewed}
             </button>
           </div>
         </div>
@@ -426,13 +436,13 @@ function PackDetail({
 
       <section>
         <h3 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-muted">
-          Recommendations
+          {messages.packsPage.recommendationsHeading}
         </h3>
         <div className="mt-4 space-y-4">
           {pack.recommendations.length === 0 ? (
             <CatalogCard className="p-6">
               <p className="text-sm text-muted">
-                This pack is still in draft and has no recommendations yet.
+                {messages.packsPage.emptyDraftRecommendations}
               </p>
             </CatalogCard>
           ) : (
@@ -446,12 +456,15 @@ function PackDetail({
                     actions={
                       feedbackState !== undefined || isSubmitting
                         ? []
-                        : recommendation.actions
+                        : recommendation.actions.map((action) =>
+                            localizeRecommendationAction(action, messages),
+                          )
                     }
                     citations={recommendation.citations}
                     confidence={recommendation.confidence}
                     onAction={(action) => {
                       void onRecommendationAction(
+                        resolveCanonicalRecommendationAction(action, messages),
                         action,
                         pack.id,
                         recommendation.id,
@@ -474,11 +487,11 @@ function PackDetail({
                             : "text-blue-700 dark:text-sky-300",
                       ].join(" ")}
                     >
-                      {feedbackState.label} for this recommendation.
+                      {feedbackState.label}
                     </p>
                   ) : isSubmitting ? (
                     <p className="text-sm font-medium text-blue-700 dark:text-sky-300">
-                      Saving feedback...
+                      {messages.packsPage.feedbackSaving}
                     </p>
                   ) : null}
                 </div>
@@ -490,18 +503,18 @@ function PackDetail({
 
       <section>
         <h3 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-muted">
-          Source data
+          {messages.packsPage.sourceDataHeading}
         </h3>
         <CatalogCard className="mt-4 overflow-hidden">
           <div className="grid gap-3 border-b border-border bg-surface-subtle px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted md:grid-cols-[2fr_1fr_1fr_1fr]">
-            <span>Source file</span>
-            <span>Class</span>
-            <span>Confidence</span>
-            <span>Contribution</span>
+            <span>{messages.packsPage.dataHeaders.sourceFile}</span>
+            <span>{messages.packsPage.dataHeaders.class}</span>
+            <span>{messages.packsPage.dataHeaders.confidence}</span>
+            <span>{messages.packsPage.dataHeaders.contribution}</span>
           </div>
           {pack.sourceData.length === 0 ? (
             <div className="px-4 py-5 text-sm text-muted">
-              No source records are attached yet.
+              {messages.packsPage.sourceDataEmpty}
             </div>
           ) : (
             pack.sourceData.map((record) => (
