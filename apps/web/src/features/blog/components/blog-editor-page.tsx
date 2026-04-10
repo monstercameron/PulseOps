@@ -92,7 +92,6 @@ export function BlogEditorPage({ postId }: Readonly<{ postId: string | null }>) 
 
   useEffect(() => {
     void loadGallery();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function copyMarkdown(image: GalleryImage) {

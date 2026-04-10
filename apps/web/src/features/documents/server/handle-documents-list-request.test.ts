@@ -90,8 +90,8 @@ describe("handleDocumentsListRequest", () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
       orgId: "org_documents",
-      totalDocuments: 2,
-      documents: [
+      totalDocuments: 5,
+      documents: expect.arrayContaining([
         expect.objectContaining({
           factCount: 3,
           fileName: "supermarket_sales - Sheet1.csv",
@@ -102,7 +102,22 @@ describe("handleDocumentsListRequest", () => {
           fileName: "10020Records.csv",
           status: "extracted",
         }),
-      ],
+        expect.objectContaining({
+          factCount: 1,
+          fileName: "field-service-customer-invoice.csv",
+          status: "extracted",
+        }),
+        expect.objectContaining({
+          factCount: 1,
+          fileName: "field-service-job-cost-report.csv",
+          status: "extracted",
+        }),
+        expect.objectContaining({
+          factCount: 1,
+          fileName: "field-service-vendor-bill.csv",
+          status: "extracted",
+        }),
+      ]),
     });
   });
 
