@@ -90,6 +90,7 @@ describe("handleDashboardPageRequest", () => {
       queueItems: expect.arrayContaining([
         expect.objectContaining({ typeLabel: "Vendor merge" }),
       ]),
+      scopedContent: null,
     });
   });
 
@@ -214,6 +215,7 @@ describe("handleDashboardPageRequest", () => {
       queueItems: expect.arrayContaining([
         expect.objectContaining({ typeLabel: "Parse failure" }),
       ]),
+      scopedContent: null,
       signals: expect.arrayContaining([
         expect.objectContaining({ label: "Pipeline risk", value: "1" }),
         expect.objectContaining({ label: "Fact coverage", value: "1" }),
@@ -344,6 +346,15 @@ describe("handleDashboardPageRequest", () => {
           ]),
         }),
       ]),
+      scopedContent: expect.objectContaining({
+        items: [
+          expect.objectContaining({
+            id: "doc_invoice",
+            title: "invoice-001.csv",
+          }),
+        ],
+        title: "Scoped records",
+      }),
       signals: expect.arrayContaining([
         expect.objectContaining({ label: "Pipeline risk", value: "1" }),
         expect.objectContaining({ label: "Fact coverage", value: "1" }),
@@ -435,6 +446,14 @@ describe("handleDashboardPageRequest", () => {
           ]),
         }),
       ]),
+      scopedContent: expect.objectContaining({
+        items: [
+          expect.objectContaining({
+            id: "doc_extracted_recent",
+            title: "job-report.csv",
+          }),
+        ],
+      }),
       signals: expect.arrayContaining([
         expect.objectContaining({ label: "Pack readiness", value: "1" }),
         expect.objectContaining({ label: "Pipeline risk", value: "Clear" }),
@@ -577,6 +596,11 @@ describe("handleDashboardPageRequest", () => {
         expect.objectContaining({ label: "Critical failures", value: "0" }),
       ]),
       queueItems: [],
+      scopedContent: expect.objectContaining({
+        description:
+          "No matching records are currently driving the filtered activity, queue, and signals below.",
+        items: [],
+      }),
     });
   });
 });
