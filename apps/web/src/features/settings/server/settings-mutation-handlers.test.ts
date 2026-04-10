@@ -140,6 +140,57 @@ describe("settings mutation handlers", () => {
     });
   });
 
+  it("persists website details without requiring unrelated settings changes", async () => {
+    const rootDirectory = await mkdtemp(
+      path.join(os.tmpdir(), "bizopsaccelerator-settings-website-details-"),
+    );
+    temporaryDirectories.push(rootDirectory);
+
+    const settingsRepository = createLocalSettingsRepository({ rootDirectory });
+    const response = await handleSettingsUpdateRequest(
+      new Request("http://localhost/api/settings", {
+        body: JSON.stringify({
+          orgId: "org_123",
+          websiteDetails: {
+            mainPhone: "(561) 555-0110",
+            partnershipsEmail: "alliances@precisionplumbing.com",
+            pressEmail: "media@precisionplumbing.com",
+            salesEmail: "sales@precisionplumbing.com",
+            supportEmail: "support@precisionplumbing.com",
+            supportPhone: "(561) 555-0198",
+          },
+        }),
+        method: "PATCH",
+      }),
+      {
+        now: () => "2026-04-10T02:00:00.000Z",
+        settingsRepository,
+      },
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      websiteDetails: {
+        mainPhone: "(561) 555-0110",
+        partnershipsEmail: "alliances@precisionplumbing.com",
+        pressEmail: "media@precisionplumbing.com",
+        salesEmail: "sales@precisionplumbing.com",
+        supportEmail: "support@precisionplumbing.com",
+        supportPhone: "(561) 555-0198",
+      },
+    });
+    await expect(settingsRepository.getByOrgId("org_123")).resolves.toMatchObject({
+      websiteDetails: {
+        mainPhone: "(561) 555-0110",
+        partnershipsEmail: "alliances@precisionplumbing.com",
+        pressEmail: "media@precisionplumbing.com",
+        salesEmail: "sales@precisionplumbing.com",
+        supportEmail: "support@precisionplumbing.com",
+        supportPhone: "(561) 555-0198",
+      },
+    });
+  });
+
   it("stores masked primary and backup billing cards", async () => {
     const rootDirectory = await mkdtemp(
       path.join(os.tmpdir(), "bizopsaccelerator-settings-payment-methods-"),

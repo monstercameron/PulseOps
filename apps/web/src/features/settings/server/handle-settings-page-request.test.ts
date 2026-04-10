@@ -50,6 +50,9 @@ describe("handleSettingsPageRequest", () => {
         expect.objectContaining({ label: "Organization" }),
         expect.objectContaining({ label: "Security" }),
       ]),
+      websiteDetails: expect.objectContaining({
+        supportEmail: "support@pulseops.io",
+      }),
     });
   });
 
@@ -80,6 +83,14 @@ describe("handleSettingsPageRequest", () => {
         },
       ],
       updatedAt: "2026-04-10T02:00:00.000Z",
+      websiteDetails: {
+        mainPhone: "(561) 555-0110",
+        partnershipsEmail: "alliances@precisionplumbing.com",
+        pressEmail: "media@precisionplumbing.com",
+        salesEmail: "sales@precisionplumbing.com",
+        supportEmail: "support@precisionplumbing.com",
+        supportPhone: "(561) 555-0198",
+      },
     });
     await accountRepository.put(
       createOrganizationAccount({
@@ -118,6 +129,14 @@ describe("handleSettingsPageRequest", () => {
             role: "Admin",
           }),
         ]),
+      },
+      websiteDetails: {
+        mainPhone: "(561) 555-0110",
+        partnershipsEmail: "alliances@precisionplumbing.com",
+        pressEmail: "media@precisionplumbing.com",
+        salesEmail: "sales@precisionplumbing.com",
+        supportEmail: "support@precisionplumbing.com",
+        supportPhone: "(561) 555-0198",
       },
     });
   });
