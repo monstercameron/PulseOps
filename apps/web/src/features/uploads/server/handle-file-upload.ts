@@ -110,19 +110,43 @@ function tryResolveUploadRouting(input: {
     return resolveUploadRouting(input);
   } catch (error) {
     if (error instanceof UnsupportedUploadFormatError) {
-      return Response.json({ error: error.message }, { status: 415 });
+      return Response.json(
+        {
+          error:
+            "This file type is not supported yet. Please upload CSV, XLSX, PDF, DOCX, TXT, HTML, XML, or JSON.",
+        },
+        { status: 415 },
+      );
     }
 
     if (error instanceof UploadFormatMismatchError) {
-      return Response.json({ error: error.message }, { status: 422 });
+      return Response.json(
+        {
+          error:
+            "This file does not match its extension. Please save or export it again, then try once more.",
+        },
+        { status: 422 },
+      );
     }
 
     if (error instanceof UploadSizeExceededError) {
-      return Response.json({ error: error.message }, { status: 413 });
+      return Response.json(
+        {
+          error:
+            "This file is too large for this upload path. Please use a smaller file and try again.",
+        },
+        { status: 413 },
+      );
     }
 
     if (error instanceof ProtectedUploadError) {
-      return Response.json({ error: error.message }, { status: 422 });
+      return Response.json(
+        {
+          error:
+            "This file is password protected. Remove the password and upload it again.",
+        },
+        { status: 422 },
+      );
     }
 
     throw error;

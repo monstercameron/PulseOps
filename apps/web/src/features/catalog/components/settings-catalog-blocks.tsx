@@ -286,16 +286,29 @@ export function DialogFrame({
   title,
 }: DialogFrameProps & Readonly<{ onClose?: () => void }>) {
   const { t } = useUiI18n();
+  const titleId = useId();
+  const descriptionId = useId();
 
   return (
-    <div className="w-full max-w-[440px] overflow-hidden rounded-[12px] border border-border-strong bg-card shadow-[0_24px_60px_rgba(0,0,0,0.45)]">
+    <div
+      aria-describedby={descriptionId}
+      aria-labelledby={titleId}
+      aria-modal="true"
+      className="w-full max-w-[440px] overflow-hidden rounded-[12px] border border-border-strong bg-card shadow-[0_24px_60px_rgba(0,0,0,0.45)]"
+      role="dialog"
+    >
       <div className="flex items-start justify-between gap-3 border-b border-border px-5 pb-[14px] pt-4">
         <div>
           {stepLabel ? <StatusBadge label={stepLabel} tone="info" /> : null}
-          <h3 className={cx("text-[14px] font-bold tracking-[-0.015em] text-foreground", stepLabel ? "mt-2" : "")}>
+          <h3
+            className={cx("text-[14px] font-bold tracking-[-0.015em] text-foreground", stepLabel ? "mt-2" : "")}
+            id={titleId}
+          >
             {title}
           </h3>
-          <p className="mt-[2px] text-[12px] leading-[1.4] text-muted">{description}</p>
+          <p className="mt-[2px] text-[12px] leading-[1.4] text-muted" id={descriptionId}>
+            {description}
+          </p>
         </div>
         <button
           aria-label={t("common.closeDialog", "Close dialog")}
