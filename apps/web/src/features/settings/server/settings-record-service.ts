@@ -17,6 +17,7 @@ import {
   type OrganizationAccountRecord,
 } from "@/features/accounts/domain/organization-account";
 import { type AccountRepository } from "@/features/accounts/repositories/account-repository";
+import { websiteDetailsSchema } from "@/features/marketing/domain/website-details";
 import {
   createDefaultSettingsRecord,
   createSettingsRecord,
@@ -68,6 +69,8 @@ export const settingsPreferenceItemsInputSchema = z.array(
       id: normalizeSettingsPreferenceId(preference),
     })),
 ).readonly();
+
+export const settingsWebsiteDetailsInputSchema = websiteDetailsSchema;
 
 export const settingsInviteInputSchema = z.object({
   email: z.string().email(),
@@ -173,6 +176,7 @@ export async function getSettingsPageDataFromRepository(input: Readonly<{
       ...fallbackSettingsPageData.team,
       members: teamMembers,
     },
+    websiteDetails: settingsRecord.websiteDetails,
   };
 }
 

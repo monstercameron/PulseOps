@@ -1,4 +1,8 @@
 import { buildDefaultSettingsPreferences } from "@/features/settings/domain/settings-preferences";
+import {
+  fallbackWebsiteDetails,
+  type WebsiteDetails,
+} from "@/features/marketing/domain/website-details";
 
 export type SettingsTabId =
   | "organization"
@@ -128,6 +132,7 @@ export type SettingsPageData = Readonly<{
       viewer: boolean;
     }[];
   }>;
+  websiteDetails: WebsiteDetails;
 }>;
 
 export const settingsPageLabels = {
@@ -454,4 +459,5 @@ export const fallbackSettingsPageData: SettingsPageData = {
       },
     ],
   },
+  websiteDetails: fallbackWebsiteDetails,
 } as const;

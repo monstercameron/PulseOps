@@ -28,6 +28,13 @@ import {
   termsPageContent,
 } from "@/features/marketing/constants/marketing-content";
 import {
+  buildWebsiteContactRoutes,
+  buildWebsiteFooterContacts,
+  normalizeTelephoneHref,
+  fallbackWebsiteDetails,
+  type WebsiteDetails,
+} from "@/features/marketing/domain/website-details";
+import {
   AuthFormCard,
   AuthSplitLayout,
   LegalDocument,
@@ -53,11 +60,22 @@ type ShellPath =
   | "/signup"
   | "/terms";
 
-function renderShell(pathName: ShellPath, children: ReactNode) {
+type MarketingWebsiteProps = Readonly<{
+  websiteDetails?: WebsiteDetails;
+}>;
+
+function renderShell(
+  pathName: ShellPath,
+  children: ReactNode,
+  websiteDetails?: WebsiteDetails,
+) {
   return (
     <MarketingShell
       ctaHref={marketingShellContent.ctaHref}
       ctaLabel={marketingShellContent.ctaLabel}
+      footerContacts={
+        websiteDetails ? buildWebsiteFooterContacts(websiteDetails) : undefined
+      }
       footerDescription={marketingShellContent.footerDescription}
       footerGroups={marketingFooterGroups}
       footerTagline={marketingShellContent.footerTagline}
@@ -69,7 +87,9 @@ function renderShell(pathName: ShellPath, children: ReactNode) {
   );
 }
 
-export function MarketingHomePage() {
+export function MarketingHomePage({
+  websiteDetails = fallbackWebsiteDetails,
+}: MarketingWebsiteProps) {
   const { messages, resolveTree } = useUiI18n();
   const content = resolveTree("marketing.home", homePageContent);
 
@@ -284,6 +304,7 @@ export function MarketingHomePage() {
         </div>
       </div>
     </>,
+    websiteDetails,
   );
 }
 
@@ -464,9 +485,12 @@ export function CareersPage() {
   );
 }
 
-export function ContactPage() {
+export function ContactPage({
+  websiteDetails = fallbackWebsiteDetails,
+}: MarketingWebsiteProps) {
   const { messages, resolveTree } = useUiI18n();
   const content = resolveTree("marketing.contact", contactPageContent);
+  const contactRoutes = buildWebsiteContactRoutes(websiteDetails);
 
   return renderShell(
     "/contact",
@@ -476,27 +500,44 @@ export function ContactPage() {
         eyebrow={content.hero.eyebrow}
         title={content.hero.title}
       />
-      <MarketingSection
-        eyebrow={messages.marketing.shared.contactReachEyebrow}
-        title={messages.marketing.shared.contactReachTitle}
-        tone="white"
-      >
-        <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
-          <div className="grid gap-4">
-            {content.channels.map((channel) => (
-              <CatalogCard key={channel.title} className="p-6 shadow-none">
-                <p className="text-lg font-semibold tracking-tight text-foreground">
-                  {channel.title}
-                </p>
-                <p className="mt-2 text-sm leading-7 text-muted">{channel.description}</p>
-                <p className="mt-4 text-sm font-semibold text-accent">{channel.action}</p>
-              </CatalogCard>
-            ))}
-          </div>
-          <CatalogCard className="p-7">
-            <p className="text-xl font-semibold tracking-tight text-foreground">
-              {messages.marketing.shared.contactSendTitle}
-            </p>
+        <MarketingSection
+          eyebrow={messages.marketing.shared.contactReachEyebrow}
+          title={messages.marketing.shared.contactReachTitle}
+          tone="white"
+        >
+          <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
+            <div className="grid gap-4">
+              {content.channels.map((channel, index) => {
+                const route = contactRoutes[index];
+
+                return (
+                <CatalogCard key={channel.title} className="p-6 shadow-none">
+                  <p className="text-lg font-semibold tracking-tight text-foreground">
+                    {channel.title}
+                  </p>
+                  <p className="mt-2 text-sm leading-7 text-muted">{channel.description}</p>
+                  <div className="mt-4 space-y-2">
+                    <a
+                      className="block text-sm font-semibold text-accent transition-colors hover:text-accent/80"
+                      href={`mailto:${route.email}`}
+                    >
+                      {route.email}
+                    </a>
+                    <a
+                      className="block text-sm font-medium text-foreground transition-colors hover:text-accent"
+                      href={`tel:${normalizeTelephoneHref(route.phone)}`}
+                    >
+                      {route.phone}
+                    </a>
+                  </div>
+                </CatalogCard>
+                );
+              })}
+            </div>
+            <CatalogCard className="p-7">
+              <p className="text-xl font-semibold tracking-tight text-foreground">
+                {messages.marketing.shared.contactSendTitle}
+              </p>
             <div className="mt-6 space-y-4">
               {content.formFields.map((field) => (
                 <label key={field.label} className="block">
@@ -527,8 +568,9 @@ export function ContactPage() {
             </div>
           </CatalogCard>
         </div>
-      </MarketingSection>
-    </>,
+        </MarketingSection>
+      </>,
+      websiteDetails,
   );
 }
 

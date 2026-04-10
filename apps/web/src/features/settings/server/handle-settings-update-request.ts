@@ -19,6 +19,7 @@ import {
   settingsNotificationGroupsInputSchema,
   settingsOrganizationInputSchema,
   settingsPreferenceItemsInputSchema,
+  settingsWebsiteDetailsInputSchema,
   updateSettingsRecord,
 } from "@/features/settings/server/settings-record-service";
 
@@ -34,6 +35,7 @@ const settingsUpdateRequestSchema = z.object({
   organization: settingsOrganizationInputSchema.optional(),
   orgId: z.string().min(1),
   preferences: settingsPreferenceItemsInputSchema.optional(),
+  websiteDetails: settingsWebsiteDetailsInputSchema.optional(),
 });
 
 type SettingsUpdateDependencies = Readonly<{
@@ -66,7 +68,8 @@ export async function handleSettingsUpdateRequest(
     parsedBody.data.billing !== undefined ||
     parsedBody.data.organization !== undefined ||
     parsedBody.data.notifications !== undefined ||
-    parsedBody.data.preferences !== undefined;
+    parsedBody.data.preferences !== undefined ||
+    parsedBody.data.websiteDetails !== undefined;
 
   if (!hasMutableSection) {
     return Response.json(
@@ -108,7 +111,8 @@ export async function handleSettingsUpdateRequest(
   const hasSettingsRecordSection =
     parsedBody.data.organization !== undefined ||
     parsedBody.data.notifications !== undefined ||
-    parsedBody.data.preferences !== undefined;
+    parsedBody.data.preferences !== undefined ||
+    parsedBody.data.websiteDetails !== undefined;
   const updatedSettingsRecord = hasSettingsRecordSection
     ? await updateSettingsRecord({
         now: () => nowIso,
@@ -126,6 +130,8 @@ export async function handleSettingsUpdateRequest(
               }
             : settingsRecord.organization,
           preferences: parsedBody.data.preferences ?? settingsRecord.preferences,
+          websiteDetails:
+            parsedBody.data.websiteDetails ?? settingsRecord.websiteDetails,
         }),
       })
     : null;

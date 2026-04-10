@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { websiteDetailsSchema } from "@/features/marketing/domain/website-details";
 import { fallbackSettingsPageData } from "@/features/settings/constants/settings-page-content";
 import {
   mergeSettingsPreferencesWithDefaults,
@@ -82,6 +83,7 @@ export const settingsRecordSchema = z.object({
   teamMembers: z.array(settingsTeamMemberSchema).readonly(),
   updatedAt: z.string().datetime(),
   version: z.literal("settings-record.v1"),
+  websiteDetails: websiteDetailsSchema.default(fallbackSettingsPageData.websiteDetails),
 });
 
 export type SettingsRecord = z.infer<typeof settingsRecordSchema>;
@@ -114,5 +116,6 @@ export function createDefaultSettingsRecord(
     securitySessions: fallbackSettingsPageData.security.sessions,
     teamMembers: fallbackSettingsPageData.team.members,
     updatedAt,
+    websiteDetails: fallbackSettingsPageData.websiteDetails,
   });
 }

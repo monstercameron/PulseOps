@@ -49,6 +49,7 @@ type PlaceholderAction = Readonly<{
   title: string;
 }> | null;
 type OrganizationEditableField = Exclude<keyof SettingsPageData["organization"], "goals">;
+type WebsiteDetailsEditableField = keyof SettingsPageData["websiteDetails"];
 type InviteRoleLabel = "Admin" | "Operator" | "Analyst" | "Viewer";
 type AccountStatusLabel = "Active" | "Invited";
 type BillingPaymentMethodRecord = SettingsPageData["billing"]["paymentMethods"][number];
@@ -154,6 +155,9 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
     ),
   );
   const [organizationDraft, setOrganizationDraft] = useState(initialData.organization);
+  const [websiteDetailsDraft, setWebsiteDetailsDraft] = useState(
+    initialData.websiteDetails,
+  );
   const [notificationGroups, setNotificationGroups] = useState(initialData.notifications);
   const [preferenceItems, setPreferenceItems] = useState(initialData.preferences);
   const [inviteDraft, setInviteDraft] = useState({
@@ -162,6 +166,7 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
     roleLabel: "Operator" as InviteRoleLabel,
   });
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isSavingWebsiteDetails, setIsSavingWebsiteDetails] = useState(false);
   const [isSavingNotifications, setIsSavingNotifications] = useState(false);
   const [isSavingBilling, setIsSavingBilling] = useState(false);
   const [isSavingPreferences, setIsSavingPreferences] = useState(false);
@@ -234,6 +239,7 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
         ),
       );
       setOrganizationDraft(nextPageData.organization);
+      setWebsiteDetailsDraft(nextPageData.websiteDetails);
       setNotificationGroups(nextPageData.notifications);
       setPreferenceItems(nextPageData.preferences);
     }
@@ -268,6 +274,16 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
 
   function updateOrganizationField(field: OrganizationEditableField, value: string) {
     setOrganizationDraft((current) => ({
+      ...current,
+      [field]: value,
+    }));
+  }
+
+  function updateWebsiteDetailsField(
+    field: WebsiteDetailsEditableField,
+    value: string,
+  ) {
+    setWebsiteDetailsDraft((current) => ({
       ...current,
       [field]: value,
     }));
@@ -449,6 +465,39 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
   function handleResetProfile() {
     setOrganizationDraft(pageData.organization);
     console.info("[PulseOps] Reset profile: form values restored to the current workspace defaults.");
+  }
+
+  async function handleSaveWebsiteDetails() {
+    if (isSavingWebsiteDetails) {
+      return;
+    }
+
+    setIsSavingWebsiteDetails(true);
+
+    try {
+      const payload = await requestSettingsMutation({
+        body: {
+          orgId,
+          websiteDetails: websiteDetailsDraft,
+        },
+        method: "PATCH",
+        url: "/api/settings",
+      });
+
+      applyMutationResponse(payload);
+    } catch (error) {
+      openPlaceholderAction(
+        "Could not save website details",
+        error instanceof Error ? error.message : "The request could not be completed.",
+      );
+    } finally {
+      setIsSavingWebsiteDetails(false);
+    }
+  }
+
+  function handleResetWebsiteDetails() {
+    setWebsiteDetailsDraft(pageData.websiteDetails);
+    console.info("[PulseOps] Reset website details: public contact values restored to the current workspace defaults.");
   }
 
   async function handleSaveNotifications() {
@@ -816,81 +865,141 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
 
         <div className="min-w-0 flex-1">
           {activeTab === "organization" ? (
-            <PreferencePanel
-              description="This information shapes how PulseOps interprets your data and builds your Cash & Margin Brief."
-              title="Business profile"
-            >
-              <div className="grid gap-[14px] md:grid-cols-2">
-                <FieldGroup label="Business name">
-                  <TextField
-                    onChange={(value) => updateOrganizationField("name", value)}
-                    value={organizationDraft.name}
-                  />
-                </FieldGroup>
-                <FieldGroup label="Primary location">
-                  <TextField
-                    onChange={(value) => updateOrganizationField("location", value)}
-                    value={organizationDraft.location}
-                  />
-                </FieldGroup>
-                <div className="md:col-span-2">
-                  <FieldGroup label="Industry">
+            <div className="space-y-5">
+              <PreferencePanel
+                description="This information shapes how PulseOps interprets your data and builds your Cash & Margin Brief."
+                title="Business profile"
+              >
+                <div className="grid gap-[14px] md:grid-cols-2">
+                  <FieldGroup label="Business name">
+                    <TextField
+                      onChange={(value) => updateOrganizationField("name", value)}
+                      value={organizationDraft.name}
+                    />
+                  </FieldGroup>
+                  <FieldGroup label="Primary location">
+                    <TextField
+                      onChange={(value) => updateOrganizationField("location", value)}
+                      value={organizationDraft.location}
+                    />
+                  </FieldGroup>
+                  <div className="md:col-span-2">
+                    <FieldGroup label="Industry">
+                      <PillGroup
+                        options={INDUSTRY_OPTIONS}
+                        selected={organizationDraft.industry}
+                        onChange={(value) => updateOrganizationField("industry", value)}
+                      />
+                    </FieldGroup>
+                  </div>
+                  <FieldGroup label="Revenue model">
                     <PillGroup
-                      options={INDUSTRY_OPTIONS}
-                      selected={organizationDraft.industry}
-                      onChange={(value) => updateOrganizationField("industry", value)}
+                      options={REVENUE_MODEL_OPTIONS}
+                      selected={organizationDraft.revenueModel}
+                      onChange={(value) => updateOrganizationField("revenueModel", value)}
+                    />
+                  </FieldGroup>
+                  <FieldGroup label="Invoice cycle">
+                    <SelectField
+                      options={INVOICE_CYCLE_OPTIONS}
+                      onChange={(value) => updateOrganizationField("invoiceCycle", value)}
+                      value={organizationDraft.invoiceCycle}
+                    />
+                  </FieldGroup>
+                  <FieldGroup label="Team size">
+                    <SelectField
+                      options={TEAM_SIZE_OPTIONS}
+                      onChange={(value) => updateOrganizationField("teamSize", value)}
+                      value={organizationDraft.teamSize}
+                    />
+                  </FieldGroup>
+                  <div className="md:col-span-2">
+                    <FieldGroup label="Goals (all that apply)">
+                      <div className="mt-1 flex flex-col gap-1">
+                        {ALL_GOALS.map((goal) => (
+                          <label
+                            key={goal}
+                            className="flex cursor-pointer items-center gap-[10px] rounded-[6px] py-[5px] text-[13px] text-foreground transition-colors"
+                          >
+                            <input
+                              checked={organizationDraft.goals.includes(goal)}
+                              className="h-[14px] w-[14px] shrink-0 cursor-pointer rounded accent-accent"
+                              onChange={() => toggleGoal(goal)}
+                              type="checkbox"
+                            />
+                            {goal}
+                          </label>
+                        ))}
+                      </div>
+                    </FieldGroup>
+                  </div>
+                </div>
+                <SettingsActionRow
+                  onPrimaryAction={handleSaveProfile}
+                  onSecondaryAction={handleResetProfile}
+                  primaryLabel={isSavingProfile ? "Saving..." : "Save profile"}
+                  secondaryLabel="Reset"
+                />
+              </PreferencePanel>
+
+              <PreferencePanel
+                description="Structured public contact details for the marketing home and contact pages. Update these fields without touching page copy or a WYSIWYG editor."
+                title="Website details"
+              >
+                <div className="grid gap-[14px] md:grid-cols-2">
+                  <FieldGroup label="Support email">
+                    <TextField
+                      onChange={(value) => updateWebsiteDetailsField("supportEmail", value)}
+                      type="email"
+                      value={websiteDetailsDraft.supportEmail}
+                    />
+                  </FieldGroup>
+                  <FieldGroup label="Sales email">
+                    <TextField
+                      onChange={(value) => updateWebsiteDetailsField("salesEmail", value)}
+                      type="email"
+                      value={websiteDetailsDraft.salesEmail}
+                    />
+                  </FieldGroup>
+                  <FieldGroup label="Press email">
+                    <TextField
+                      onChange={(value) => updateWebsiteDetailsField("pressEmail", value)}
+                      type="email"
+                      value={websiteDetailsDraft.pressEmail}
+                    />
+                  </FieldGroup>
+                  <FieldGroup label="Partnerships email">
+                    <TextField
+                      onChange={(value) =>
+                        updateWebsiteDetailsField("partnershipsEmail", value)
+                      }
+                      type="email"
+                      value={websiteDetailsDraft.partnershipsEmail}
+                    />
+                  </FieldGroup>
+                  <FieldGroup label="Main phone">
+                    <TextField
+                      onChange={(value) => updateWebsiteDetailsField("mainPhone", value)}
+                      value={websiteDetailsDraft.mainPhone}
+                    />
+                  </FieldGroup>
+                  <FieldGroup label="Support phone">
+                    <TextField
+                      onChange={(value) => updateWebsiteDetailsField("supportPhone", value)}
+                      value={websiteDetailsDraft.supportPhone}
                     />
                   </FieldGroup>
                 </div>
-                <FieldGroup label="Revenue model">
-                  <PillGroup
-                    options={REVENUE_MODEL_OPTIONS}
-                    selected={organizationDraft.revenueModel}
-                    onChange={(value) => updateOrganizationField("revenueModel", value)}
-                  />
-                </FieldGroup>
-                <FieldGroup label="Invoice cycle">
-                  <SelectField
-                    options={INVOICE_CYCLE_OPTIONS}
-                    onChange={(value) => updateOrganizationField("invoiceCycle", value)}
-                    value={organizationDraft.invoiceCycle}
-                  />
-                </FieldGroup>
-                <FieldGroup label="Team size">
-                  <SelectField
-                    options={TEAM_SIZE_OPTIONS}
-                    onChange={(value) => updateOrganizationField("teamSize", value)}
-                    value={organizationDraft.teamSize}
-                  />
-                </FieldGroup>
-                <div className="md:col-span-2">
-                  <FieldGroup label="Goals (all that apply)">
-                    <div className="mt-1 flex flex-col gap-1">
-                      {ALL_GOALS.map((goal) => (
-                        <label
-                          key={goal}
-                          className="flex cursor-pointer items-center gap-[10px] rounded-[6px] py-[5px] text-[13px] text-foreground transition-colors"
-                        >
-                          <input
-                            checked={organizationDraft.goals.includes(goal)}
-                            className="h-[14px] w-[14px] shrink-0 cursor-pointer rounded accent-accent"
-                            onChange={() => toggleGoal(goal)}
-                            type="checkbox"
-                          />
-                          {goal}
-                        </label>
-                      ))}
-                    </div>
-                  </FieldGroup>
-                </div>
-              </div>
-              <SettingsActionRow
-                onPrimaryAction={handleSaveProfile}
-                onSecondaryAction={handleResetProfile}
-                primaryLabel={isSavingProfile ? "Saving..." : "Save profile"}
-                secondaryLabel="Reset"
-              />
-            </PreferencePanel>
+                <SettingsActionRow
+                  onPrimaryAction={handleSaveWebsiteDetails}
+                  onSecondaryAction={handleResetWebsiteDetails}
+                  primaryLabel={
+                    isSavingWebsiteDetails ? "Saving..." : "Save website details"
+                  }
+                  secondaryLabel="Reset"
+                />
+              </PreferencePanel>
+            </div>
           ) : null}
 
           {activeTab === "team" ? (

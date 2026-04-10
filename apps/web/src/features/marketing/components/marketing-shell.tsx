@@ -17,10 +17,17 @@ export type MarketingFooterGroup = Readonly<{
   title: string;
 }>;
 
+export type MarketingFooterContact = Readonly<{
+  href: string;
+  label: string;
+  value: string;
+}>;
+
 type MarketingShellProps = Readonly<{
   children: ReactNode;
   ctaHref: string;
   ctaLabel: string;
+  footerContacts?: readonly MarketingFooterContact[];
   footerDescription: string;
   footerGroups: readonly MarketingFooterGroup[];
   footerTagline: string;
@@ -32,6 +39,7 @@ export function MarketingShell({
   children,
   ctaHref,
   ctaLabel,
+  footerContacts,
   footerDescription,
   footerGroups,
   footerTagline,
@@ -90,6 +98,23 @@ export function MarketingShell({
               Pulse<span className="text-accent">Ops</span>
             </Link>
             <p className="mt-4 max-w-xs text-sm leading-7">{footerDescription}</p>
+            {footerContacts && footerContacts.length > 0 ? (
+              <div className="mt-6 space-y-2">
+                {footerContacts.map((contact) => (
+                  <p key={contact.label} className="text-sm leading-6">
+                    <span className="mr-2 font-semibold uppercase tracking-[0.08em] text-[#9eb5c9]">
+                      {contact.label}
+                    </span>
+                    <a
+                      className="transition-colors hover:text-accent"
+                      href={contact.href}
+                    >
+                      {contact.value}
+                    </a>
+                  </p>
+                ))}
+              </div>
+            ) : null}
           </div>
           {footerGroups.map((group) => (
             <div key={group.title}>
