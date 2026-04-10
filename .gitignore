@@ -24,11 +24,18 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
-.env
+
+# Env files
+.env*
+!.env.example
+
+# Local runtime artifacts
 .local-data/
 .tmp/
 .codex-tmp/
 test-results/
 apps/web/test-results/
 apps/web/playwright-report/
+apps/web/audit-logs.json
+apps/web/feedback-events.json
 apps/web/e2e/debug-content.spec.ts
