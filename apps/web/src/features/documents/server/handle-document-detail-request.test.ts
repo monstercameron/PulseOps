@@ -79,12 +79,16 @@ describe("handleDocumentDetailRequest", () => {
       }),
       facts: expect.arrayContaining([
         expect.objectContaining({
+          evidenceSummary: "Sheet Sheet1",
           label: "Rows parsed",
           value: 100,
+          valueDisplay: "100",
         }),
         expect.objectContaining({
+          excerpt: expect.stringContaining("Total profit was aggregated"),
           label: "Total profit",
           value: 44168198.4,
+          valueDisplay: "$44,168,198.40",
         }),
       ]),
       orgId: "org_documents",
@@ -241,7 +245,11 @@ describe("handleDocumentDetailRequest", () => {
     await expect(response.json()).resolves.toMatchObject({
       facts: [
         expect.objectContaining({
-          label: "document.observation.number",
+          description:
+            "A generic numeric fact extracted from a business document when no narrower canonical fact type applies.",
+          evidenceSummary: "Row 1",
+          label: "Row count",
+          valueDisplay: "5",
         }),
       ],
     });

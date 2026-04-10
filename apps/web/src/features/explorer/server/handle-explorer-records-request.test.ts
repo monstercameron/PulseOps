@@ -178,9 +178,19 @@ describe("handleExplorerRecordsRequest", () => {
           detailFacts: [
             {
               canonicalFactTypeId: "invoice.amount.outstanding",
+              description: "The unpaid amount still open on a customer invoice.",
+              evidenceLabel: "Row 2",
               key: "Outstanding balance",
               sourceFieldKey: "amount_outstanding",
-              value: "2100",
+              value: "$2,100.00",
+            },
+          ],
+          detailKeyFindings: [
+            {
+              detail:
+                "The unpaid amount still open on a customer invoice. / Row 2",
+              label: "Outstanding balance",
+              value: "$2,100.00",
             },
           ],
           detailParserFields: expect.arrayContaining([
@@ -197,7 +207,7 @@ describe("handleExplorerRecordsRequest", () => {
           downloadAvailable: false,
           documentMeta: "Manual uploads - 1 KB",
           documentName: "invoice-001.csv",
-          factsSummary: "1 extracted fact",
+          factsSummary: "1 fact: Outstanding balance",
           statusLabel: "Extracted",
           typeLabel: "Customer invoice",
         },
@@ -436,9 +446,10 @@ describe("handleExplorerRecordsRequest", () => {
           detailCitations: ["api-summary.csv - field"],
           detailFacts: [
             expect.objectContaining({
-              key: "document.observation.number",
+              key: "Observed value",
             }),
           ],
+          factsSummary: "1 fact: Observed value",
           downloadAvailable: false,
           documentMeta: "Connected API - Size unavailable",
           sourceLabel: "Connected API",

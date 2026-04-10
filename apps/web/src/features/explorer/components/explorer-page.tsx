@@ -31,6 +31,19 @@ type ExplorerExportError = Readonly<{
   error: string;
 }>;
 
+type ReviewSummary = Readonly<{
+  badge: string;
+  cta?: Readonly<{
+    href: string;
+    label: string;
+  }>;
+  description: string;
+  emptyFactsMessage: string;
+  meta: string;
+  title: string;
+  tone: "danger" | "info" | "success" | "warning";
+}>;
+
 export function ExplorerPage({ initialData, orgId }: ExplorerPageProps) {
   const { messages, t } = useUiI18n();
   const router = useRouter();
@@ -70,6 +83,9 @@ export function ExplorerPage({ initialData, orgId }: ExplorerPageProps) {
   );
   const isDetailPaneOpen = selectedRecord !== null;
   const summary = buildVisibleSummary(visibleRecords);
+  const reviewSummary =
+    selectedRecord === null ? null : buildReviewSummary(selectedRecord, t);
+  const reviewSummaryCta = reviewSummary?.cta;
 
   function openActionDialog(title: string, description?: string) {
     setPlaceholderAction({ description, title });
@@ -211,23 +227,27 @@ export function ExplorerPage({ initialData, orgId }: ExplorerPageProps) {
 
   return (
     <div className="flex min-h-full flex-col">
-
-      {/* ── Compact single-row page header ─────────────────────────────────── */}
       <div className="flex shrink-0 items-center gap-3 border-b border-border bg-background px-5 py-3">
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline gap-1.5 text-[11.5px] text-muted">
             <span>{messages.explorerPage.breadcrumbs[0]}</span>
             <span className="text-muted/40">/</span>
-            <span className="font-medium text-foreground">{messages.explorerPage.title}</span>
+            <span className="font-medium text-foreground">
+              {messages.explorerPage.title}
+            </span>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <button
             className="inline-flex items-center gap-[6px] rounded-[7px] border border-border-strong bg-surface-subtle px-[10px] py-[5px] text-[12px] font-semibold text-muted transition hover:bg-surface-muted hover:text-foreground active:scale-[.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-            onClick={() => { void handleExportCsv(); }}
+            onClick={() => {
+              void handleExportCsv();
+            }}
             type="button"
           >
-            {isExporting ? messages.explorerPage.actions.exporting : messages.explorerPage.actions.export}
+            {isExporting
+              ? messages.explorerPage.actions.exporting
+              : messages.explorerPage.actions.export}
           </button>
           <button
             className="inline-flex items-center gap-[6px] rounded-[7px] bg-accent px-[10px] py-[5px] text-[12px] font-bold text-[#0d1b2a] transition hover:opacity-90 active:scale-[.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
@@ -239,7 +259,6 @@ export function ExplorerPage({ initialData, orgId }: ExplorerPageProps) {
         </div>
       </div>
 
-      {/* ── Compact toolbar: filters + stats + search ──────────────────────── */}
       <div className="sticky top-0 z-10 flex shrink-0 items-center gap-2 border-b border-border bg-background/[0.94] px-5 py-2 backdrop-blur-sm">
         {initialData.filters.map((filterLabel) => (
           <FilterChip
@@ -250,20 +269,23 @@ export function ExplorerPage({ initialData, orgId }: ExplorerPageProps) {
           />
         ))}
 
-        {/* Inline stat pills */}
         <div className="mx-2 hidden items-center gap-3 text-[11.5px] text-muted sm:flex">
           <span className="flex items-baseline gap-1">
-            <strong className="text-[13px] font-bold text-foreground">{summary.totalRecords}</strong>
+            <strong className="text-[13px] font-bold text-foreground">
+              {summary.totalRecords}
+            </strong>
             {` ${messages.explorerPage.summary.totalRecords.toLowerCase()}`}
           </span>
-          <span className="text-muted/30">·</span>
+          <span className="text-muted/30">/</span>
           <span className="flex items-baseline gap-1">
-            <strong className="text-[13px] font-bold text-foreground">{summary.averageConfidence}</strong>
+            <strong className="text-[13px] font-bold text-foreground">
+              {summary.averageConfidence}
+            </strong>
             {` ${messages.explorerPage.summary.averageConfidence.toLowerCase()}`}
           </span>
           {Number(summary.needsReviewCount) > 0 ? (
             <>
-              <span className="text-muted/30">·</span>
+              <span className="text-muted/30">/</span>
               <span className="flex items-baseline gap-1">
                 <strong className="text-[13px] font-bold text-amber-600 dark:text-amber-300">
                   {summary.needsReviewCount}
@@ -275,7 +297,15 @@ export function ExplorerPage({ initialData, orgId }: ExplorerPageProps) {
         </div>
 
         <div className="ml-auto flex items-center gap-[6px] rounded-[7px] border border-border bg-card px-3 py-[5px]">
-          <svg fill="none" height="12" stroke="#8898aa" strokeLinecap="round" strokeWidth="1.5" viewBox="0 0 16 16" width="12">
+          <svg
+            fill="none"
+            height="12"
+            stroke="#8898aa"
+            strokeLinecap="round"
+            strokeWidth="1.5"
+            viewBox="0 0 16 16"
+            width="12"
+          >
             <circle cx="7" cy="7" r="5" />
             <path d="M11 11l2.5 2.5" />
           </svg>
@@ -289,7 +319,6 @@ export function ExplorerPage({ initialData, orgId }: ExplorerPageProps) {
       </div>
 
       <div className="flex min-h-0 flex-1 overflow-hidden">
-        {/* ── Left: compact sidebar list (when detail open) or full table ───── */}
         <div
           className={cx(
             isDetailPaneOpen
@@ -313,7 +342,10 @@ export function ExplorerPage({ initialData, orgId }: ExplorerPageProps) {
                   type="button"
                 >
                   {isSelected ? (
-                    <span aria-hidden className="absolute inset-y-0 left-0 w-[3px] rounded-r-full bg-accent" />
+                    <span
+                      aria-hidden
+                      className="absolute inset-y-0 left-0 w-[3px] rounded-r-full bg-accent"
+                    />
                   ) : null}
                   <span
                     className={cx(
@@ -347,39 +379,51 @@ export function ExplorerPage({ initialData, orgId }: ExplorerPageProps) {
           )}
         </div>
 
-        {/* ── Right: detail pane ────────────────────────────────────────────── */}
         {selectedRecord !== null ? (
           <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-            {/* Mobile back button */}
             <div className="flex items-center border-b border-border/60 px-5 py-2 lg:hidden">
               <button
                 className="flex items-center gap-1.5 text-[12.5px] font-medium text-muted transition-colors hover:text-foreground"
                 onClick={() => setSelectedRecordId(null)}
                 type="button"
               >
-                <svg fill="none" height="11" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 16 16" width="11">
+                <svg
+                  fill="none"
+                  height="11"
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  viewBox="0 0 16 16"
+                  width="11"
+                >
                   <path d="M10 4L6 8l4 4" />
                 </svg>
                 {messages.explorerPage.backToList}
               </button>
             </div>
 
-            {/* Sticky header */}
             <div className="shrink-0 border-b border-border bg-card">
               <div className="flex items-start gap-4 px-6 py-5">
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-1.5">
-                    <StatusBadge label={selectedRecord.typeLabel} tone={selectedRecord.typeTone} />
-                    <StatusBadge label={selectedRecord.statusLabel} tone={selectedRecord.statusTone} />
+                    <StatusBadge
+                      label={selectedRecord.typeLabel}
+                      tone={selectedRecord.typeTone}
+                    />
+                    <StatusBadge
+                      label={selectedRecord.statusLabel}
+                      tone={selectedRecord.statusTone}
+                    />
                   </div>
                   <h2 className="mt-2.5 text-[18px] font-bold leading-snug tracking-tight text-foreground">
                     {selectedRecord.documentName}
                   </h2>
                   <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12.5px] text-muted">
                     <span>{selectedRecord.documentMeta}</span>
-                    <span className="text-muted/40">·</span>
+                    <span className="text-muted/40">/</span>
                     <span>{selectedRecord.sourceLabel}</span>
-                    <span className="text-muted/40">·</span>
+                    <span className="text-muted/40">/</span>
                     <span>{selectedRecord.dateLabel}</span>
                   </div>
                 </div>
@@ -411,11 +455,42 @@ export function ExplorerPage({ initialData, orgId }: ExplorerPageProps) {
               </div>
             </div>
 
-            {/* Scrollable body */}
             <div className="flex-1 overflow-y-auto">
               <div className="mx-auto max-w-2xl divide-y divide-border px-6 pb-12">
+                {reviewSummary ? (
+                  <section className="py-6">
+                    <div className="rounded-[12px] border border-border bg-surface-subtle px-4 py-4">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <StatusBadge
+                              label={reviewSummary.badge}
+                              tone={reviewSummary.tone}
+                            />
+                            <span className="text-[11px] font-medium text-muted">
+                              {reviewSummary.meta}
+                            </span>
+                          </div>
+                          <p className="mt-3 text-[14px] font-semibold text-foreground">
+                            {reviewSummary.title}
+                          </p>
+                          <p className="mt-1 text-[12.5px] leading-[1.6] text-muted">
+                            {reviewSummary.description}
+                          </p>
+                        </div>
+                        {reviewSummaryCta ? (
+                          <CatalogButton
+                            onClick={() => router.push(reviewSummaryCta.href)}
+                            variant="secondary"
+                          >
+                            {reviewSummaryCta.label}
+                          </CatalogButton>
+                        ) : null}
+                      </div>
+                    </div>
+                  </section>
+                ) : null}
 
-                {/* Document metadata */}
                 {selectedRecord.detailDocumentFields.length > 0 ? (
                   <section className="py-6">
                     <h3 className="mb-4 text-[10.5px] font-bold uppercase tracking-[0.09em] text-muted">
@@ -442,7 +517,6 @@ export function ExplorerPage({ initialData, orgId }: ExplorerPageProps) {
                   </section>
                 ) : null}
 
-                {/* Parser metadata */}
                 {selectedRecord.detailParserFields.length > 0 ? (
                   <section className="py-6">
                     <h3 className="mb-4 text-[10.5px] font-bold uppercase tracking-[0.09em] text-muted">
@@ -469,7 +543,45 @@ export function ExplorerPage({ initialData, orgId }: ExplorerPageProps) {
                   </section>
                 ) : null}
 
-                {/* Enumerated facts */}
+                <section className="py-6">
+                  <h3 className="mb-4 flex items-baseline gap-2 text-[10.5px] font-bold uppercase tracking-[0.09em] text-muted">
+                    {t("explorerPage.keyFindingsHeading", "Key findings")}
+                    <span className="text-[11px] font-normal normal-case tracking-normal text-muted/60">
+                      {selectedRecord.detailKeyFindings.length}{" "}
+                      {selectedRecord.detailKeyFindings.length === 1
+                        ? t("explorerPage.findingSingular", "finding")
+                        : t("explorerPage.findingPlural", "findings")}
+                    </span>
+                  </h3>
+                  {selectedRecord.detailKeyFindings.length === 0 ? (
+                    <p className="text-[13px] text-muted">
+                      {t(
+                        "explorerPage.noKeyFindings",
+                        "No high-signal facts are available yet.",
+                      )}
+                    </p>
+                  ) : (
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {selectedRecord.detailKeyFindings.map((finding, index) => (
+                        <article
+                          key={`${selectedRecord.id}-finding-${index + 1}-${finding.label}`}
+                          className="rounded-[12px] border border-border bg-card px-4 py-3.5"
+                        >
+                          <p className="text-[10.5px] font-bold uppercase tracking-[0.08em] text-muted">
+                            {finding.label}
+                          </p>
+                          <p className="mt-2 text-[17px] font-semibold leading-snug text-foreground">
+                            {finding.value}
+                          </p>
+                          <p className="mt-2 text-[12px] leading-relaxed text-muted">
+                            {finding.detail}
+                          </p>
+                        </article>
+                      ))}
+                    </div>
+                  )}
+                </section>
+
                 <section className="py-6">
                   <h3 className="mb-4 flex items-baseline gap-2 text-[10.5px] font-bold uppercase tracking-[0.09em] text-muted">
                     {messages.explorerPage.extractedFactsHeading}
@@ -481,45 +593,63 @@ export function ExplorerPage({ initialData, orgId }: ExplorerPageProps) {
                     </span>
                   </h3>
                   {selectedRecord.detailFacts.length === 0 ? (
-                    <p className="text-[13px] text-muted">{messages.explorerPage.noFacts}</p>
+                    <p className="text-[13px] text-muted">
+                      {reviewSummary?.emptyFactsMessage ?? messages.explorerPage.noFacts}
+                    </p>
                   ) : (
-                    <div className="overflow-hidden rounded-[10px] border border-border">
+                    <div className="space-y-3">
                       {selectedRecord.detailFacts.map((fact, index) => (
-                        <div
+                        <article
                           key={`${selectedRecord.id}-${fact.canonicalFactTypeId}-${fact.sourceFieldKey}-${index + 1}`}
-                          className={cx(
-                            "flex items-start justify-between gap-6 px-4 py-3.5",
-                            index !== selectedRecord.detailFacts.length - 1
-                              ? "border-b border-border/50"
-                              : "",
-                          )}
+                          className="rounded-[12px] border border-border bg-card px-4 py-4"
                         >
-                          <div className="flex min-w-0 gap-3">
-                            <span className="mt-0.5 inline-flex h-6 min-w-6 shrink-0 items-center justify-center rounded-full border border-border bg-surface-subtle px-1 text-[11px] font-bold text-muted">
-                              {index + 1}
-                            </span>
+                          <div className="flex items-start justify-between gap-4">
                             <div className="min-w-0">
-                              <p className="text-[10.5px] font-bold uppercase tracking-[0.06em] text-muted">
-                              {fact.key}
-                            </p>
-                            <p className="mt-1 text-[15px] font-semibold leading-snug text-foreground">
-                              {fact.value}
-                            </p>
-                            <p className="mt-0.5 text-[11px] text-muted/60">
-                              {fact.canonicalFactTypeId} · {fact.sourceFieldKey}
-                            </p>
+                              <p className="text-[10.5px] font-bold uppercase tracking-[0.08em] text-muted">
+                                {fact.key}
+                              </p>
+                              <p className="mt-2 text-[18px] font-semibold leading-snug text-foreground">
+                                {fact.value}
+                              </p>
+                              <p className="mt-2 text-[12.5px] leading-relaxed text-muted">
+                                {fact.description}
+                              </p>
+                            </div>
+                            <div className="shrink-0 pt-0.5">
+                              <ConfidenceMeter value={fact.confidenceScore} />
+                            </div>
                           </div>
-                          </div>
-                          <div className="shrink-0 pt-1">
-                            <ConfidenceMeter value={fact.confidenceScore} />
-                          </div>
-                        </div>
+
+                          <dl className="mt-4 space-y-2 text-[12px] leading-relaxed text-muted">
+                            <div>
+                              <dt className="font-semibold text-foreground">
+                                {t("explorerPage.factEvidenceLabel", "Evidence")}
+                              </dt>
+                              <dd>{fact.evidenceLabel}</dd>
+                            </div>
+                            <div>
+                              <dt className="font-semibold text-foreground">
+                                {t("explorerPage.factSourceFieldLabel", "Source field")}
+                              </dt>
+                              <dd className="font-mono text-[11.5px]">
+                                {fact.sourceFieldKey}
+                              </dd>
+                            </div>
+                            {fact.excerpt ? (
+                              <div>
+                                <dt className="font-semibold text-foreground">
+                                  {t("explorerPage.factExcerptLabel", "Source excerpt")}
+                                </dt>
+                                <dd>{fact.excerpt}</dd>
+                              </div>
+                            ) : null}
+                          </dl>
+                        </article>
                       ))}
                     </div>
                   )}
                 </section>
 
-                {/* Citations */}
                 <section className="py-6">
                   <h3 className="mb-4 flex items-baseline gap-2 text-[10.5px] font-bold uppercase tracking-[0.09em] text-muted">
                     {t("explorerPage.citationsHeading", "Citations")}
@@ -531,12 +661,13 @@ export function ExplorerPage({ initialData, orgId }: ExplorerPageProps) {
                     </span>
                   </h3>
                   {selectedRecord.detailCitations.length === 0 ? (
-                    <p className="text-[13px] text-muted">{messages.explorerPage.noCitations}</p>
+                    <p className="text-[13px] text-muted">
+                      {messages.explorerPage.noCitations}
+                    </p>
                   ) : (
                     <CitationList items={selectedRecord.detailCitations} />
                   )}
                 </section>
-
               </div>
             </div>
           </div>
@@ -580,7 +711,7 @@ async function downloadResponseAsFile(response: Response) {
   const objectUrl = URL.createObjectURL(fileBlob);
   const link = document.createElement("a");
   const contentDisposition = response.headers.get("content-disposition");
-  const fileNameMatch = contentDisposition?.match(/filename="([^"]+)"/);
+  const fileNameMatch = contentDisposition?.match(/filename=\"([^\"]+)\"/);
 
   link.href = objectUrl;
   link.download = fileNameMatch?.[1] ?? "explorer-records.csv";
@@ -588,4 +719,92 @@ async function downloadResponseAsFile(response: Response) {
   link.click();
   link.remove();
   URL.revokeObjectURL(objectUrl);
+}
+
+function buildReviewSummary(
+  record: ExplorerRecord,
+  t: (
+    key: string,
+    fallback: string,
+    values?: Readonly<Record<string, boolean | number | string>>,
+  ) => string,
+): ReviewSummary {
+  const findingsCount = record.detailKeyFindings.length;
+  const factsCount = record.detailFacts.length;
+  const citationsCount = record.detailCitations.length;
+  const meta = t(
+    "explorerPage.reviewSummaryMeta",
+    "{{findings}} findings / {{facts}} facts / {{citations}} citations",
+    {
+      citations: citationsCount,
+      facts: factsCount,
+      findings: findingsCount,
+    },
+  );
+
+  if (record.statusTone === "danger") {
+    return {
+      badge: t("explorerPage.reviewStateFailed", "Needs attention"),
+      cta: {
+        href: "/pipeline",
+        label: t("explorerPage.reviewStateCtaPipeline", "Open Pipeline"),
+      },
+      description: t(
+        "explorerPage.reviewStateFailedDescription",
+        "This file hit a problem earlier in the workflow. Check Pipeline before trusting the details here.",
+      ),
+      emptyFactsMessage: t(
+        "explorerPage.reviewStateFailedEmptyFacts",
+        "No facts are ready yet because this file needs attention in Pipeline.",
+      ),
+      meta,
+      title: t(
+        "explorerPage.reviewStateFailedTitle",
+        "This record is not ready for review yet.",
+      ),
+      tone: "danger",
+    };
+  }
+
+  if (record.statusTone === "warning" || factsCount === 0) {
+    return {
+      badge: t("explorerPage.reviewStateProcessing", "Still getting it ready"),
+      cta: {
+        href: "/pipeline",
+        label: t("explorerPage.reviewStateCtaPipeline", "Open Pipeline"),
+      },
+      description: t(
+        "explorerPage.reviewStateProcessingDescription",
+        "The file is in the workspace, but some details may still be filling in. Use Pipeline if you want to follow the latest progress.",
+      ),
+      emptyFactsMessage: t(
+        "explorerPage.reviewStateProcessingEmptyFacts",
+        "We do not have review-ready facts for this file yet. Open Pipeline to follow progress.",
+      ),
+      meta,
+      title: t(
+        "explorerPage.reviewStateProcessingTitle",
+        "Use the metadata below to confirm the file while the review details are still settling.",
+      ),
+      tone: "warning",
+    };
+  }
+
+  return {
+    badge: t("explorerPage.reviewStateReady", "Ready to review"),
+    description: t(
+      "explorerPage.reviewStateReadyDescription",
+      "Start with the key findings, then verify the evidence on the fact cards below.",
+    ),
+    emptyFactsMessage: t(
+      "explorerPage.reviewStateReadyEmptyFacts",
+      "The file is ready, but there are no extracted facts to review yet.",
+    ),
+    meta,
+    title: t(
+      "explorerPage.reviewStateReadyTitle",
+      "This record has enough detail to review confidently.",
+    ),
+    tone: "success",
+  };
 }

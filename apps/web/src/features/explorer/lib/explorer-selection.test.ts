@@ -9,6 +9,7 @@ const baseRecord: ExplorerRecord = {
   detailCitations: [],
   detailDocumentFields: [],
   detailFacts: [],
+  detailKeyFindings: [],
   detailParserFields: [],
   downloadAvailable: true,
   documentMeta: "Manual upload - 1 KB",

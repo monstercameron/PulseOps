@@ -9,6 +9,14 @@ import {
   documentStatusListSearchParamSchema,
   matchesDocumentStatusFilter,
 } from "@/features/documents/server/document-query-filters";
+import {
+  buildFactEvidenceSummary,
+  buildFactExcerpt,
+  formatFactValue,
+  getCanonicalFactTypeDefinition,
+  resolveFactDescription,
+  resolveFactLabel,
+} from "@/features/facts/domain/fact-presentation";
 import { type FactRepository } from "@/features/facts/repositories/fact-repository";
 import {
   type SupportedDocumentFamilyId,
@@ -42,8 +50,17 @@ type ExplorerRecordDetailField = Readonly<{
 type ExplorerRecordFact = Readonly<{
   canonicalFactTypeId: string;
   confidenceScore: number;
+  description: string;
+  evidenceLabel: string;
+  excerpt?: string;
   key: string;
   sourceFieldKey: string;
+  value: string;
+}>;
+
+type ExplorerRecordKeyFinding = Readonly<{
+  detail: string;
+  label: string;
   value: string;
 }>;
 
@@ -53,6 +70,7 @@ export type ExplorerRecord = Readonly<{
   detailCitations: readonly string[];
   detailDocumentFields: readonly ExplorerRecordDetailField[];
   detailFacts: readonly ExplorerRecordFact[];
+  detailKeyFindings: readonly ExplorerRecordKeyFinding[];
   detailParserFields: readonly ExplorerRecordDetailField[];
   downloadAvailable: boolean;
   documentMeta: string;
@@ -190,13 +208,8 @@ export async function getExplorerPageData({
             messages,
             parserContext,
           }),
-          detailFacts: facts.slice(0, 10).map((fact) => ({
-            canonicalFactTypeId: fact.canonicalFactTypeId,
-            confidenceScore: fact.confidenceScore,
-            key: fact.label ?? fact.canonicalFactTypeId,
-            sourceFieldKey: fact.sourceFieldKey,
-            value: formatFactValue(fact.value),
-          })),
+          detailFacts: buildDetailFacts(facts, locale).slice(0, 10),
+          detailKeyFindings: buildDetailKeyFindings(facts, locale),
           detailParserFields: buildDetailParserFields({
             locale,
             messages,
@@ -205,15 +218,15 @@ export async function getExplorerPageData({
           downloadAvailable: document.rawObject !== undefined,
           documentMeta: `${buildSourceLabel(messages, document.source)} - ${formatFileSize(document.sizeBytes, messages.dataLabels.generic.sizeUnavailable)}`,
           documentName: document.fileName,
-          factsSummary:
-            facts.length === 0
-              ? "No extracted facts yet"
-              : `${facts.length} extracted fact${facts.length === 1 ? "" : "s"}`,
+          factsSummary: buildFactsSummary(facts),
           id: document.id,
           sourceLabel: buildSourceLabel(messages, document.source),
           statusLabel: buildStatusLabel(messages, document.status),
           statusTone: buildStatusTone(document.status),
-          typeLabel: buildDocumentTypeLabel(messages, document.suggestedDocumentFamily),
+          typeLabel: buildDocumentTypeLabel(
+            messages,
+            document.suggestedDocumentFamily,
+          ),
           typeTone: buildDocumentTypeTone(document.suggestedDocumentFamily),
         } satisfies ExplorerRecord;
       }),
@@ -341,7 +354,10 @@ function buildDetailDocumentFields(input: Readonly<{
     },
     {
       label: "Document class",
-      value: buildDocumentTypeLabel(input.messages, input.document.suggestedDocumentFamily),
+      value: buildDocumentTypeLabel(
+        input.messages,
+        input.document.suggestedDocumentFamily,
+      ),
     },
     {
       label: "Status",
@@ -434,11 +450,17 @@ function buildDetailParserFields(input: Readonly<{
       },
       {
         label: "Section count",
-        value: formatInteger(input.parserContext.artifact.sectionCount, input.locale),
+        value: formatInteger(
+          input.parserContext.artifact.sectionCount,
+          input.locale,
+        ),
       },
       {
         label: "Text length",
-        value: formatInteger(input.parserContext.artifact.textLength, input.locale),
+        value: formatInteger(
+          input.parserContext.artifact.textLength,
+          input.locale,
+        ),
       },
       {
         label: "OCR fallback",
@@ -462,17 +484,20 @@ function buildDetailParserFields(input: Readonly<{
       label: "Parser artifact ID",
       value: input.parserContext.artifact.id,
     },
-      {
-        label: "Primary heading",
-        value: primarySheet?.name ?? input.messages.dataLabels.generic.unavailable,
-      },
+    {
+      label: "Primary heading",
+      value: primarySheet?.name ?? input.messages.dataLabels.generic.unavailable,
+    },
     {
       label: "Sheet count",
       value: formatInteger(input.parserContext.artifact.sheetCount, input.locale),
     },
     {
       label: "Total rows",
-      value: formatInteger(input.parserContext.artifact.totalRowCount, input.locale),
+      value: formatInteger(
+        input.parserContext.artifact.totalRowCount,
+        input.locale,
+      ),
     },
   ];
 
@@ -612,6 +637,154 @@ function buildCitationLabels(
   );
 }
 
+function buildDetailFacts(
+  facts: readonly ExplorerFactRecord[],
+  locale: string,
+): ExplorerRecordFact[] {
+  return facts
+    .slice()
+    .sort((left, right) => compareFactsForDisplay(left, right))
+    .map((fact) => ({
+      canonicalFactTypeId: fact.canonicalFactTypeId,
+      confidenceScore: fact.confidenceScore,
+      description: resolveFactDescription(fact.canonicalFactTypeId),
+      evidenceLabel: buildFactEvidenceSummary(fact.citations),
+      excerpt: buildFactExcerpt(fact.citations),
+      key: resolveFactLabel({
+        canonicalFactTypeId: fact.canonicalFactTypeId,
+        label: fact.label,
+        sourceFieldKey: fact.sourceFieldKey,
+      }),
+      sourceFieldKey: fact.sourceFieldKey,
+      value: formatFactValue({
+        canonicalFactTypeId: fact.canonicalFactTypeId,
+        label: fact.label,
+        locale,
+        sourceFieldKey: fact.sourceFieldKey,
+        value: fact.value,
+      }),
+    }));
+}
+
+function buildDetailKeyFindings(
+  facts: readonly ExplorerFactRecord[],
+  locale: string,
+): ExplorerRecordKeyFinding[] {
+  const groupedFacts = new Map<string, ExplorerFactRecord[]>();
+
+  for (const fact of facts) {
+    const label = resolveFactLabel({
+      canonicalFactTypeId: fact.canonicalFactTypeId,
+      label: fact.label,
+      sourceFieldKey: fact.sourceFieldKey,
+    });
+    const groupKey = `${fact.canonicalFactTypeId}:${label}`;
+    const existingGroup = groupedFacts.get(groupKey);
+
+    if (existingGroup === undefined) {
+      groupedFacts.set(groupKey, [fact]);
+      continue;
+    }
+
+    existingGroup.push(fact);
+  }
+
+  return Array.from(groupedFacts.values())
+    .map((group) => summarizeFactGroup(group, locale))
+    .sort((left, right) => right.priority - left.priority)
+    .slice(0, 4)
+    .map(({ detail, label, value }) => ({
+      detail,
+      label,
+      value,
+    }));
+}
+
+function summarizeFactGroup(
+  group: readonly ExplorerFactRecord[],
+  locale: string,
+): ExplorerRecordKeyFinding & Readonly<{ priority: number }> {
+  const sampleFact = group[0]!;
+  const resolvedLabel = resolveFactLabel({
+    canonicalFactTypeId: sampleFact.canonicalFactTypeId,
+    label: sampleFact.label,
+    sourceFieldKey: sampleFact.sourceFieldKey,
+  });
+  const formattedValues = group.map((fact) =>
+    formatFactValue({
+      canonicalFactTypeId: fact.canonicalFactTypeId,
+      label: fact.label,
+      locale,
+      sourceFieldKey: fact.sourceFieldKey,
+      value: fact.value,
+    }),
+  );
+  const numericValues = group
+    .map((fact) => (typeof fact.value === "number" ? fact.value : null))
+    .filter((value): value is number => value !== null);
+  const stringValues = group
+    .map((fact) => (typeof fact.value === "string" ? fact.value : null))
+    .filter((value): value is string => value !== null);
+  const averageConfidence = average(
+    group.map((fact) => fact.confidenceScore),
+  ).toFixed(2);
+  const evidenceLabel = buildFactEvidenceSummary(sampleFact.citations);
+  const firstDefinition = getCanonicalFactTypeDefinition(
+    sampleFact.canonicalFactTypeId,
+  );
+  const priority = scoreFactGroup(sampleFact, resolvedLabel);
+
+  if (numericValues.length === group.length && numericValues.length > 1) {
+    return {
+      detail: `${group.length} values / avg confidence ${averageConfidence}`,
+      label: resolvedLabel,
+      priority,
+      value: summarizeNumericFinding(sampleFact, resolvedLabel, numericValues, locale),
+    };
+  }
+
+  if (stringValues.length === group.length && looksLikeDateGroup(stringValues)) {
+    return {
+      detail:
+        stringValues.length === 1
+          ? `${firstDefinition?.description ?? "Document timing detail"} / ${evidenceLabel}`
+          : `${stringValues.length} dates found / avg confidence ${averageConfidence}`,
+      label: resolvedLabel,
+      priority,
+      value: summarizeDateFinding(stringValues, locale),
+    };
+  }
+
+  return {
+    detail:
+      group.length === 1
+        ? `${firstDefinition?.description ?? "Document fact"} / ${evidenceLabel}`
+        : `${group.length} values found / avg confidence ${averageConfidence}`,
+    label: resolvedLabel,
+    priority,
+    value:
+      group.length === 1
+        ? formattedValues[0]!
+        : summarizeTextFinding(formattedValues),
+  };
+}
+
+function buildFactsSummary(facts: readonly ExplorerFactRecord[]) {
+  if (facts.length === 0) {
+    return "No facts extracted yet";
+  }
+
+  const topLabels = buildDetailKeyFindings(facts, "en-US")
+    .slice(0, 2)
+    .map((finding) => finding.label);
+
+  if (topLabels.length === 0) {
+    return `${facts.length} fact${facts.length === 1 ? "" : "s"}`;
+  }
+
+  return `${facts.length} fact${facts.length === 1 ? "" : "s"}: ${topLabels.join(", ")}`;
+}
+
 function formatDateLabel(isoTimestamp: string, locale: string) {
   return new Intl.DateTimeFormat(locale, {
     day: "numeric",
@@ -661,16 +834,185 @@ function formatConfidenceScore(
   return value.toFixed(2);
 }
 
-function formatFactValue(value: string | number | boolean | null | string[]) {
-  if (Array.isArray(value)) {
-    return value.join(", ");
+function compareFactsForDisplay(
+  left: ExplorerFactRecord,
+  right: ExplorerFactRecord,
+) {
+  const priorityDifference =
+    scoreFactGroup(
+      left,
+      resolveFactLabel({
+        canonicalFactTypeId: left.canonicalFactTypeId,
+        label: left.label,
+        sourceFieldKey: left.sourceFieldKey,
+      }),
+    ) -
+    scoreFactGroup(
+      right,
+      resolveFactLabel({
+        canonicalFactTypeId: right.canonicalFactTypeId,
+        label: right.label,
+        sourceFieldKey: right.sourceFieldKey,
+      }),
+    );
+
+  if (priorityDifference !== 0) {
+    return priorityDifference * -1;
   }
 
-  if (value === null) {
-    return "null";
+  if (right.confidenceScore !== left.confidenceScore) {
+    return right.confidenceScore - left.confidenceScore;
   }
 
-  return String(value);
+  return left.id.localeCompare(right.id);
+}
+
+function scoreFactGroup(
+  fact: ExplorerFactRecord,
+  resolvedLabel: string,
+) {
+  switch (fact.canonicalFactTypeId) {
+    case "invoice.amount.outstanding":
+    case "invoice.payment_days_late":
+    case "vendor_bill.amount.total":
+    case "vendor_bill.due_at":
+      return 100;
+    case "invoice.amount.total":
+    case "bank_transaction.amount":
+    case "job.revenue.actual":
+    case "job.margin.gross":
+    case "estimate.amount.total":
+      return 92;
+    case "invoice.due_at":
+    case "invoice.issued_at":
+    case "bank_transaction.posted_at":
+    case "work_order.scheduled_at":
+    case "payment.received_at":
+      return 84;
+    case "job.cost.labor":
+    case "job.cost.material":
+    case "job.cost.subcontractor":
+    case "crew.labor_hours":
+      return 76;
+    default:
+      return /\b(total|revenue|profit|balance|outstanding|due|late|margin|cost|cash)\b/i.test(
+        resolvedLabel,
+      )
+        ? 68
+        : 54;
+  }
+}
+
+function summarizeNumericFinding(
+  fact: ExplorerFactRecord,
+  resolvedLabel: string,
+  values: readonly number[],
+  locale: string,
+) {
+  const sum = values.reduce((total, value) => total + value, 0);
+
+  if (values.length === 1) {
+    return formatFactValue({
+      canonicalFactTypeId: fact.canonicalFactTypeId,
+      label: fact.label,
+      locale,
+      sourceFieldKey: fact.sourceFieldKey,
+      value: values[0]!,
+    });
+  }
+
+  if (fact.canonicalFactTypeId === "invoice.payment_days_late") {
+    return `${new Intl.NumberFormat(locale, {
+      maximumFractionDigits: 0,
+    }).format(Math.max(...values))} days late max`;
+  }
+
+  if (fact.canonicalFactTypeId === "crew.labor_hours") {
+    return `${new Intl.NumberFormat(locale, {
+      maximumFractionDigits: Number.isInteger(sum) ? 0 : 2,
+    }).format(sum)} total hours`;
+  }
+
+  if (isCurrencyLikeFact(fact, resolvedLabel)) {
+    return `${new Intl.NumberFormat(locale, {
+      currency: "USD",
+      maximumFractionDigits: 2,
+      style: "currency",
+    }).format(sum)} total`;
+  }
+
+  return `${new Intl.NumberFormat(locale, {
+    maximumFractionDigits: Number.isInteger(sum) ? 0 : 2,
+  }).format(sum)} total`;
+}
+
+function summarizeDateFinding(values: readonly string[], locale: string) {
+  const parsedDates = values
+    .map((value) => new Date(value))
+    .filter((value) => !Number.isNaN(value.getTime()))
+    .sort((left, right) => left.getTime() - right.getTime());
+
+  if (parsedDates.length === 0) {
+    return values[0]!;
+  }
+
+  const formatter = new Intl.DateTimeFormat(locale, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+
+  if (parsedDates.length === 1) {
+    return formatter.format(parsedDates[0]!);
+  }
+
+  return `${formatter.format(parsedDates[0]!)} to ${formatter.format(parsedDates.at(-1)!)}`;
+}
+
+function summarizeTextFinding(values: readonly string[]) {
+  const uniqueValues = Array.from(new Set(values.filter((value) => value.length > 0)));
+
+  if (uniqueValues.length === 0) {
+    return "No value captured";
+  }
+
+  if (uniqueValues.length === 1) {
+    return uniqueValues[0]!;
+  }
+
+  return uniqueValues.slice(0, 3).join(", ");
+}
+
+function looksLikeDateGroup(values: readonly string[]) {
+  return values.every((value) => !Number.isNaN(new Date(value).getTime()));
+}
+
+function isCurrencyLikeFact(
+  fact: ExplorerFactRecord,
+  resolvedLabel: string,
+) {
+  return (
+    fact.canonicalFactTypeId === "invoice.amount.total" ||
+    fact.canonicalFactTypeId === "invoice.amount.outstanding" ||
+    fact.canonicalFactTypeId === "vendor_bill.amount.total" ||
+    fact.canonicalFactTypeId === "bank_transaction.amount" ||
+    fact.canonicalFactTypeId === "job.revenue.actual" ||
+    fact.canonicalFactTypeId === "job.cost.labor" ||
+    fact.canonicalFactTypeId === "job.cost.material" ||
+    fact.canonicalFactTypeId === "job.cost.subcontractor" ||
+    fact.canonicalFactTypeId === "job.margin.gross" ||
+    fact.canonicalFactTypeId === "estimate.amount.total" ||
+    (fact.canonicalFactTypeId === "document.observation.number" &&
+      /\b(total|revenue|profit|balance|outstanding|margin|cost|cash)\b/i.test(
+        resolvedLabel,
+      ))
+  );
+}
+
+function average(values: readonly number[]) {
+  return values.length === 0
+    ? 0
+    : values.reduce((total, value) => total + value, 0) / values.length;
 }
 
 function resolveDocumentHeading(
@@ -678,11 +1020,17 @@ function resolveDocumentHeading(
   parserContext: ResolvedDocumentArtifact,
 ) {
   if (parserContext?.kind === "tabular") {
-    return parserContext.artifact.sheets[0]?.name ?? stripFileExtension(document.fileName);
+    return (
+      parserContext.artifact.sheets[0]?.name ??
+      stripFileExtension(document.fileName)
+    );
   }
 
   if (parserContext?.kind === "text") {
-    return extractTextHeading(parserContext.artifact.text) ?? stripFileExtension(document.fileName);
+    return (
+      extractTextHeading(parserContext.artifact.text) ??
+      stripFileExtension(document.fileName)
+    );
   }
 
   return stripFileExtension(document.fileName);

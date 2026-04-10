@@ -1,6 +1,13 @@
 import { z } from "zod";
 
 import { type DocumentRepository } from "@/features/documents/repositories/document-repository";
+import {
+  buildFactExcerpt,
+  buildFactEvidenceSummary,
+  formatFactValue,
+  resolveFactDescription,
+  resolveFactLabel,
+} from "@/features/facts/domain/fact-presentation";
 import { type FactRepository } from "@/features/facts/repositories/fact-repository";
 
 const documentDetailSearchParamsSchema = z.object({
@@ -68,10 +75,23 @@ export async function handleDocumentDetailRequest(
       canonicalFactTypeId: fact.canonicalFactTypeId,
       citations: fact.citations,
       confidenceScore: fact.confidenceScore,
+      description: resolveFactDescription(fact.canonicalFactTypeId),
+      evidenceSummary: buildFactEvidenceSummary(fact.citations),
+      excerpt: buildFactExcerpt(fact.citations),
       id: fact.id,
-      label: fact.label ?? fact.canonicalFactTypeId,
+      label: resolveFactLabel({
+        canonicalFactTypeId: fact.canonicalFactTypeId,
+        label: fact.label,
+        sourceFieldKey: fact.sourceFieldKey,
+      }),
       sourceFieldKey: fact.sourceFieldKey,
       value: fact.value,
+      valueDisplay: formatFactValue({
+        canonicalFactTypeId: fact.canonicalFactTypeId,
+        label: fact.label,
+        sourceFieldKey: fact.sourceFieldKey,
+        value: fact.value,
+      }),
     }));
 
   return Response.json(
