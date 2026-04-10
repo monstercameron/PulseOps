@@ -92,64 +92,85 @@ export async function submitTabularUploadToQueue(
   );
 
   if (existingDocument !== null && existingDocument.status !== "failed") {
-    const existingJobs = await input.ingestionJobRepository.listByDocumentId(
-      existingDocument.id,
+    let latestJob = selectLatestIngestionJob(
+      await input.ingestionJobRepository.listByDocumentId(existingDocument.id),
     );
-    const latestJob = selectLatestIngestionJob(existingJobs);
 
-    if (latestJob === null) {
-      throw new Error(
-        `Existing duplicate upload ${existingDocument.id} is missing ingestion state.`,
+    if (latestJob === null && existingDocument.status === "extracted") {
+      latestJob = buildBackfilledCompletedIngestionJob(
+        existingDocument,
+        generateId(),
+      );
+      await input.ingestionJobRepository.put(latestJob);
+
+      emitLog(
+        serializeStructuredLogEntry({
+          data: {
+            checksumSha256: uploadChecksumSha256,
+            synthesizedJobId: latestJob.id,
+          },
+          documentId: existingDocument.id,
+          feature: "ingestion",
+          jobId: latestJob.id,
+          level: "info",
+          message:
+            "Backfilled missing ingestion job for an extracted duplicate document.",
+          orgId: input.orgId,
+          requestId: input.requestId,
+          service: "web",
+        }),
       );
     }
 
-    const duplicateEvent = await input.ingestionEventRepository.put(
-      createIngestionEvent({
-        archiveAfterDays: existingDocument.archiveAfterDays ?? 30,
-        checksumSha256: uploadChecksumSha256,
-        createdAt,
-        deduplicated: true,
-        documentId: existingDocument.id,
-        fileName: existingDocument.fileName,
-        id: generateId(),
-        jobId: latestJob.id,
-        kind: "upload.duplicate",
-        metadata: {
-          duplicateOfDocumentId: existingDocument.id,
-        },
-        orgId: input.orgId,
-        retentionPolicyKey:
-          existingDocument.retentionPolicyKey ?? "manual-upload-hot-30d",
-        sizeBytes: existingDocument.sizeBytes ?? input.body.byteLength,
-        source: existingDocument.source,
-      }),
-    );
-
-    emitLog(
-      serializeStructuredLogEntry({
-        data: {
+    if (latestJob !== null) {
+      const duplicateEvent = await input.ingestionEventRepository.put(
+        createIngestionEvent({
+          archiveAfterDays: existingDocument.archiveAfterDays ?? 30,
           checksumSha256: uploadChecksumSha256,
-          duplicateOfDocumentId: existingDocument.id,
+          createdAt,
+          deduplicated: true,
+          documentId: existingDocument.id,
+          fileName: existingDocument.fileName,
+          id: generateId(),
+          jobId: latestJob.id,
+          kind: "upload.duplicate",
+          metadata: {
+            duplicateOfDocumentId: existingDocument.id,
+          },
+          orgId: input.orgId,
+          retentionPolicyKey:
+            existingDocument.retentionPolicyKey ?? "manual-upload-hot-30d",
           sizeBytes: existingDocument.sizeBytes ?? input.body.byteLength,
-        },
-        documentId: existingDocument.id,
-        feature: "ingestion",
-        jobId: latestJob.id,
-        level: "info",
-        message: "Deduplicated repeated tabular upload.",
-        orgId: input.orgId,
-        requestId: input.requestId,
-        service: "web",
-      }),
-    );
+          source: existingDocument.source,
+        }),
+      );
 
-    return {
-      document: existingDocument,
-      ingestionEvent: duplicateEvent,
-      ingestionJob: latestJob,
-      isDuplicate: true,
-      storageObject: existingDocument.rawObject,
-    };
+      emitLog(
+        serializeStructuredLogEntry({
+          data: {
+            checksumSha256: uploadChecksumSha256,
+            duplicateOfDocumentId: existingDocument.id,
+            sizeBytes: existingDocument.sizeBytes ?? input.body.byteLength,
+          },
+          documentId: existingDocument.id,
+          feature: "ingestion",
+          jobId: latestJob.id,
+          level: "info",
+          message: "Deduplicated repeated tabular upload.",
+          orgId: input.orgId,
+          requestId: input.requestId,
+          service: "web",
+        }),
+      );
+
+      return {
+        document: existingDocument,
+        ingestionEvent: duplicateEvent,
+        ingestionJob: latestJob,
+        isDuplicate: true,
+        storageObject: existingDocument.rawObject,
+      };
+    }
   }
 
   const documentId = generateId();
@@ -316,4 +337,30 @@ function selectLatestIngestionJob(
   return [...jobs].sort((left, right) =>
     right.lastUpdatedAt.localeCompare(left.lastUpdatedAt),
   )[0];
+}
+
+function buildBackfilledCompletedIngestionJob(
+  document: DocumentRecord,
+  jobId: string,
+): IngestionJob {
+  let job = createIngestionJob(
+    {
+      documentId: document.id,
+      id: jobId,
+      orgId: document.orgId,
+    },
+    document.createdAt,
+  );
+
+  for (const status of [
+    "parsing",
+    "classifying",
+    "extracting",
+    "normalizing",
+    "completed",
+  ] as const) {
+    job = transitionIngestionJob(job, status, document.updatedAt);
+  }
+
+  return job;
 }

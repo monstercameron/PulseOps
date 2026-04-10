@@ -4,6 +4,11 @@ import { mkdtemp, rm } from "node:fs/promises";
 
 import { afterEach, describe, expect, it } from "vitest";
 
+import {
+  attachStoredObjectToDocument,
+  createUploadedDocument,
+  markDocumentExtracted,
+} from "@/features/documents/domain/document";
 import { createLocalDocumentRepository } from "@/features/documents/repositories/local-document-repository";
 import { createInMemoryIngestionQueue } from "@/features/ingestion/queue/in-memory-ingestion-queue";
 import { createLocalIngestionEventRepository } from "@/features/ingestion/repositories/local-ingestion-event-repository";
@@ -146,6 +151,84 @@ describe("submitTabularUploadToQueue", () => {
     await expect(
       ingestionEventRepository.listByDocumentId(firstUpload.document.id),
     ).resolves.toHaveLength(2);
+  });
+
+  it("backfills duplicate handling for extracted documents without an ingestion job", async () => {
+    const rootDirectory = await mkdtemp(
+      path.join(os.tmpdir(), "bizopsaccelerator-submit-queue-"),
+    );
+    temporaryDirectories.push(rootDirectory);
+
+    const storage = createLocalObjectStorage({
+      now: () => "2026-04-09T18:00:00.000Z",
+      rootDirectory: path.join(rootDirectory, "storage"),
+    });
+    const documentRepository = createLocalDocumentRepository({
+      rootDirectory: path.join(rootDirectory, "records"),
+    });
+    const ingestionEventRepository = createLocalIngestionEventRepository({
+      rootDirectory: path.join(rootDirectory, "records"),
+    });
+    const ingestionJobRepository = createLocalIngestionJobRepository({
+      rootDirectory: path.join(rootDirectory, "records"),
+    });
+    const queue = createInMemoryIngestionQueue();
+    const body = Buffer.from(
+      "Invoice Number,Customer Name,Due Date,Amount Due\nINV-001,Acme Heating,2026-04-14,4200",
+      "utf8",
+    );
+    const rawObject = await storage.putObject({
+      body,
+      key: "org_123/2026-04-09/seed/existing.csv",
+      metadata: {
+        documentId: "seed_doc_123",
+        orgId: "org_123",
+      },
+    });
+    let seededDocument = createUploadedDocument(
+      {
+        fileName: "existing-seed.csv",
+        id: "seed_doc_123",
+        orgId: "org_123",
+      },
+      "2026-04-09T18:00:00.000Z",
+    );
+
+    seededDocument = attachStoredObjectToDocument(
+      seededDocument,
+      rawObject,
+      "2026-04-09T18:00:00.000Z",
+    );
+    seededDocument = markDocumentExtracted(
+      seededDocument,
+      "2026-04-09T18:10:00.000Z",
+    );
+
+    await documentRepository.put(seededDocument);
+
+    const result = await submitTabularUploadToQueue({
+      body,
+      documentRepository,
+      fileName: "existing-seed-copy.csv",
+      generateId: () => "generated_job_123",
+      ingestionEventRepository,
+      ingestionJobRepository,
+      now: () => "2026-04-09T18:20:00.000Z",
+      orgId: "org_123",
+      queue,
+      storage,
+    });
+
+    expect(result.isDuplicate).toBe(true);
+    expect(result.document.id).toBe("seed_doc_123");
+    expect(result.ingestionJob.status).toBe("completed");
+    await expect(
+      ingestionJobRepository.listByDocumentId("seed_doc_123"),
+    ).resolves.toHaveLength(1);
+    await expect(
+      ingestionEventRepository.listByDocumentId("seed_doc_123"),
+    ).resolves.toHaveLength(1);
+    expect(await queue.size()).toBe(0);
   });
 
   it("emits sanitized ingestion logs without raw file identifiers", async () => {
