@@ -39,3 +39,10 @@ apps/web/playwright-report/
 apps/web/audit-logs.json
 apps/web/feedback-events.json
 apps/web/e2e/debug-content.spec.ts
+apps/web/data/blog-posts.json
+apps/web/public/uploads/blog/[0-9]*-*.png
+apps/web/public/uploads/blog/[0-9]*-*.jpg
+apps/web/public/uploads/blog/[0-9]*-*.jpeg
+apps/web/public/uploads/blog/[0-9]*-*.gif
+apps/web/public/uploads/blog/[0-9]*-*.webp
+artifacts/
