@@ -2,12 +2,19 @@
 
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import rehypeSanitize from "rehype-sanitize";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { BlogPost, BlogPostStatus } from "@/features/blog/domain/blog-post";
 
 type EditorTab = "write" | "preview";
+
+type GalleryImage = Readonly<{ filename: string; url: string }>;
+
+function altFromFilename(filename: string): string {
+  const noExt = filename.replace(/\.[^.]+$/, "");
+  if (/^\d+-[0-9a-f]+$/i.test(noExt)) return "image";
+  return noExt.replace(/[-_]+/g, " ").trim();
+}
 
 function slugify(title: string): string {
   return title
@@ -33,9 +40,14 @@ export function BlogEditorPage({ postId }: Readonly<{ postId: string | null }>) 
   const [tab, setTab] = useState<EditorTab>("write");
   const [slugManual, setSlugManual] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([]);
+  const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<GalleryImage | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const galleryFileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (postId === null) return;
@@ -64,6 +76,48 @@ export function BlogEditorPage({ postId }: Readonly<{ postId: string | null }>) 
     setTitle(value);
     if (!slugManual) {
       setSlug(slugify(value));
+    }
+  }
+
+  async function loadGallery() {
+    try {
+      const res = await fetch("/api/blog/images");
+      if (!res.ok) return;
+      const data = (await res.json()) as { images: GalleryImage[] };
+      setGalleryImages(data.images);
+    } catch {
+      // non-fatal — gallery just stays empty
+    }
+  }
+
+  useEffect(() => {
+    void loadGallery();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function copyMarkdown(image: GalleryImage) {
+    const md = `![${altFromFilename(image.filename)}](${image.url})`;
+    void navigator.clipboard.writeText(md).then(() => {
+      setCopiedUrl(image.url);
+      setTimeout(() => setCopiedUrl(null), 1800);
+    });
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget || isDeleting) return;
+    setIsDeleting(true);
+    try {
+      const res = await fetch("/api/blog/images", {
+        method: "DELETE",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ filename: deleteTarget.filename }),
+      });
+      if (res.ok || res.status === 404) {
+        setDeleteTarget(null);
+        void loadGallery();
+      }
+    } finally {
+      setIsDeleting(false);
     }
   }
 
@@ -114,6 +168,7 @@ export function BlogEditorPage({ postId }: Readonly<{ postId: string | null }>) 
       const { url } = (await res.json()) as { url: string };
       const altText = file.name.replace(/\.[^.]+$/, "");
       insertAtCursor(`\n![${altText}](${url})\n`);
+      void loadGallery();
     } finally {
       setIsUploading(false);
     }
@@ -267,6 +322,89 @@ export function BlogEditorPage({ postId }: Readonly<{ postId: string | null }>) 
                 value={summary}
               />
             </EditorField>
+
+            {/* ── Image gallery ─────────────────────────────────────────────── */}
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-muted">
+                  Images
+                </span>
+                <button
+                  className="flex items-center gap-1 rounded-[5px] px-2 py-0.5 text-[11px] font-medium text-muted transition hover:bg-surface-muted hover:text-foreground disabled:opacity-40"
+                  disabled={isUploading}
+                  onClick={() => galleryFileInputRef.current?.click()}
+                  title="Upload image"
+                  type="button"
+                >
+                  <svg fill="none" height="11" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" viewBox="0 0 24 24" width="11">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" x2="12" y1="3" y2="15" />
+                  </svg>
+                  {isUploading ? "Uploading…" : "Upload"}
+                </button>
+                <input
+                  accept="image/jpeg,image/png,image/gif,image/webp"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) void handleImageUpload(file);
+                    e.target.value = "";
+                  }}
+                  ref={galleryFileInputRef}
+                  style={{ display: "none" }}
+                  type="file"
+                />
+              </div>
+
+              {galleryImages.length === 0 ? (
+                <p className="text-[11.5px] italic text-muted">No images yet.</p>
+              ) : (
+                <div className="grid grid-cols-2 gap-1.5">
+                  {galleryImages.map((img) => (
+                    <div className="group relative" key={img.url}>
+                      <button
+                        className="relative overflow-hidden rounded-[6px] border border-border bg-surface-subtle transition hover:border-accent/50 w-full"
+                        onClick={() => copyMarkdown(img)}
+                        title={`Click to copy markdown: ![…](${img.url})`}
+                        type="button"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          alt={altFromFilename(img.filename)}
+                          className="aspect-square w-full object-cover"
+                          src={img.url}
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 transition-opacity group-hover:opacity-100">
+                          {copiedUrl === img.url ? (
+                            <span className="rounded-[4px] bg-accent px-1.5 py-0.5 text-[10px] font-bold text-[#0d1b2a]">
+                              Copied!
+                            </span>
+                          ) : (
+                            <svg fill="none" height="16" stroke="white" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" width="16">
+                              <rect height="13" rx="2" width="13" x="9" y="9" />
+                              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                            </svg>
+                          )}
+                        </div>
+                      </button>
+                      {/* Delete button — always visible on hover of the outer div */}
+                      <button
+                        aria-label={`Delete ${img.filename}`}
+                        className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/70 text-white opacity-0 transition-opacity hover:bg-red-600 group-hover:opacity-100"
+                        onClick={(e) => { e.stopPropagation(); setDeleteTarget(img); }}
+                        title="Delete image"
+                        type="button"
+                      >
+                        <svg fill="none" height="9" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" viewBox="0 0 24 24" width="9">
+                          <line x1="18" x2="6" y1="6" y2="18" />
+                          <line x1="6" x2="18" y1="6" y2="18" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -372,7 +510,7 @@ export function BlogEditorPage({ postId }: Readonly<{ postId: string | null }>) 
             <div className="min-h-0 flex-1 overflow-y-auto p-6">
               {body.trim() ? (
                 <div className="md-preview mx-auto max-w-[680px]">
-                  <ReactMarkdown rehypePlugins={[rehypeSanitize]} remarkPlugins={[remarkGfm]}>
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
                     {body}
                   </ReactMarkdown>
                 </div>
@@ -383,6 +521,46 @@ export function BlogEditorPage({ postId }: Readonly<{ postId: string | null }>) 
           )}
         </div>
       </div>
+
+      {/* ── Delete confirmation modal ────────────────────────────────────────── */}
+      {deleteTarget !== null ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-modal-title"
+        >
+          <div className="w-[340px] rounded-[12px] border border-border bg-card p-6 shadow-xl">
+            <h2 className="mb-2 text-[14px] font-bold text-foreground" id="delete-modal-title">
+              Delete image?
+            </h2>
+            <p className="mb-1 text-[12.5px] text-muted">
+              This will permanently delete the file from disk.
+            </p>
+            <p className="mb-5 truncate rounded-[6px] bg-surface-subtle px-2.5 py-1.5 font-mono text-[11px] text-foreground">
+              {deleteTarget.filename}
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                className="rounded-[7px] border border-border-strong bg-surface-subtle px-4 py-1.5 text-[12.5px] font-medium text-muted transition hover:bg-surface-muted hover:text-foreground"
+                disabled={isDeleting}
+                onClick={() => setDeleteTarget(null)}
+                type="button"
+              >
+                Cancel
+              </button>
+              <button
+                className="rounded-[7px] bg-red-600 px-4 py-1.5 text-[12.5px] font-bold text-white transition hover:bg-red-700 disabled:opacity-50"
+                disabled={isDeleting}
+                onClick={() => void confirmDelete()}
+                type="button"
+              >
+                {isDeleting ? "Deleting…" : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

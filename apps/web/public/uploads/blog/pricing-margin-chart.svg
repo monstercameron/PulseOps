@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 360" style="font-family: system-ui, sans-serif; background: #f9fafb; border-radius: 12px;">
+  <!-- Title -->
+  <text x="350" y="36" text-anchor="middle" font-size="15" font-weight="700" fill="#0d1b2a">Gross Margin % by Service Type</text>
+  <text x="350" y="56" text-anchor="middle" font-size="12" fill="#6b7d8f">After labor burden, drive time, and callback costs</text>
+
+  <!-- Y-axis label -->
+  <text transform="rotate(-90,18,200)" x="18" y="200" text-anchor="middle" font-size="11" fill="#6b7d8f">Gross Margin %</text>
+
+  <!-- Grid lines -->
+  <line x1="80" y1="80" x2="660" y2="80" stroke="#e4edf5" stroke-width="1"/>
+  <line x1="80" y1="130" x2="660" y2="130" stroke="#e4edf5" stroke-width="1"/>
+  <line x1="80" y1="180" x2="660" y2="180" stroke="#e4edf5" stroke-width="1"/>
+  <line x1="80" y1="230" x2="660" y2="230" stroke="#e4edf5" stroke-width="1"/>
+  <line x1="80" y1="280" x2="660" y2="280" stroke="#e4edf5" stroke-width="1"/>
+
+  <!-- Y-axis labels -->
+  <text x="72" y="84" text-anchor="end" font-size="11" fill="#6b7d8f">50%</text>
+  <text x="72" y="134" text-anchor="end" font-size="11" fill="#6b7d8f">40%</text>
+  <text x="72" y="184" text-anchor="end" font-size="11" fill="#6b7d8f">30%</text>
+  <text x="72" y="234" text-anchor="end" font-size="11" fill="#6b7d8f">20%</text>
+  <text x="72" y="284" text-anchor="end" font-size="11" fill="#6b7d8f">10%</text>
+
+  <!-- X axis -->
+  <line x1="80" y1="280" x2="660" y2="280" stroke="#c8d6e0" stroke-width="1.5"/>
+
+  <!-- Bar: AC Installation 48.9% → height 244px from base 280 → top 36 → actual height = 48.9/50*200 = 195.6 -->
+  <rect x="100" y="82" width="72" height="198" rx="4" fill="#00c9a7"/>
+  <text x="136" y="76" text-anchor="middle" font-size="12" font-weight="700" fill="#0d1b2a">48.9%</text>
+  <text x="136" y="298" text-anchor="middle" font-size="10.5" fill="#0d1b2a">AC</text>
+  <text x="136" y="311" text-anchor="middle" font-size="10.5" fill="#0d1b2a">Installation</text>
+
+  <!-- Bar: Emergency Call-Out 47.9% -->
+  <rect x="195" y="84" width="72" height="196" rx="4" fill="#00c9a7"/>
+  <text x="231" y="78" text-anchor="middle" font-size="12" font-weight="700" fill="#0d1b2a">47.9%</text>
+  <text x="231" y="298" text-anchor="middle" font-size="10.5" fill="#0d1b2a">Emergency</text>
+  <text x="231" y="311" text-anchor="middle" font-size="10.5" fill="#0d1b2a">Call-Out</text>
+
+  <!-- Bar: Duct Cleaning 35.3% → height 35.3/50*200 = 141.2 → top = 280-141 = 139 -->
+  <rect x="290" y="139" width="72" height="141" rx="4" fill="#00c9a7"/>
+  <text x="326" y="133" text-anchor="middle" font-size="12" font-weight="700" fill="#0d1b2a">35.3%</text>
+  <text x="326" y="298" text-anchor="middle" font-size="10.5" fill="#0d1b2a">Duct</text>
+  <text x="326" y="311" text-anchor="middle" font-size="10.5" fill="#0d1b2a">Cleaning</text>
+
+  <!-- Bar: Inspection 18% → height 18/50*200=72 → top=208 -->
+  <rect x="385" y="208" width="72" height="72" rx="4" fill="#e05c5c"/>
+  <text x="421" y="202" text-anchor="middle" font-size="12" font-weight="700" fill="#e05c5c">18.0%</text>
+  <text x="421" y="298" text-anchor="middle" font-size="10.5" fill="#0d1b2a">Inspection</text>
+
+  <!-- Bar: Annual Maintenance 1% → height 1/50*200=4 → top=276 -->
+  <rect x="480" y="276" width="72" height="4" rx="2" fill="#e05c5c"/>
+  <text x="516" y="264" text-anchor="middle" font-size="12" font-weight="700" fill="#e05c5c">1.0%</text>
+  <text x="516" y="298" text-anchor="middle" font-size="10.5" fill="#0d1b2a">Annual</text>
+  <text x="516" y="311" text-anchor="middle" font-size="10.5" fill="#0d1b2a">Maintenance</text>
+
+  <!-- Legend -->
+  <rect x="560" y="108" width="12" height="12" rx="2" fill="#00c9a7"/>
+  <text x="577" y="119" font-size="11" fill="#0d1b2a">Healthy (&gt;30%)</text>
+  <rect x="560" y="130" width="12" height="12" rx="2" fill="#e05c5c"/>
+  <text x="577" y="141" font-size="11" fill="#0d1b2a">At risk (&lt;20%)</text>
+</svg>

@@ -2,7 +2,7 @@ import { blogRepository } from "@/features/blog/server/blog-repository";
 import type { CreateBlogPostInput, UpdateBlogPostInput } from "@/features/blog/domain/blog-post";
 
 export async function handleBlogListRequest(): Promise<Response> {
-  const posts = blogRepository.list();
+  const posts = await blogRepository.list();
   return Response.json({ posts });
 }
 
@@ -32,12 +32,12 @@ export async function handleBlogCreateRequest(request: Request): Promise<Respons
   const input = body as Record<string, unknown>;
   const status = input["status"] === "published" ? "published" : "draft";
 
-  const existing = blogRepository.getBySlug(input["slug"] as string);
+  const existing = await blogRepository.getBySlug(input["slug"] as string);
   if (existing !== null) {
     return Response.json({ error: "A post with this slug already exists." }, { status: 409 });
   }
 
-  const post = blogRepository.create({
+  const post = await blogRepository.create({
     author: input["author"] as string,
     body: input["body"] as string,
     slug: input["slug"] as string,
@@ -50,7 +50,7 @@ export async function handleBlogCreateRequest(request: Request): Promise<Respons
 }
 
 export async function handleBlogGetRequest(id: string): Promise<Response> {
-  const post = blogRepository.getById(id);
+  const post = await blogRepository.getById(id);
   if (post === null) {
     return Response.json({ error: "Post not found." }, { status: 404 });
   }
@@ -84,7 +84,7 @@ export async function handleBlogUpdateRequest(
       : {}),
   };
 
-  const post = blogRepository.update(id, update);
+  const post = await blogRepository.update(id, update);
   if (post === null) {
     return Response.json({ error: "Post not found." }, { status: 404 });
   }
@@ -92,7 +92,7 @@ export async function handleBlogUpdateRequest(
 }
 
 export async function handleBlogDeleteRequest(id: string): Promise<Response> {
-  const deleted = blogRepository.delete(id);
+  const deleted = await blogRepository.delete(id);
   if (!deleted) {
     return Response.json({ error: "Post not found." }, { status: 404 });
   }

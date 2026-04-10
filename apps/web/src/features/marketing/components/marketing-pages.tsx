@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import rehypeSanitize from "rehype-sanitize";
 
 import { CatalogCard } from "@/features/catalog/components/catalog-primitives";
 import {
@@ -634,10 +633,7 @@ export function DynamicBlogPostPage({ post }: DynamicBlogPostPageProps) {
       <section className="bg-white px-6 py-12 text-[#0d1b2a] md:px-12 md:py-16">
         <div className="mx-auto max-w-[760px]">
           <div className="blog-prose text-[#0d1b2a]">
-            <ReactMarkdown
-              rehypePlugins={[rehypeSanitize]}
-              remarkPlugins={[remarkGfm]}
-            >
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
               {post.body}
             </ReactMarkdown>
           </div>

@@ -1,28 +1,64 @@
-﻿import { randomUUID } from "node:crypto";
+﻿import path from "node:path";
+import { randomUUID } from "node:crypto";
+import { z } from "zod";
+
 import type { BlogPost, CreateBlogPostInput, UpdateBlogPostInput } from "@/features/blog/domain/blog-post";
+import { createLocalJsonCollection } from "@/features/persistence/lib/local-json-collection";
 import { BLOG_SEED_POSTS } from "@/features/blog/server/blog-seed-data";
 
-// Module-level store — resets on server restart, fine for prototype.
-const store = new Map<string, BlogPost>(BLOG_SEED_POSTS.map((p) => [p.id, p]));
+const blogPostSchema = z.object({
+  id: z.string(),
+  slug: z.string(),
+  title: z.string(),
+  summary: z.string(),
+  body: z.string(),
+  author: z.string(),
+  status: z.enum(["draft", "published"]),
+  publishedAt: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+const collection = createLocalJsonCollection<BlogPost>({
+  filePath: path.resolve(process.cwd(), "data", "blog-posts.json"),
+  recordSchema: blogPostSchema,
+});
+
+// Seed the JSON file on first use (only if it is empty).
+let seeded = false;
+async function ensureSeeded() {
+  if (seeded) return;
+  seeded = true;
+  const existing = await collection.list();
+  if (existing.length === 0) {
+    for (const post of BLOG_SEED_POSTS) {
+      await collection.put(post);
+    }
+  }
+}
+
 export const blogRepository = {
-  list(): readonly BlogPost[] {
-    return Array.from(store.values()).sort(
+  async list(): Promise<readonly BlogPost[]> {
+    await ensureSeeded();
+    const posts = await collection.list();
+    return posts.sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
   },
 
-  getById(id: string): BlogPost | null {
-    return store.get(id) ?? null;
+  async getById(id: string): Promise<BlogPost | null> {
+    await ensureSeeded();
+    return collection.getById(id);
   },
 
-  getBySlug(slug: string): BlogPost | null {
-    for (const post of store.values()) {
-      if (post.slug === slug) return post;
-    }
-    return null;
+  async getBySlug(slug: string): Promise<BlogPost | null> {
+    await ensureSeeded();
+    const posts = await collection.list();
+    return posts.find((p) => p.slug === slug) ?? null;
   },
 
-  create(input: CreateBlogPostInput): BlogPost {
+  async create(input: CreateBlogPostInput): Promise<BlogPost> {
+    await ensureSeeded();
     const now = new Date().toISOString();
     const post: BlogPost = {
       id: randomUUID(),
@@ -36,12 +72,12 @@ export const blogRepository = {
       createdAt: now,
       updatedAt: now,
     };
-    store.set(post.id, post);
-    return post;
+    return collection.put(post);
   },
 
-  update(id: string, input: UpdateBlogPostInput): BlogPost | null {
-    const existing = store.get(id);
+  async update(id: string, input: UpdateBlogPostInput): Promise<BlogPost | null> {
+    await ensureSeeded();
+    const existing = await collection.getById(id);
     if (!existing) return null;
     const now = new Date().toISOString();
     const next: BlogPost = {
@@ -57,11 +93,14 @@ export const blogRepository = {
             ? null
             : existing.publishedAt,
     };
-    store.set(id, next);
-    return next;
+    return collection.put(next);
   },
 
-  delete(id: string): boolean {
-    return store.delete(id);
+  async delete(id: string): Promise<boolean> {
+    await ensureSeeded();
+    const existing = await collection.getById(id);
+    if (!existing) return false;
+    await collection.deleteById(id);
+    return true;
   },
 };
