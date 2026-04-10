@@ -20,6 +20,10 @@ const promptRoundLimit = Math.max(
   1,
   Number(process.env.PROMPT_ROUND_LIMIT ?? "20"),
 );
+const promptRoundStart = Math.max(
+  1,
+  Number(process.env.PROMPT_ROUND_START ?? "1"),
+);
 
 if (!apiKey) {
   throw new Error("OPENAI_API_KEY is required.");
@@ -142,9 +146,19 @@ const assetDefinitions = [
 await fs.promises.mkdir(path.dirname(reportPath), { recursive: true });
 
 const assets = await Promise.all(assetDefinitions.map(loadAsset));
-const results = [];
+const existingReport = await readExistingReport(reportPath);
+const results = Array.isArray(existingReport?.rounds) ? existingReport.rounds : [];
+const completedRounds = new Set(results.map((item) => item.round));
 
-for (const round of Array.from({ length: promptRoundLimit }, (_, index) => index + 1)) {
+for (const round of Array.from(
+  { length: promptRoundLimit - promptRoundStart + 1 },
+  (_, index) => index + promptRoundStart,
+)) {
+  if (completedRounds.has(round)) {
+    console.log(`Skipping completed round ${round}.`);
+    continue;
+  }
+
   const variant = buildVariant(round);
   const startedAt = Date.now();
   console.log(`Running round ${round}: ${variant.name}`);
@@ -198,29 +212,15 @@ for (const round of Array.from({ length: promptRoundLimit }, (_, index) => index
     totalExpectedFacts,
     variant,
   });
+  completedRounds.add(round);
+  await writeReport(reportPath, model, results);
   console.log(
     `Round ${round} score ${overallScore} with ${matchedFacts}/${totalExpectedFacts} matched facts.`,
   );
 }
 
-const rankedRounds = [...results].sort(
-  (left, right) =>
-    right.overallScore - left.overallScore || left.round - right.round,
-);
-const report = {
-  generatedAt: new Date().toISOString(),
-  model,
-  rankedRounds: rankedRounds.map((item) => ({
-    matchedFacts: item.matchedFacts,
-    name: item.name,
-    overallScore: item.overallScore,
-    round: item.round,
-    totalExpectedFacts: item.totalExpectedFacts,
-  })),
-  rounds: results,
-};
-
-await fs.promises.writeFile(reportPath, JSON.stringify(report, null, 2));
+const report = await writeReport(reportPath, model, results);
+const rankedRounds = report.rankedRounds;
 console.log(
   JSON.stringify(
     {
@@ -875,4 +875,42 @@ function round2(value) {
 
 function fact(labelHints, type, value, tolerance) {
   return { labelHints, tolerance, type, value };
+}
+
+function buildReport(modelName, roundResults) {
+  const rankedRounds = [...roundResults].sort(
+    (left, right) =>
+      right.overallScore - left.overallScore || left.round - right.round,
+  );
+
+  return {
+    generatedAt: new Date().toISOString(),
+    model: modelName,
+    rankedRounds: rankedRounds.map((item) => ({
+      matchedFacts: item.matchedFacts,
+      name: item.name,
+      overallScore: item.overallScore,
+      round: item.round,
+      totalExpectedFacts: item.totalExpectedFacts,
+    })),
+    rounds: roundResults,
+  };
+}
+
+async function readExistingReport(filePath) {
+  try {
+    return JSON.parse(await fs.promises.readFile(filePath, "utf8"));
+  } catch (error) {
+    if (error && typeof error === "object" && "code" in error && error.code === "ENOENT") {
+      return null;
+    }
+
+    throw error;
+  }
+}
+
+async function writeReport(filePath, modelName, roundResults) {
+  const report = buildReport(modelName, roundResults);
+  await fs.promises.writeFile(filePath, JSON.stringify(report, null, 2));
+  return report;
 }
