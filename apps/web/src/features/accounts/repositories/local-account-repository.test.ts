@@ -88,5 +88,11 @@ describe("createLocalAccountRepository", () => {
       name: "Updated Admin User",
       passwordHash: "hash-2",
     });
+    await expect(
+      repository.getByOrgIdAndUserId("org_123", originalAccount.userId),
+    ).resolves.toMatchObject({
+      email: "admin@example.com",
+      userId: originalAccount.userId,
+    });
   });
 });

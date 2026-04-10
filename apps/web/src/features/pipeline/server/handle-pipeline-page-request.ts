@@ -70,6 +70,7 @@ export async function handlePipelinePageRequest(
 
 type GetPipelinePageDataInput = PipelineDependencies &
   Readonly<{
+    locale?: string;
     orgId: string;
     statuses?: readonly DocumentStatus[];
   }>;
@@ -77,6 +78,7 @@ type GetPipelinePageDataInput = PipelineDependencies &
 export async function getPipelinePageData({
   documentRepository,
   ingestionJobRepository,
+  locale = "en-US",
   orgId,
   statuses,
 }: GetPipelinePageDataInput): Promise<PipelinePageData> {
@@ -98,7 +100,7 @@ export async function getPipelinePageData({
   }
 
   const failedDocuments = documents.filter((document) => document.status === "failed");
-  const groupedSources = groupSources(documents);
+  const groupedSources = groupSources(documents, locale);
   const runs = filteredJobs
     .slice()
     .sort((left, right) => right.lastUpdatedAt.localeCompare(left.lastUpdatedAt))
@@ -118,7 +120,7 @@ export async function getPipelinePageData({
         outcomeTone: buildJobOutcomeTone(job.status),
         recordsLabel: "1",
         sourceLabel: relatedDocument?.source ?? "upload",
-        timeLabel: new Intl.DateTimeFormat("en-US", {
+        timeLabel: new Intl.DateTimeFormat(locale, {
           hour: "numeric",
           minute: "2-digit",
         }).format(new Date(job.lastUpdatedAt)),
@@ -166,6 +168,7 @@ export async function getPipelinePageData({
 
 function groupSources(
   documents: Awaited<ReturnType<DocumentRepository["listByOrgId"]>>,
+  locale: string,
 ): readonly PipelineSource[] {
   const sourceOrder = ["api", "email", "upload"] as const;
   const sources: PipelineSource[] = [];
@@ -199,7 +202,7 @@ function groupSources(
       detailRows: [
         {
           label: "Last sync",
-          value: new Intl.DateTimeFormat("en-US", {
+          value: new Intl.DateTimeFormat(locale, {
             day: "numeric",
             hour: "numeric",
             minute: "2-digit",

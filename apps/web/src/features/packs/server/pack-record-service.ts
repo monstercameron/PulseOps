@@ -16,6 +16,7 @@ import { type RecommendationRepository } from "@/features/packs/repositories/rec
 export async function listPackRecordsForOrg(input: Readonly<{
   documentRepository: DocumentRepository;
   factRepository: FactRepository;
+  locale?: string;
   orgId: string;
   packRepository?: PackRepository;
 }>): Promise<readonly PackRecord[]> {
@@ -30,6 +31,7 @@ export async function listPackRecordsForOrg(input: Readonly<{
     : buildDerivedPackRecords({
         documents,
         facts,
+        locale: input.locale,
         orgId: input.orgId,
       });
 
@@ -67,6 +69,7 @@ export async function generatePackRecord(input: Readonly<{
   documentRepository: DocumentRepository;
   factRepository: FactRepository;
   generateId?: () => string;
+  locale?: string;
   now?: () => string;
   orgId: string;
   packRepository: PackRepository;
@@ -75,12 +78,13 @@ export async function generatePackRecord(input: Readonly<{
   const visiblePacks = await listPackRecordsForOrg({
     documentRepository: input.documentRepository,
     factRepository: input.factRepository,
+    locale: input.locale,
     orgId: input.orgId,
     packRepository: input.packRepository,
   });
   const sourcePack = visiblePacks[0] ?? packItemToRecord(fallbackPacksPageData.packs[0], input.orgId);
   const timestamp = input.now?.() ?? new Date().toISOString();
-  const formattedTimestamp = new Intl.DateTimeFormat("en-US", {
+  const formattedTimestamp = new Intl.DateTimeFormat(input.locale ?? "en-US", {
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
@@ -141,17 +145,18 @@ export function markPackReviewed(
 function buildDerivedPackRecords(input: Readonly<{
   documents: Awaited<ReturnType<DocumentRepository["listByOrgId"]>>;
   facts: Awaited<ReturnType<FactRepository["listByOrgId"]>>;
+  locale?: string;
   orgId: string;
 }>): readonly PackRecord[] {
   const primaryPack = fallbackPacksPageData.packs[0];
   const latestUpdatedAt = input.documents
     .slice()
-    .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))[0]?.updatedAt;
+      .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))[0]?.updatedAt;
   const readyPacks = input.documents.filter((document) => document.status === "extracted").length;
   const packs: readonly PackItem[] = [
     {
       ...primaryPack,
-      generatedAtLabel: `Generated ${new Intl.DateTimeFormat("en-US", {
+      generatedAtLabel: `Generated ${new Intl.DateTimeFormat(input.locale ?? "en-US", {
         day: "numeric",
         hour: "numeric",
         minute: "2-digit",

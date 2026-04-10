@@ -3,8 +3,10 @@ import { createPostgresAuditLogRepository } from "@/features/audit/repositories/
 import { createLocalAccountRepository } from "@/features/accounts/repositories/local-account-repository";
 import { createPostgresAccountRepository } from "@/features/accounts/repositories/postgres-account-repository";
 import { createLocalBillingAccountRepository } from "@/features/cost/repositories/local-billing-account-repository";
+import { createLocalBillingPaymentMethodRepository } from "@/features/cost/repositories/local-billing-payment-method-repository";
 import { createLocalLlmUsageEventRepository } from "@/features/cost/repositories/local-llm-usage-event-repository";
 import { createPostgresBillingAccountRepository } from "@/features/cost/repositories/postgres-billing-account-repository";
+import { createPostgresBillingPaymentMethodRepository } from "@/features/cost/repositories/postgres-billing-payment-method-repository";
 import { createPostgresLlmUsageEventRepository } from "@/features/cost/repositories/postgres-llm-usage-event-repository";
 import { createLlmCostTracker } from "@/features/cost/server/llm-cost-tracker";
 import { createDeterministicTextEmbedder } from "@/features/chunks/lib/deterministic-embedder";
@@ -41,11 +43,14 @@ import { createPostgresTextParserArtifactRepository } from "@/features/parsing/r
 import { getPostgresPool } from "@/features/persistence/postgres/postgres-pool";
 import { createLocalSavedQuestionRepository } from "@/features/query/repositories/local-saved-question-repository";
 import { createPostgresSavedQuestionRepository } from "@/features/query/repositories/postgres-saved-question-repository";
+import { createOpenAiAskConversationServiceFromEnv } from "@/features/query/services/openai-ask-conversation-service";
 import { createLocalSettingsRepository } from "@/features/settings/repositories/local-settings-repository";
 import { createPostgresOrganizationRepository } from "@/features/settings/repositories/postgres-organization-repository";
 import { createLocalObjectStorage } from "@/features/storage/lib/local-object-storage";
 import { resolveServerPaths } from "@/features/config/server-env";
 import { createPostgresExperimentRepository } from "@/features/experiments/repositories/postgres-experiment-repository";
+import { createLocalUiTranslationBundleRepository } from "@/features/i18n/repositories/local-ui-translation-bundle-repository";
+import { createPostgresUiTranslationBundleRepository } from "@/features/i18n/repositories/postgres-ui-translation-bundle-repository";
 
 const serverPaths = resolveServerPaths();
 const postgresPool =
@@ -66,6 +71,14 @@ const llmUsageEventRepository =
         rootDirectory: serverPaths.recordsRoot,
       })
     : createPostgresLlmUsageEventRepository({
+        pool: postgresPool,
+      });
+const billingPaymentMethodRepository =
+  postgresPool === null
+    ? createLocalBillingPaymentMethodRepository({
+        rootDirectory: serverPaths.recordsRoot,
+      })
+    : createPostgresBillingPaymentMethodRepository({
         pool: postgresPool,
       });
 const llmCostTracker = createLlmCostTracker({
@@ -90,7 +103,12 @@ export const localIngestionRuntime = {
       : createPostgresAuditLogRepository({
           pool: postgresPool,
         }),
+  askConversationService:
+    createOpenAiAskConversationServiceFromEnv(process.env, {
+      llmCostTracker,
+    }) ?? undefined,
   billingAccountRepository,
+  billingPaymentMethodRepository,
   chunkRepository:
     postgresPool === null
       ? createLocalChunkRepository({
@@ -232,6 +250,14 @@ export const localIngestionRuntime = {
   settingsRepository: createLocalSettingsRepository({
     rootDirectory: serverPaths.recordsRoot,
   }),
+  uiTranslationBundleRepository:
+    postgresPool === null
+      ? createLocalUiTranslationBundleRepository({
+          rootDirectory: serverPaths.recordsRoot,
+        })
+      : createPostgresUiTranslationBundleRepository({
+          pool: postgresPool,
+        }),
   storage: createLocalObjectStorage({
     rootDirectory: serverPaths.storageRoot,
   }),

@@ -51,6 +51,42 @@ export function createPostgresAccountRepository({
         ? null
         : mapOrganizationAccountRow(result.rows[0]);
     },
+    async getByOrgIdAndUserId(orgId, userId) {
+      const result = await queryMembershipRows(pool, {
+        emptyValue: null,
+        query: `
+          select
+            memberships.id,
+            memberships.org_id,
+            memberships.role,
+            memberships.status,
+            memberships.setup_access,
+            memberships.operations_access,
+            memberships.report_access,
+            memberships.created_at,
+            memberships.updated_at,
+            users.id as user_id,
+            users.email,
+            users.display_name,
+            users.password_hash
+          from organization_memberships as memberships
+          inner join account_users as users
+            on users.id = memberships.user_id
+          where memberships.org_id = $1
+            and memberships.user_id = $2
+          limit 1
+        `,
+        values: [orgId, userId],
+      });
+
+      if (result === null) {
+        return null;
+      }
+
+      return result.rows[0] === undefined
+        ? null
+        : mapOrganizationAccountRow(result.rows[0]);
+    },
     async listByOrgId(orgId) {
       const result = await queryMembershipRows(pool, {
         emptyValue: [],

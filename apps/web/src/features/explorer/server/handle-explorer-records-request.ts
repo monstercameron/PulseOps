@@ -66,6 +66,7 @@ type ExplorerDependencies = Readonly<{
 type GetExplorerPageDataInput = ExplorerDependencies &
   Readonly<{
     documentId?: string;
+    locale?: string;
     orgId: string;
     statuses?: readonly DocumentStatus[];
   }>;
@@ -116,6 +117,7 @@ export async function getExplorerPageData({
   documentId,
   documentRepository,
   factRepository,
+  locale = "en-US",
   orgId,
   statuses,
 }: GetExplorerPageDataInput): Promise<ExplorerPageData> {
@@ -145,7 +147,7 @@ export async function getExplorerPageData({
 
       return {
         confidenceScore,
-        dateLabel: formatDateLabel(document.updatedAt),
+        dateLabel: formatDateLabel(document.updatedAt, locale),
         detailCitations: buildCitationLabels(facts, document.fileName),
         detailFacts: facts.slice(0, 6).map((fact) => ({
           confidenceScore: fact.confidenceScore,
@@ -294,8 +296,8 @@ function buildCitationLabels(
   );
 }
 
-function formatDateLabel(isoTimestamp: string) {
-  return new Intl.DateTimeFormat("en-US", {
+function formatDateLabel(isoTimestamp: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     day: "numeric",
     month: "short",
     year: "numeric",

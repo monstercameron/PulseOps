@@ -15,7 +15,10 @@ describe("createPostgresAccountRepository", () => {
     await expect(
       repository.getByOrgIdAndEmail("org_123", "owner@example.com"),
     ).resolves.toBeNull();
-    expect(query).toHaveBeenCalledTimes(2);
+    await expect(
+      repository.getByOrgIdAndUserId("org_123", "user_owner"),
+    ).resolves.toBeNull();
+    expect(query).toHaveBeenCalledTimes(3);
   });
 
   it("rethrows unexpected database errors", async () => {
@@ -61,6 +64,14 @@ describe("createPostgresAccountRepository", () => {
         userId: "user_123",
       }),
     ]);
+    await expect(
+      repository.getByOrgIdAndUserId("org_123", "user_123"),
+    ).resolves.toEqual(
+      expect.objectContaining({
+        email: "admin@example.com",
+        userId: "user_123",
+      }),
+    );
   });
 
   it("upserts users and memberships in a transaction", async () => {

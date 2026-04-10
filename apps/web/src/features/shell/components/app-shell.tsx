@@ -6,6 +6,8 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 
 import { cx } from "@/features/catalog/components/catalog-primitives";
+import { LocaleSwitcher } from "@/features/i18n/components/locale-switcher";
+import { useUiI18n } from "@/features/i18n/components/ui-i18n-provider";
 
 const sidebarStorageKey = "sidebar-collapsed";
 
@@ -16,16 +18,21 @@ type NavItem = Readonly<{
   mobileLabel: string;
 }>;
 
-const primaryNav: readonly NavItem[] = [
-  { href: "/dashboard", label: "Dashboard", mobileLabel: "Home", Icon: IconDashboard },
-  { href: "/pipeline", label: "Pipeline", mobileLabel: "Pipeline", Icon: IconPipeline },
-  { href: "/explorer", label: "Explorer", mobileLabel: "Explorer", Icon: IconExplorer },
-  { href: "/packs", label: "Decision Packs", mobileLabel: "Packs", Icon: IconPacks },
-  { href: "/ask", label: "Ask", mobileLabel: "Ask", Icon: IconAsk },
-];
+type ShellCurrentUser = Readonly<{
+  initials: string;
+  name: string;
+  role: string;
+}> | null;
 
-export function AppShell({ children }: Readonly<{ children: ReactNode }>) {
+export function AppShell({
+  children,
+  currentUser,
+}: Readonly<{
+  children: ReactNode;
+  currentUser?: ShellCurrentUser;
+}>) {
   const pathname = usePathname();
+  const { messages } = useUiI18n();
   const [isCollapsed, setIsCollapsed] = useState(() => {
     if (typeof window === "undefined") {
       return false;
@@ -33,6 +40,38 @@ export function AppShell({ children }: Readonly<{ children: ReactNode }>) {
 
     return window.localStorage.getItem(sidebarStorageKey) === "true";
   });
+  const primaryNav: readonly NavItem[] = [
+    {
+      href: "/dashboard",
+      label: messages.appShell.navItems.dashboard.label,
+      mobileLabel: messages.appShell.navItems.dashboard.mobileLabel,
+      Icon: IconDashboard,
+    },
+    {
+      href: "/pipeline",
+      label: messages.appShell.navItems.pipeline.label,
+      mobileLabel: messages.appShell.navItems.pipeline.mobileLabel,
+      Icon: IconPipeline,
+    },
+    {
+      href: "/explorer",
+      label: messages.appShell.navItems.explorer.label,
+      mobileLabel: messages.appShell.navItems.explorer.mobileLabel,
+      Icon: IconExplorer,
+    },
+    {
+      href: "/packs",
+      label: messages.appShell.navItems.packs.label,
+      mobileLabel: messages.appShell.navItems.packs.mobileLabel,
+      Icon: IconPacks,
+    },
+    {
+      href: "/ask",
+      label: messages.appShell.navItems.ask.label,
+      mobileLabel: messages.appShell.navItems.ask.mobileLabel,
+      Icon: IconAsk,
+    },
+  ];
 
   function toggleSidebar() {
     setIsCollapsed((current) => {
@@ -45,6 +84,7 @@ export function AppShell({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <div className="flex min-h-0 flex-1 overflow-hidden">
       <aside
+        aria-label={messages.appShell.primaryNavigationAriaLabel}
         className={cx(
           "hidden shrink-0 flex-col overflow-x-hidden overflow-y-auto bg-[#060e18] transition-[width] duration-200 min-[901px]:flex",
           isCollapsed
@@ -69,7 +109,7 @@ export function AppShell({ children }: Readonly<{ children: ReactNode }>) {
               </span>
               <span
                 className="ml-auto h-[7px] w-[7px] shrink-0 rounded-full bg-amber-500 shadow-[0_0_0_2px_rgba(245,158,11,0.22)]"
-                title="2 alerts need attention"
+                title={messages.appShell.workspaceAlertsTitle}
               />
             </>
           ) : null}
@@ -89,7 +129,7 @@ export function AppShell({ children }: Readonly<{ children: ReactNode }>) {
           {!isCollapsed ? (
             <>
               <span className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-[12.5px] font-semibold text-white/85">
-                Broward HVAC Co.
+                {messages.appShell.workspaceName}
               </span>
               <span className="shrink-0 text-white/35">
                 <IconChevron />
@@ -98,7 +138,10 @@ export function AppShell({ children }: Readonly<{ children: ReactNode }>) {
           ) : null}
         </button>
 
-        <nav className="flex flex-1 flex-col gap-0.5 px-2">
+        <nav
+          aria-label={messages.appShell.primaryNavigationAriaLabel}
+          className="flex flex-1 flex-col gap-0.5 px-2"
+        >
           {primaryNav.map((item) => (
             <NavLink
               key={item.href}
@@ -115,8 +158,8 @@ export function AppShell({ children }: Readonly<{ children: ReactNode }>) {
             collapsed={isCollapsed}
             href="/settings"
             Icon={IconSettings}
-            label="Settings"
-            mobileLabel="Settings"
+            label={messages.appShell.navItems.settings.label}
+            mobileLabel={messages.appShell.navItems.settings.mobileLabel}
           />
           <div
             className={cx(
@@ -125,24 +168,27 @@ export function AppShell({ children }: Readonly<{ children: ReactNode }>) {
             )}
           >
             <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#1d4166] text-[11px] font-bold text-white">
-              JR
+              {currentUser?.initials ?? "JR"}
             </span>
             {!isCollapsed ? (
               <div className="min-w-0 flex-1">
                 <div className="overflow-hidden text-ellipsis whitespace-nowrap text-[12.5px] font-semibold text-white/80">
-                  Jamie R.
+                  {currentUser?.name ?? "Jamie R."}
                 </div>
-                <div className="text-[11px] text-white/35">Operator</div>
+                <div className="text-[11px] text-white/35">
+                  {currentUser?.role ?? messages.appShell.userRole}
+                </div>
               </div>
             ) : null}
           </div>
         </div>
 
         <button
-          aria-label="Toggle sidebar"
+          aria-expanded={!isCollapsed}
+          aria-label={messages.appShell.sidebarToggleLabel}
           className="flex h-8 items-center justify-center border-t border-white/[0.055] bg-transparent p-0 text-white/25 transition hover:bg-white/[0.04] hover:text-white/60 active:bg-white/[0.07] active:text-white/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00c9a7]/60 focus-visible:ring-inset"
           onClick={toggleSidebar}
-          title="Toggle sidebar"
+          title={messages.appShell.sidebarToggleLabel}
           type="button"
         >
           <span className={cx("transition-transform duration-200", isCollapsed ? "rotate-180" : "")}>
@@ -152,13 +198,24 @@ export function AppShell({ children }: Readonly<{ children: ReactNode }>) {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden bg-background max-[900px]:pb-14">
-        <main className="main-area flex min-w-0 flex-1 flex-col overflow-y-auto bg-background">
+        <div
+          aria-label={messages.appShell.topBarAriaLabel}
+          className="border-b border-border bg-background px-4 py-2"
+        >
+          <div className="flex justify-end">
+            <LocaleSwitcher />
+          </div>
+        </div>
+        <main
+          className="main-area flex min-w-0 flex-1 flex-col overflow-y-auto bg-background"
+          id="main-content"
+        >
           {children}
         </main>
       </div>
 
       <nav
-        aria-label="Mobile navigation"
+        aria-label={messages.appShell.mobileNavigationAriaLabel}
         className="fixed inset-x-0 bottom-0 z-50 hidden h-14 border-t border-white/[0.09] bg-[#0d1b2a] max-[900px]:flex"
       >
         <div className="flex h-full">
@@ -173,6 +230,7 @@ export function AppShell({ children }: Readonly<{ children: ReactNode }>) {
                   active ? "text-[#00c9a7]" : "text-white/[0.38]",
                 )}
                 href={item.href}
+                aria-current={active ? "page" : undefined}
               >
                 <item.Icon />
                 <span>{item.mobileLabel}</span>
@@ -198,6 +256,8 @@ function NavLink({
   }>) {
   return (
     <Link
+      aria-current={active ? "page" : undefined}
+      aria-label={label}
       className={cx(
         "group flex items-center rounded-[7px] font-medium tracking-[-0.01em] transition duration-100 active:opacity-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00c9a7]/60 focus-visible:ring-inset",
         active

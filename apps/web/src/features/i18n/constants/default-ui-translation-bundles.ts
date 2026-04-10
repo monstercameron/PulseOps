@@ -1,0 +1,2105 @@
+import {
+  aboutPageContent,
+  blogPageContent,
+  careersPageContent,
+  contactPageContent,
+  helpPageContent,
+  homePageContent,
+  loginPageContent,
+  marketingFooterGroups,
+  marketingNavigationLinks,
+  marketingShellContent,
+  pressPageContent,
+  privacyPageContent,
+  signupPageContent,
+  termsPageContent,
+} from "@/features/marketing/constants/marketing-content";
+import { packsPageLabels } from "@/features/packs/constants/packs-page-content";
+import { pipelinePageLabels } from "@/features/pipeline/constants/pipeline-page-content";
+import { settingsPageLabels } from "@/features/settings/constants/settings-page-content";
+import {
+  supportedUiLocales,
+  type SupportedUiLocale,
+} from "@/features/i18n/lib/locale";
+
+const defaultUiMessagesEnUs = {
+  appShell: {
+    localeLabel: "Locale",
+    mobileNavigationAriaLabel: "Mobile navigation",
+    navItems: {
+      ask: {
+        label: "Ask",
+        mobileLabel: "Ask",
+      },
+      dashboard: {
+        label: "Dashboard",
+        mobileLabel: "Home",
+      },
+      explorer: {
+        label: "Explorer",
+        mobileLabel: "Explorer",
+      },
+      packs: {
+        label: "Decision Packs",
+        mobileLabel: "Packs",
+      },
+      pipeline: {
+        label: "Pipeline",
+        mobileLabel: "Pipeline",
+      },
+      settings: {
+        label: "Settings",
+        mobileLabel: "Settings",
+      },
+    },
+    primaryNavigationAriaLabel: "Primary navigation",
+    sidebarToggleLabel: "Toggle sidebar",
+    topBarAriaLabel: "Workspace controls",
+    userRole: "Operator",
+    workspaceAlertsTitle: "2 alerts need attention",
+    workspaceName: "Broward HVAC Co.",
+    workspaceSwitcherLabel: "Workspace",
+  },
+  askPage: {
+    actions: {
+      ask: "Ask with evidence",
+      history: "Saved thread history",
+    },
+    askSurfaceEyebrow: "Ask Surface",
+    assistantLeadLabel: "Based on",
+    breadcrumbs: ["Dashboard", "Ask"],
+    clarifyNextLabel: "Clarify next",
+    copyAction: "Copy",
+    deleteDialog: {
+      cancel: "Cancel",
+      delete: "Delete thread",
+      deleting: "Deleting...",
+      description:
+        "This thread will be permanently removed from the workspace. This cannot be undone.",
+      title: "Delete thread?",
+    },
+    description:
+      "Query the workspace in plain language. Each answer is grounded in saved facts and returned with citations.",
+    emptyStateDescription:
+      "The current query planner already recognizes those business objects. When local evidence is missing, the page returns a clear no-evidence response instead of a dead mock.",
+    emptyStateTitle:
+      "Start with a question that maps to invoices, jobs, cash, or margin.",
+    errorFallback: "The ask request could not be completed.",
+    historyActionDescription:
+      "Desktop thread history is already visible in the left rail. A dedicated history drawer for smaller screens is not implemented yet.",
+    newThread: "New thread",
+    noAnswer:
+      "No matching evidence is available in this workspace yet. Upload more data or narrow the question.",
+    noThreadsDescription:
+      "Ask a question to create a reusable thread in this workspace.",
+    noThreadsTitle: "No saved threads yet",
+    placeholder:
+      "Ask about overdue invoices, underpriced jobs, cash pressure, or margin drift.",
+    saveToPack: "Save to pack",
+    saveToPackDescription:
+      "Ask insights can be saved to packs once that workflow is implemented.",
+    starterPrompts: [
+      "Which invoices are overdue as of today?",
+      "Which jobs are underpriced?",
+      "What deserves attention first this week?",
+    ],
+    submitLabel: "Ask",
+    submitting: "Running...",
+    threadDeleteLabel: "Delete thread",
+    threadHistoryDescription:
+      "Questions are saved to thread history when submitted from this input.",
+    threadsHeading: "Threads",
+    title: "Ask",
+  },
+  common: {
+    closeDialog: "Close dialog",
+    localeLabel: "Locale",
+    skipToMainContent: "Skip to main content",
+  },
+  dashboardPage: {
+    activityLiveLabel: "Live - auto-refreshes",
+    activityTitle: "Pipeline activity",
+    emptyQueueDescription:
+      "Broaden the filters or wait for new document activity.",
+    emptyQueueTitle: "No operator actions in the current scope.",
+    queueItemsLabel: "{{count}} items",
+    viewFullActivityLog: "View full activity log ->",
+  },
+  explorerPage: {
+    actions: {
+      export: "Export CSV",
+      exporting: "Exporting...",
+      upload: "Upload file",
+    },
+    breadcrumbs: ["Dashboard", "Explorer"],
+    description:
+      "Browse parsed artifacts, extracted facts, and review-state records in one workspace table.",
+    factsPreview: "Facts preview",
+    noCitations: "No citations attached yet.",
+    noFacts: "No extracted facts attached yet.",
+    noRecordSelectedDescription:
+      "Adjust the current filters or search query to bring a record into view.",
+    noRecordSelectedTitle: "No record selected",
+    searchPlaceholder: "Search records...",
+    summary: {
+      averageConfidence: "Avg confidence",
+      averageConfidenceDetail: "above 0.85 brief threshold",
+      needsReview: "Needs review",
+      needsReviewDetail: "held - not yet downstream",
+      totalRecords: "Total records",
+      totalRecordsDetail: "across all sources and types",
+    },
+    tableHeaders: {
+      confidence: "Confidence",
+      date: "Date",
+      document: "Document",
+      facts: "Facts extracted",
+      source: "Source",
+      status: "Status",
+      type: "Doc class",
+    },
+    title: "Data explorer",
+  },
+  globalError: {
+    badge: "Global error",
+    description:
+      "The failure was reported through the structured logging path.",
+    reload: "Reload page",
+    retry: "Retry",
+    title: "The app hit a fatal error.",
+  },
+  marketing: {
+    about: aboutPageContent,
+    blog: blogPageContent,
+    careers: careersPageContent,
+    contact: contactPageContent,
+    help: helpPageContent,
+    home: {
+      ...homePageContent,
+      hero: {
+        ...homePageContent.hero,
+        eyebrow: "Inteligencia de efectivo y margen",
+        title: "Tu negocio de servicios funciona por intuicion. Empieza a operarlo con hechos.",
+        description:
+          "PulseOps entrega un brief semanal en lenguaje claro que te dice por donde se fuga el dinero, que facturas perseguir y que corregir antes del viernes.",
+        actions: [
+          { href: "/signup", label: "Empieza gratis", variant: "primary" },
+          { href: "/#how-it-works", label: "Ver como funciona", variant: "secondary" },
+        ],
+        stats: [
+          { value: "56%", detail: "de las pequenas empresas tienen facturas vencidas" },
+          { value: "$17.5K", detail: "saldo promedio pendiente por empresa" },
+          { value: "75%", detail: "citan el alza de costos como el principal reto" },
+          { value: "#1", detail: "la claridad de margen es el punto ciego mas comun" },
+        ],
+        footerNote: "Fuentes: encuesta crediticia de la Fed para pequenas empresas e investigacion SMB de Intuit.",
+      },
+      pain: {
+        ...homePageContent.pain,
+        eyebrow: "El problema real",
+        title: "Los numeros ya existen. Simplemente no se pueden usar con la suficiente rapidez para actuar.",
+        description:
+          "Las ventas viven en un sistema, los costos en otro, los horarios en una hoja de calculo y las facturas en una bandeja de entrada. Los problemas se acumulan en silencio hasta que ya duelen.",
+        items: [
+          {
+            icon: "Cash",
+            title: "Trabajos con precio bajo",
+            description:
+              "La mano de obra supera el estimado, los materiales suben y el precio nunca alcanza al costo real.",
+          },
+          {
+            icon: "AR",
+            title: "Facturas que nadie persigue",
+            description:
+              "El efectivo ya se gano, pero la cobranza se retrasa porque las cuentas correctas no aparecen a tiempo.",
+          },
+          {
+            icon: "Margin",
+            title: "Fugas por linea",
+            description:
+              "Un tipo de servicio o un proveedor puede borrar margen sin hacerse visible en un dashboard resumido.",
+          },
+          {
+            icon: "Timing",
+            title: "Latigazos de flujo de caja",
+            description:
+              "Los proveedores quieren cobrar antes de que los clientes paguen, y el faltante se vuelve obvio demasiado tarde.",
+          },
+        ],
+      },
+      workflow: {
+        ...homePageContent.workflow,
+        eyebrow: "Como funciona",
+        title: "Conectado en un dia. Accionable el lunes.",
+        description:
+          "Hacemos el trabajo sucio de integracion y normalizacion para que el dueno reciba un brief corto y util en lugar de otro reporte que mantener.",
+        steps: [
+          {
+            step: "1",
+            title: "Conecta los sistemas que ya usas",
+            description:
+              "QuickBooks, ServiceTitan, hojas de calculo, adjuntos de email y cargas manuales entran por una sola superficie.",
+          },
+          {
+            step: "2",
+            title: "Construye una vista limpia del negocio",
+            description:
+              "PulseOps reconcilia trabajos, costos, pagos y documentos en una sola vista operativa.",
+          },
+          {
+            step: "3",
+            title: "Muestra la evidencia fuente",
+            description:
+              "Cada recomendacion incluye procedencia, confianza y los registros exactos que la respaldan.",
+          },
+          {
+            step: "4",
+            title: "Entrega el brief semanal",
+            description:
+              "El dueno recibe seis respuestas enfocadas en decisiones, en lenguaje claro y con las siguientes acciones ordenadas por impacto.",
+          },
+        ],
+        connectors: [
+          "QuickBooks",
+          "Jobber",
+          "ServiceTitan",
+          "Housecall Pro",
+          "Google Sheets",
+          "Excel",
+          "Exportaciones bancarias",
+        ],
+      },
+      questions: {
+        ...homePageContent.questions,
+        eyebrow: "El brief semanal",
+        title: "Seis preguntas. Respondidas cada lunes.",
+        description:
+          "Estas son las preguntas que los duenos ya hacen. PulseOps se asegura de que alguien las responda con evidencia.",
+        items: [
+          {
+            icon: "?",
+            title: "Que trabajos estan mal cotizados?",
+            description:
+              "Encuentra los servicios donde el costo real supera de forma consistente el precio cotizado.",
+          },
+          {
+            icon: "?",
+            title: "Por donde se fuga el margen?",
+            description:
+              "Los retrabajos, las horas extra y la variacion de materiales se ordenan por impacto en dolares.",
+          },
+          {
+            icon: "?",
+            title: "Que facturas debemos perseguir hoy?",
+            description:
+              "Obten una lista corta y urgente de quien debe efectivo y que hacer primero.",
+          },
+          {
+            icon: "?",
+            title: "Que clientes necesitan deposito?",
+            description:
+              "Marca cuentas lentas para pagar y trabajos grandes proximos que deberian requerir efectivo por adelantado.",
+          },
+          {
+            icon: "?",
+            title: "Que facturas son sensibles al timing?",
+            description:
+              "Saca a la luz compras y pagos a proveedores que deben alinearse con las entradas de efectivo.",
+          },
+          {
+            icon: "?",
+            title: "Que merece mas atencion?",
+            description:
+              "Recibe una lista ordenada de las acciones de mayor impacto para la semana.",
+          },
+        ],
+      },
+      preview: {
+        ...homePageContent.preview,
+        eyebrow: "Como se ve",
+        title: "Consejos, no un reporte.",
+        description:
+          "Cada recomendacion te dice que cambio, que significa en dolares y que hacer despues.",
+        checklist: [
+          "Solo destaca lo que cambio o necesita accion.",
+          "Muestra evidencia fuente y confianza para cada recomendacion.",
+          "Ordena los problemas por impacto en dolares para empezar por lo que mas importa.",
+          "Funciona por email o dentro de la app con la misma superficie clara de decision.",
+          "Toma menos de cinco minutos leerlo y actuar.",
+        ],
+        recommendations: [
+          {
+            title: "Brecha de precio en instalaciones de calentadores de agua",
+            summary:
+              "La mano de obra promedio fue de 3.4 horas frente a un estimado de 2.5 horas en 17 trabajos recientes.",
+            detail: "Recuperacion estimada: $2,400 al mes.",
+          },
+          {
+            title: "Tres facturas vencidas necesitan escalamiento",
+            summary:
+              "Riverdale Commercial y otras dos cuentas ya representan la mayor concentracion de cuentas por cobrar abiertas.",
+            detail: "Efectivo en riesgo: $8,750.",
+          },
+          {
+            title: "El calendario de un proveedor genera un bache de caja el viernes",
+            summary:
+              "Una factura de proveedor vence antes de que entren los cobros esperados, generando un faltante salvo que la cobranza se adelante.",
+            detail: "Brecha proyectada: $1,400.",
+          },
+        ],
+      },
+      difference: {
+        ...homePageContent.difference,
+        eyebrow: "Lo que nos diferencia",
+        title: "Otras herramientas muestran datos. Nosotros te decimos que hacer con ellos.",
+        description:
+          "La mayoria de los productos lee un sistema limpio y te entrega una grafica. PulseOps reconcilia la realidad desordenada y la convierte en una decision.",
+        items: [
+          {
+            icon: "Merge",
+            title: "Una imagen clara",
+            description:
+              "Datos bancarios, sistemas de trabajo, hojas de calculo y archivos de bandeja de entrada se reconcilian en una sola vista operativa.",
+          },
+          {
+            icon: "Proof",
+            title: "Muestra tu trabajo",
+            description:
+              "Las recomendaciones incluyen los trabajos, las facturas y los calculos detras de ellas para que el usuario pueda juzgar el consejo.",
+          },
+          {
+            icon: "Learn",
+            title: "Aprende de tu negocio",
+            description:
+              "Las correcciones, aprobaciones y recomendaciones rechazadas ajustan el sistema a como el negocio opera en realidad.",
+          },
+        ],
+      },
+      industries: {
+        ...homePageContent.industries,
+        eyebrow: "Creado para",
+        title: "Negocios locales de servicio basados en proyectos con 5 a 50 empleados.",
+        description:
+          "El primer paquete de decision esta optimizado para negocios de field service y oficios que viven las mismas preguntas de caja y margen cada semana.",
+        items: [
+          "HVAC",
+          "Plomeria",
+          "Electricidad",
+          "Paisajismo",
+          "Servicio de albercas",
+          "Limpieza",
+          "Control de plagas",
+          "Puertas de garaje",
+          "Construccion ligera",
+          "Reparacion de electrodomesticos",
+        ],
+        note: "Los paquetes adicionales para otros verticales llegan despues, una vez que el brief de efectivo y margen funcione de punta a punta.",
+      },
+      testimonials: {
+        ...homePageContent.testimonials,
+        eyebrow: "Desde el campo",
+        title: "Duenos que dejaron de volar a ciegas.",
+        items: [
+          {
+            quote:
+              "PulseOps nos mostro que las visitas de mantenimiento costaban mas de lo que cobraban cuando cuentas el tiempo de traslado y los retrabajos. Cambiamos precios y el margen se recupero en seis semanas.",
+            name: "Marcus R.",
+            company: "HVAC - 14 tecnicos",
+            initials: "MR",
+          },
+          {
+            quote:
+              "El primer brief me dio una lista de tres facturas para perseguir esa misma manana. Cobramos la mayor parte del atraso esa misma semana.",
+            name: "Diana V.",
+            company: "Plomeria - 9 empleados",
+            initials: "DV",
+          },
+          {
+            quote:
+              "Arreglamos el proceso de estimacion, no a la cuadrilla, porque el sistema mostro exactamente donde empezaba el problema de margen.",
+            name: "Tariq B.",
+            company: "Paisajismo - 11 empleados",
+            initials: "TB",
+          },
+        ],
+      },
+      pricing: {
+        ...homePageContent.pricing,
+        eyebrow: "Precios",
+        title: "Tarifa plana. Sin analistas. Sin sorpresas.",
+        description:
+          "Todo esta incluido. Sin tarifas por asiento, sin contrato oculto de implementacion y sin sorpresas de uso en el primer producto.",
+        tiers: [
+          {
+            name: "Brief de efectivo y margen",
+            price: "$149",
+            priceSuffix: "/mes",
+            description:
+              "Para negocios de servicio operados por sus duenos que quieren dejar de adivinar sobre caja y margen.",
+            points: [
+              "1 negocio y hasta 4 fuentes de datos",
+              "Brief semanal de efectivo y margen",
+              "Analisis de rentabilidad por trabajo",
+              "Seguimiento de facturas y cuentas por cobrar",
+              "Referencias de la industria",
+              "Soporte por email",
+            ],
+            ctaLabel: "Empieza la prueba gratis",
+          },
+          {
+            name: "Paquete completo de operaciones",
+            price: "$299",
+            priceSuffix: "/mes",
+            description:
+              "Para operadores en crecimiento que necesitan visibilidad de caja, margen, personal y excepciones en una sola superficie.",
+            points: [
+              "Hasta 3 ubicaciones y fuentes ilimitadas",
+              "Capturas diarias mas brief semanal",
+              "Seguimiento de rentabilidad por cuadrilla y trabajo",
+              "Recomendaciones de depositos de clientes",
+              "Alertas basadas en excepciones",
+              "Soporte prioritario",
+            ],
+            ctaLabel: "Empieza la prueba gratis",
+            featured: true,
+            featuredLabel: "Mas popular",
+          },
+          {
+            name: "Multiubicacion",
+            price: "Personalizado",
+            priceSuffix: "",
+            description:
+              "Para grupos y franquicias que necesitan visibilidad consolidada y comparativos.",
+            points: [
+              "Ubicaciones ilimitadas",
+              "Benchmarking entre ubicaciones",
+              "Conectores personalizados",
+              "Soporte dedicado de onboarding",
+              "Opcion white-label",
+              "Soporte con SLA",
+            ],
+            ctaLabel: "Contactar ventas",
+          },
+        ],
+      },
+      cta: {
+        ...homePageContent.cta,
+        title: "Empieza a conocer tus numeros esta semana.",
+        description:
+          "Conecta tu primera fuente de datos en menos de 10 minutos. Tu primer brief llega el lunes.",
+        primaryAction: "Empieza gratis",
+        secondaryAction: "Hablar con ventas",
+      },
+    },
+    login: {
+      ...loginPageContent,
+      eyebrow: "Iniciar sesion",
+      title: "Bienvenido de nuevo",
+      highlight:
+        "Abre el ultimo brief de efectivo y margen, inspecciona la evidencia y revisa acciones del operador desde un solo espacio de trabajo.",
+      details: [
+        "Revision del brief semanal con evidencia y metadatos de confianza.",
+        "Acceso al explorador para registros parseados y hechos extraidos.",
+        "Visibilidad del pipeline para salud de fuentes y registros fallidos.",
+      ],
+      form: {
+        ...loginPageContent.form,
+        title: "Bienvenido de nuevo",
+        subtitle: "Inicia sesion para entrar al espacio de trabajo de PulseOps.",
+        fields: [
+          { label: "Email de trabajo", placeholder: "jamie@browardhvac.com", type: "email" },
+          { label: "Contrasena", placeholder: "Ingresa tu contrasena", type: "password" },
+        ],
+        actions: [
+          { label: "Entrar", href: "/dashboard", variant: "primary" },
+          { label: "Olvidaste tu contrasena?", href: "/help", variant: "secondary" },
+        ],
+        footerPrompt: "Necesitas una cuenta?",
+        footerLinkLabel: "Empieza una prueba gratis",
+        footerLinkHref: "/signup",
+      },
+    },
+    press: {
+      ...pressPageContent,
+      hero: {
+        ...pressPageContent.hero,
+        eyebrow: "Prensa",
+        title: "Recursos para prensa y medios.",
+        description:
+          "Material de contexto, posicionamiento del producto y datos de contacto para cobertura.",
+      },
+      boilerplate:
+        "PulseOps ayuda a los negocios locales de servicio a proteger caja y margen por medio de un brief semanal de decision sustentado en sus datos operativos reales.",
+      facts: [
+        { value: "Field service", detail: "Foco inicial del ICP" },
+        { value: "1 producto", detail: "Brief semanal de efectivo y margen" },
+        { value: "Confianza primero", detail: "Evidencia y confianza en cada recomendacion" },
+        { value: "Next.js", detail: "Superficie local actual del producto" },
+      ],
+      coverage: [
+        "La nueva clase de herramientas analiticas para field service por fin esta hecha para el dueno, no para el contador.",
+        "PulseOps entrega lo que QuickBooks no puede: una respuesta semanal a si el negocio realmente es rentable.",
+        "Un brief de $149 que le dice a operadores de oficios que trabajos pierden dinero? Lo probamos.",
+      ],
+    },
+    privacy: {
+      ...privacyPageContent,
+      title: "Politica de privacidad",
+      updatedLabel: "Actualizado el 9 de abr de 2026",
+      intro:
+        "Esta politica explica que informacion recopila PulseOps, como se usa y como se protege mientras el producto se construye alrededor de un modelo operativo centrado en la confianza.",
+      sections: [
+        {
+          title: "1. Informacion que recopilamos",
+          body: [
+            "Recopilamos informacion de cuenta, documentos subidos, datos de sistemas conectados, mensajes de soporte y senales de uso necesarias para operar el servicio.",
+            "Minimizamos la recopilacion a lo necesario para ingestion, normalizacion, salida de decisiones, seguridad y soporte operativo.",
+          ],
+        },
+        {
+          title: "2. Como usamos la informacion",
+          body: [
+            "La informacion se usa para procesar cargas, generar recomendaciones, mejorar la calidad del modelo, atender clientes, asegurar el producto y cumplir obligaciones legales.",
+          ],
+        },
+        {
+          title: "3. Conexiones de datos y acceso de terceros",
+          body: [
+            "Los sistemas conectados y procesadores de carga se usan solo para operar el producto. No damos a los modelos acceso irrestricto a tus bases de datos ni a entornos arbitrarios de ejecucion de codigo.",
+          ],
+        },
+        {
+          title: "4. Seguridad de datos",
+          body: [
+            "Disenamos para aislamiento por tenant, control de acceso, auditabilidad, estrategia de redaccion y retencion desde el inicio, no como una etapa de endurecimiento posterior.",
+          ],
+        },
+        {
+          title: "5. Retencion de datos",
+          body: [
+            "Las ventanas de retencion se atan al flujo del producto, a la necesidad del negocio y a las obligaciones contractuales. Los artefactos y logs no se conservan indefinidamente por defecto.",
+          ],
+        },
+        {
+          title: "6. Tus derechos",
+          body: [
+            "Puedes solicitar acceso, correccion, exportacion o eliminacion de tus datos sujeto a obligaciones legales y operativas.",
+          ],
+        },
+        {
+          title: "7. Cookies",
+          body: [
+            "Usamos un conjunto limitado de cookies y mecanismos de almacenamiento local para autenticacion, seguridad y funcionalidad del producto.",
+          ],
+        },
+        {
+          title: "8. Cambios",
+          body: [
+            "Si esta politica cambia de forma material, actualizaremos la fecha de vigencia y comunicaremos el cambio por el producto o por email cuando corresponda.",
+          ],
+        },
+      ],
+    },
+    shell: {
+      content: marketingShellContent,
+      footerGroups: marketingFooterGroups,
+      navigationLinks: marketingNavigationLinks,
+    },
+    shared: {
+      aboutMissionEyebrow: "Mission",
+      aboutTeamEyebrow: "Team",
+      aboutTeamTitle: "People who have actually run the problem.",
+      careersApplyInterest: "Apply interest",
+      aboutValuesEyebrow: "What We Care About",
+      aboutValuesTitle: "A few things we care about deeply.",
+      blogFeaturedEyebrow: "Featured",
+      blogRequestArticle: "Request this article",
+      careersOpenRolesEyebrow: "Open Roles",
+      careersOpenRolesTitle: "Current openings",
+      careersWhyJoinEyebrow: "Why Join",
+      careersWhyJoinTitle: "We are small by design. Everyone ships real work.",
+      contactReachEyebrow: "Reach Us",
+      contactReachTitle: "Other ways to reach the team",
+      contactSendAction: "Send message",
+      contactSendTitle: "Send us a message",
+      footerCopyright: "(c) 2026 PulseOps. All rights reserved.",
+      footerNavigationLabel: "Footer navigation",
+      helpSearchPlaceholder: "Search the help center",
+      pressBoilerplateEyebrow: "Company Boilerplate",
+      pressBoilerplateTitle: "Company boilerplate",
+      pressBrandEyebrow: "Brand",
+      pressBrandTitle: "Logos and color palette",
+      pressCoverageEyebrow: "Coverage",
+      pressCoverageTitle: "Recent press coverage",
+      pressMediaDescription:
+        "For interviews, logos, product screenshots, or background material, contact the media team.",
+      pressMediaPrimary: "press@pulseops.io",
+      pressMediaSecondary: "Contact Us",
+      pressMediaTitle: "Media inquiries",
+      sampleBriefSubtitle: "Week of Apr 14, 2026 - Precision Plumbing Co.",
+      sampleBriefTitle: "Weekly Cash and Margin Brief",
+      worksWithLabel: "Works with",
+    },
+    signup: {
+      ...signupPageContent,
+      eyebrow: "Empieza gratis",
+      title: "Empieza tu prueba gratis",
+      highlight:
+        "Conecta un negocio, sube registros reales y recibe el primer brief de efectivo y margen antes de ampliar el alcance.",
+      details: [
+        "Precio plano sin impuesto por asiento.",
+        "Soporte de carga manual para CSV y XLSX desde el primer dia.",
+        "Recomendaciones centradas en la confianza con citas y confianza.",
+      ],
+      form: {
+        ...signupPageContent.form,
+        title: "Crea tu cuenta",
+        subtitle: "Comparte lo necesario para levantar el primer espacio de trabajo y brief.",
+        fields: [
+          { label: "Nombre completo", placeholder: "Jamie Reynolds" },
+          { label: "Email de trabajo", placeholder: "jamie@browardhvac.com", type: "email" },
+          { label: "Empresa", placeholder: "Broward HVAC Co." },
+          { label: "Contrasena", placeholder: "Elige una contrasena", type: "password" },
+        ],
+        actions: [
+          { label: "Crear cuenta", href: "/dashboard", variant: "primary" },
+          { label: "Hablar con ventas", href: "/contact", variant: "secondary" },
+        ],
+        footerPrompt: "Ya tienes una cuenta?",
+        footerLinkLabel: "Inicia sesion",
+        footerLinkHref: "/login",
+      },
+    },
+    terms: {
+      ...termsPageContent,
+      title: "Terminos del servicio",
+      updatedLabel: "Actualizado el 9 de abr de 2026",
+      intro:
+        "Estos terminos regulan el acceso a PulseOps y describen el uso de la suscripcion, el comportamiento aceptable y los limites del alcance actual del producto.",
+      sections: [
+        {
+          title: "1. El servicio",
+          body: [
+            "PulseOps ofrece actualmente un producto acotado centrado en un brief semanal de efectivo y margen y en los flujos de ingestion, revision y recomendacion necesarios para producirlo.",
+          ],
+        },
+        {
+          title: "2. Registro de cuenta",
+          body: [
+            "Eres responsable de mantener seguras las credenciales de tu cuenta y de la actividad que ocurra bajo ella.",
+          ],
+        },
+        {
+          title: "3. Suscripciones y facturacion",
+          body: [
+            "Las suscripciones se renuevan segun el periodo de facturacion seleccionado salvo cancelacion antes de la renovacion.",
+          ],
+        },
+        {
+          title: "4. Tus datos",
+          body: [
+            "Conservas la propiedad de tus datos. Nos otorgas los derechos necesarios para almacenarlos, procesarlos y transformarlos con el fin de operar el servicio.",
+          ],
+        },
+        {
+          title: "5. Uso aceptable",
+          body: [
+            "No puedes usar el servicio para violar la ley, abusar del sistema, interferir con otros o intentar obtener acceso no autorizado a datos o infraestructura.",
+          ],
+        },
+        {
+          title: "6. Limitaciones del servicio",
+          body: [
+            "El servicio esta evolucionando. Algunas funciones mostradas en el diseno o la documentacion pueden estar planificadas y no totalmente implementadas, y buscamos etiquetar esos casos con claridad.",
+          ],
+        },
+        {
+          title: "7. Descargo y responsabilidad",
+          body: [
+            "Salvo donde la ley exija lo contrario, el servicio se ofrece segun disponibilidad y la responsabilidad se limita al maximo permitido.",
+          ],
+        },
+        {
+          title: "8. Cambios en los terminos",
+          body: [
+            "Podemos actualizar estos terminos con el tiempo. El uso continuado despues de una actualizacion constituye aceptacion de los terminos revisados.",
+          ],
+        },
+      ],
+    },
+  },
+  packsPage: {
+    actions: {
+      export: "Export PDF",
+      exporting: "Exporting...",
+      generate: "Generate brief",
+      generating: "Generating...",
+      markReviewed: "Mark reviewed",
+      markingReviewed: "Marking...",
+    },
+    dataHeaders: {
+      class: "Class",
+      confidence: "Confidence",
+      contribution: "Contribution",
+      sourceFile: "Source file",
+    },
+    detailEyebrow: "Decision pack",
+    emptyDraftRecommendations:
+      "This pack is still in draft and has no recommendations yet.",
+    emptyPackList: "No packs match the current filter.",
+    feedbackAccepted: "Accepted for this recommendation.",
+    feedbackDismissed: "Dismissed for this recommendation.",
+    feedbackSaving: "Saving feedback...",
+    labels: packsPageLabels,
+    recommendationsHeading: "Recommendations",
+    searchPlaceholder: "Search packs",
+    sourceDataEmpty: "No source records are attached yet.",
+    sourceDataHeading: "Source data",
+  },
+  pipelinePage: {
+    dismissAction: "Dismiss alert",
+    labels: pipelinePageLabels,
+    stageHeaders: {
+      brief: "Brief",
+      depth: "Pipeline depth",
+      documentType: "Doc type",
+      llm: "LLM",
+      source: "Source",
+      sql: "SQL",
+      vector: "Vector",
+    },
+    tableHeaders: [
+      "Time",
+      "Source",
+      "Document type",
+      "Records",
+      "Outcome",
+      "Confidence",
+      "Duration",
+    ],
+    testPipelineDescription:
+      "Pipeline diagnostics are planned, but the test-run orchestration is not implemented yet.",
+  },
+  settingsPage: {
+    actionDescriptions: {
+      authentication:
+        "Authentication and access-control settings for the workspace.",
+      businessProfile:
+        "This information shapes how PulseOps interprets your data and builds your Cash & Margin Brief.",
+      colorModePersisted: "Persisted across sessions.",
+      connectedSources:
+        "Connect your business systems to feed the ingestion pipeline.",
+      currentCycle: "Current cycle across the workspace.",
+      notificationPreferences:
+        "Choose how and when PulseOps contacts you. Operator role or above required.",
+      preferences: "Workspace-level display and workflow defaults.",
+      rolePermissions:
+        "Defines what each role can see and do in your workspace.",
+    },
+    actionTitles: {
+      colorMode: "Color mode",
+      connectedSources: "Connected sources",
+      currentUsage: "Usage this billing period",
+      notificationPreferences: "Notification preferences",
+      rolePermissions: "Role permissions",
+      teamMembers: "Team members",
+    },
+    appearance: {
+      dark: "Dark",
+      light: "Light",
+    },
+    dialogs: {
+      connect: {
+        apiKeyLabel: "API key",
+        connect: "Connect",
+        connecting: "Connecting...",
+        description:
+          "The key is sent over HTTPS and stored in your workspace settings. You can disconnect at any time.",
+      },
+      invite: {
+        email: "Email",
+        name: "Name",
+        role: "Role",
+      },
+      revokeKeyWarning:
+        "Any service using this key will lose access immediately and will need a replacement key before the integration can recover.",
+      twoFactorDescription:
+        "Scan the QR code in your authenticator app, confirm the six-digit code, and store the backup codes securely.",
+      twoFactorQrPlaceholder: "Authenticator QR placeholder",
+    },
+    labels: settingsPageLabels,
+    options: {
+      goals: [
+        "Improve cash flow visibility",
+        "Increase job margin",
+        "Reduce overhead costs",
+        "Cut time spent on reporting",
+        "Reduce cost per job",
+      ],
+      industry: [
+        "HVAC / Field service",
+        "Plumbing",
+        "Electrical",
+        "Landscaping",
+        "Roofing",
+        "Other...",
+      ],
+      invoiceCycle: ["Weekly", "Bi-weekly", "Monthly", "Per job"],
+      inviteRoles: ["Admin", "Operator", "Analyst", "Viewer"],
+      revenueModel: ["Job-based", "Subscription", "Mixed"],
+      teamSize: [
+        "1-4 people",
+        "5-10 people",
+        "11-25 people",
+        "26-50 people",
+        "51+ people",
+      ],
+    },
+    placeholders: {
+      apiKey: "Paste your API key here",
+      email: "jamie@browardhvac.com",
+      name: "Jamie Reynolds",
+    },
+  },
+  uploadModal: {
+    acceptsDescription: "Accepts CSV and XLSX files up to 20 MB.",
+    cancel: "Cancel",
+    done: "Done",
+    duplicateDescription:
+      "This file was already uploaded. The existing record has been refreshed.",
+    duplicateNotice: "Duplicate detected - existing document updated.",
+    fileQueuedDescription: "File uploaded and queued for processing.",
+    fileTypeFallback: "unknown type",
+    title: "Upload files",
+    upload: "Upload",
+    uploadFailed: "Upload failed.",
+    uploadPrompt: "Drop a file here or click to browse",
+    uploading: "Uploading...",
+    uploadTypes: "CSV - XLSX - up to 20 MB",
+  },
+} as const;
+
+type WidenUiMessages<T> =
+  T extends string ? string
+  : T extends number ? number
+  : T extends boolean ? boolean
+  : T extends readonly (infer Item)[] ? readonly WidenUiMessages<Item>[]
+  : T extends Record<string, unknown>
+    ? { readonly [Key in keyof T]: WidenUiMessages<T[Key]> }
+    : T;
+
+export type UiMessages = WidenUiMessages<typeof defaultUiMessagesEnUs>;
+
+const defaultUiMessagesEs: UiMessages = {
+  ...defaultUiMessagesEnUs,
+  appShell: {
+    ...defaultUiMessagesEnUs.appShell,
+    localeLabel: "Idioma",
+    mobileNavigationAriaLabel: "Navegacion movil",
+    navItems: {
+      ask: {
+        label: "Preguntar",
+        mobileLabel: "Preguntar",
+      },
+      dashboard: {
+        label: "Panel",
+        mobileLabel: "Inicio",
+      },
+      explorer: {
+        label: "Explorador",
+        mobileLabel: "Explorador",
+      },
+      packs: {
+        label: "Paquetes de decision",
+        mobileLabel: "Paquetes",
+      },
+      pipeline: {
+        label: "Pipeline",
+        mobileLabel: "Pipeline",
+      },
+      settings: {
+        label: "Configuracion",
+        mobileLabel: "Config.",
+      },
+    },
+    primaryNavigationAriaLabel: "Navegacion principal",
+    sidebarToggleLabel: "Alternar barra lateral",
+    topBarAriaLabel: "Controles del espacio de trabajo",
+    userRole: "Operador",
+    workspaceAlertsTitle: "2 alertas requieren atencion",
+    workspaceSwitcherLabel: "Espacio de trabajo",
+  },
+  askPage: {
+    ...defaultUiMessagesEnUs.askPage,
+    actions: {
+      ask: "Preguntar con evidencia",
+      history: "Historial guardado de hilos",
+    },
+    askSurfaceEyebrow: "Superficie de preguntas",
+    assistantLeadLabel: "Basado en",
+    breadcrumbs: ["Panel", "Preguntar"],
+    clarifyNextLabel: "Aclarar lo siguiente",
+    copyAction: "Copiar",
+    deleteDialog: {
+      cancel: "Cancelar",
+      delete: "Eliminar hilo",
+      deleting: "Eliminando...",
+      description:
+        "Este hilo se eliminara permanentemente del espacio de trabajo. Esta accion no se puede deshacer.",
+      title: "Eliminar hilo?",
+    },
+    description:
+      "Consulta el espacio de trabajo en lenguaje natural. Cada respuesta se apoya en hechos guardados y se devuelve con citas.",
+    emptyStateDescription:
+      "El planificador actual ya reconoce esos objetos de negocio. Cuando falta evidencia local, la pagina devuelve una respuesta clara de falta de evidencia en lugar de un mock vacio.",
+    emptyStateTitle:
+      "Empieza con una pregunta sobre facturas, trabajos, efectivo o margen.",
+    errorFallback: "No se pudo completar la consulta.",
+    historyActionDescription:
+      "El historial de hilos en desktop ya es visible en la barra lateral. Un panel dedicado para pantallas pequenas todavia no esta implementado.",
+    newThread: "Nuevo hilo",
+    noAnswer:
+      "Todavia no hay evidencia coincidente en este espacio de trabajo. Sube mas datos o acota la pregunta.",
+    noThreadsDescription:
+      "Haz una pregunta para crear un hilo reutilizable en este espacio de trabajo.",
+    noThreadsTitle: "Todavia no hay hilos guardados",
+    placeholder:
+      "Pregunta por facturas vencidas, trabajos con precio bajo, presion de caja o deriva de margen.",
+    saveToPack: "Guardar en paquete",
+    saveToPackDescription:
+      "Los hallazgos de Preguntar se podran guardar en paquetes cuando ese flujo este implementado.",
+    starterPrompts: [
+      "Que facturas estan vencidas hoy?",
+      "Que trabajos estan mal valorados?",
+      "Que merece atencion primero esta semana?",
+    ],
+    submitLabel: "Preguntar",
+    submitting: "Ejecutando...",
+    threadDeleteLabel: "Eliminar hilo",
+    threadHistoryDescription:
+      "Las preguntas se guardan en el historial de hilos al enviarse desde esta entrada.",
+    threadsHeading: "Hilos",
+    title: "Preguntar",
+  },
+  common: {
+    closeDialog: "Cerrar dialogo",
+    localeLabel: "Idioma",
+    skipToMainContent: "Saltar al contenido principal",
+  },
+  dashboardPage: {
+    activityLiveLabel: "En vivo - se actualiza automaticamente",
+    activityTitle: "Actividad del pipeline",
+    emptyQueueDescription:
+      "Amplia los filtros o espera nueva actividad de documentos.",
+    emptyQueueTitle: "No hay acciones de operador en el alcance actual.",
+    queueItemsLabel: "{{count}} elementos",
+    viewFullActivityLog: "Ver registro completo de actividad ->",
+  },
+  explorerPage: {
+    actions: {
+      export: "Exportar CSV",
+      exporting: "Exportando...",
+      upload: "Subir archivo",
+    },
+    breadcrumbs: ["Panel", "Explorador"],
+    description:
+      "Explora artefactos parseados, hechos extraidos y registros en revision en una sola tabla del espacio de trabajo.",
+    factsPreview: "Vista previa de hechos",
+    noCitations: "Todavia no hay citas adjuntas.",
+    noFacts: "Todavia no hay hechos extraidos adjuntos.",
+    noRecordSelectedDescription:
+      "Ajusta los filtros actuales o la busqueda para traer un registro a la vista.",
+    noRecordSelectedTitle: "No hay registro seleccionado",
+    searchPlaceholder: "Buscar registros...",
+    summary: {
+      averageConfidence: "Confianza media",
+      averageConfidenceDetail: "por encima del umbral de 0.85 para el brief",
+      needsReview: "Necesita revision",
+      needsReviewDetail: "retenido - aun no pasa aguas abajo",
+      totalRecords: "Total de registros",
+      totalRecordsDetail: "en todas las fuentes y tipos",
+    },
+    tableHeaders: {
+      confidence: "Confianza",
+      date: "Fecha",
+      document: "Documento",
+      facts: "Hechos extraidos",
+      source: "Fuente",
+      status: "Estado",
+      type: "Clase de documento",
+    },
+    title: "Explorador de datos",
+  },
+  globalError: {
+    badge: "Error global",
+    description:
+      "La falla fue reportada a traves del flujo de logging estructurado.",
+    reload: "Recargar pagina",
+    retry: "Reintentar",
+    title: "La aplicacion encontro un error fatal.",
+  },
+  marketing: {
+    about: {
+      ...aboutPageContent,
+      hero: {
+        ...aboutPageContent.hero,
+        eyebrow: "Sobre PulseOps",
+        title:
+          "Construimos la herramienta que nos hubiera gustado tener cuando operabamos negocios de servicio.",
+        description:
+          "La meta no es otro dashboard. La meta es una respuesta semanal, rapida y confiable, a las preguntas de dinero que los duenos ya hacen.",
+      },
+      mission:
+        "Todo negocio local de servicios merece operar con hechos en lugar de instinto, especialmente cuando los margenes son ajustados y el timing de caja no perdona.",
+      story:
+        "PulseOps nace de la misma frustracion repetida en los oficios: los datos existian, pero nadie tenia tiempo para reconciliarlos, confiar en ellos y convertirlos en una accion antes de que la semana siguiera avanzando.",
+      stats: [
+        { value: "5 min", detail: "tiempo objetivo de lectura del brief semanal" },
+        { value: "1 pack", detail: "enfoque actual del producto: efectivo y margen semanal" },
+        { value: "0 relleno", detail: "cada recomendacion necesita evidencia y confianza" },
+      ],
+      values: [
+        {
+          title: "Decisiones, no dashboards",
+          description:
+            "El producto debe terminar en una accion clara, no en otro lugar para mirar numeros.",
+        },
+        {
+          title: "Muestra tu trabajo",
+          description:
+            "Las recomendaciones necesitan evidencia fuente, confianza y suficiente contexto para su revision.",
+        },
+        {
+          title: "Hecho para el dueno",
+          description:
+            "Optimizamos para el operador que intenta proteger caja y margen, no para una presentacion ejecutiva.",
+        },
+      ],
+      team: [
+        {
+          name: "Jordan Kim",
+          role: "Cofundador y ex operador de field service",
+          description:
+            "Paso una decada dentro de negocios de servicio con buen instinto y flujo de informacion deficiente.",
+        },
+        {
+          name: "Sofia Reyes",
+          role: "Producto y diseno",
+          description:
+            "Se enfoca en hacer que preguntas operativas densas se sientan lo bastante simples para usarse un lunes por la manana.",
+        },
+        {
+          name: "Marcus Liu",
+          role: "Sistemas de datos",
+          description:
+            "Convierte documentos y exportaciones desordenadas en hechos tipados y revisables en los que el producto puede confiar.",
+        },
+      ],
+      cta: {
+        title: "Listo para verlo en accion?",
+        description:
+          "Empieza con el brief semanal de efectivo y margen y conecta un flujo real antes de ampliar el alcance.",
+        primaryAction: "Empieza gratis",
+        secondaryAction: "Contactanos",
+      },
+    },
+    blog: {
+      ...blogPageContent,
+      hero: {
+        ...blogPageContent.hero,
+        eyebrow: "Blog",
+        title: "Ideas practicas para duenos de negocios de servicio.",
+        description:
+          "Contenido para operadores sobre timing de caja, deriva de margen, precios en field service y calidad de decision.",
+      },
+      featuredPost: {
+        ...blogPageContent.featuredPost,
+        title:
+          "Por que la mayoria de los negocios HVAC no puede responder 'somos rentables este mes?'",
+        summary:
+          "La respuesta suele quedar atrapada entre datos de costo por trabajo, facturas, cuentas de proveedor y hojas de calculo que nunca coinciden a tiempo.",
+        meta: "Articulo destacado",
+      },
+      posts: [
+        "Como saber que tu tarifa de mano de obra esta desactualizada antes de que empiece a costarte trabajos.",
+        "La conversacion sobre depositos con clientes comerciales y cuando tenerla.",
+        "El tiempo de traslado destruye el margen por trabajo. Asi se ve la matematica.",
+        "El problema de facturas a 30/60/90 dias y por que un mal AR se vuelve un habito.",
+        "Como un negocio de plomeria encontro margen al corregir una sola categoria de trabajo.",
+        "El aumento lento del costo de materiales y por que los estimados envejecen mas rapido de lo que crees.",
+      ],
+      cta: {
+        title: "Recibe el brief semanal gratis por 30 dias.",
+        description:
+          "Si el blog es util, el producto convierte esa misma forma de pensar en una superficie operativa recurrente.",
+        primaryAction: "Empieza gratis",
+        secondaryAction: "Ver precios",
+      },
+    },
+    careers: {
+      ...careersPageContent,
+      hero: {
+        ...careersPageContent.hero,
+        eyebrow: "Carreras",
+        title:
+          "Ayudanos a construir la capa de claridad financiera para negocios locales de servicio.",
+        description:
+          "Seguimos siendo pequenos, enviamos trabajo real y optimizamos para un producto util en vez de teatro interno.",
+      },
+      reasons: [
+        {
+          title: "El problema es realmente dificil",
+          description:
+            "Documentos desordenados, sistemas fragmentados, requisitos de confianza y decisiones de negocio de alto impacto convergen en un solo producto.",
+        },
+        {
+          title: "Los clientes te dicen rapido si funciona",
+          description:
+            "La salida ayuda o no ayuda a un dueno a proteger caja y margen esta misma semana.",
+        },
+        {
+          title: "Construye lo que importa",
+          description:
+            "Preferimos alcance acotado, contratos claros y valor medible del producto por encima de mas superficie.",
+        },
+      ],
+      openings: [
+        {
+          title: "Senior Data Engineer",
+          meta: "Remoto - Tiempo completo",
+          description:
+            "Lidera rutas de ingestion y canonizacion desde archivos crudos hasta hechos y metricas revisables.",
+        },
+        {
+          title: "Product Designer",
+          meta: "Remoto - Tiempo completo",
+          description:
+            "Disena superficies de decision que sigan siendo simples sin ocultar confianza, procedencia ni riesgo.",
+        },
+        {
+          title: "Customer Success - Especialista en Field Service",
+          meta: "Remoto - Tiempo completo",
+          description:
+            "Traduce el dolor del operador en onboarding, implementacion y ciclos de feedback de producto.",
+        },
+        {
+          title: "Growth Marketing Manager",
+          meta: "Remoto - Tiempo completo",
+          description:
+            "Ayuda a que los operadores correctos descubran el producto sin mover el ICP ni las promesas del producto.",
+        },
+      ],
+    },
+    contact: {
+      ...contactPageContent,
+      hero: {
+        ...contactPageContent.hero,
+        eyebrow: "Contacto",
+        title: "Ponte en contacto.",
+        description:
+          "Usa la via que mejor encaje con el problema. Mantenemos separadas las conversaciones de producto, soporte y alianzas.",
+      },
+      channels: [
+        {
+          title: "Soporte al cliente",
+          description: "Ayuda con onboarding, problemas de datos o interpretacion del brief.",
+          action: "support@pulseops.io",
+        },
+        {
+          title: "Ventas y multiubicacion",
+          description: "Precios, expansion y despliegues operativos mas amplios.",
+          action: "sales@pulseops.io",
+        },
+        {
+          title: "Prensa y medios",
+          description: "Entrevistas, cobertura y contexto del producto.",
+          action: "press@pulseops.io",
+        },
+        {
+          title: "Alianzas e integraciones",
+          description: "Alianzas de plataforma y conversaciones sobre conectores.",
+          action: "partners@pulseops.io",
+        },
+      ],
+      formFields: [
+        { label: "Nombre", placeholder: "Jamie Reynolds" },
+        { label: "Email de trabajo", placeholder: "jamie@browardhvac.com", type: "email" },
+        { label: "Empresa", placeholder: "Broward HVAC Co." },
+        { label: "Mensaje", placeholder: "Cuentanos en que necesitas ayuda." },
+      ],
+    },
+    help: {
+      ...helpPageContent,
+      hero: {
+        ...helpPageContent.hero,
+        eyebrow: "Centro de ayuda",
+        title: "Como podemos ayudarte?",
+        description:
+          "El primer producto es intencionalmente acotado, por lo que la ayuda se concentra en setup, ingestion, el brief semanal y controles de cuenta.",
+      },
+      groups: [
+        {
+          title: "Primeros pasos",
+          items: [
+            {
+              question: "Que hace PulseOps primero?",
+              answer:
+                "El primer producto es el brief semanal de efectivo y margen para negocios de field service. No es una plataforma BI generalista.",
+            },
+            {
+              question: "Que datos puedo subir hoy?",
+              answer:
+                "CSV y XLSX son los formatos principales de carga manual. Las fuentes adicionales llegan despues.",
+            },
+          ],
+        },
+        {
+          title: "Conexion de datos",
+          items: [
+            {
+              question: "Puedo conectar ServiceTitan y QuickBooks al mismo tiempo?",
+              answer:
+                "Si. El objetivo es reconciliar datos fragmentados en una sola vista operativa util.",
+            },
+            {
+              question: "Que pasa si falla el parsing?",
+              answer:
+                "Los registros fallidos siguen visibles para revision y reintento en lugar de contaminar silenciosamente las salidas posteriores.",
+            },
+          ],
+        },
+        {
+          title: "Tu brief",
+          items: [
+            {
+              question: "Por que cada recomendacion incluye confianza?",
+              answer:
+                "La confianza es un requisito central del producto. El usuario necesita saber cuan fuerte es la evidencia antes de actuar.",
+            },
+            {
+              question: "Se pueden rechazar recomendaciones?",
+              answer:
+                "Si. Los rechazos y ediciones forman parte del ciclo de retroalimentacion que ayuda al sistema a aprender del negocio.",
+            },
+          ],
+        },
+        {
+          title: "Cuenta y facturacion",
+          items: [
+            {
+              question: "Puedo cancelar en cualquier momento?",
+              answer: "Si. El producto inicial esta disenado para seguir siendo simple y de baja friccion.",
+            },
+            {
+              question: "Cobran por asiento?",
+              answer:
+                "No. El precio es una tarifa plana por paquete de producto, no por asiento.",
+            },
+          ],
+        },
+      ],
+      cta: {
+        title: "Todavia tienes una pregunta?",
+        description: "Habla directamente con el equipo si el centro de ayuda no cubre tu caso.",
+        primaryAction: "Contactar soporte",
+        secondaryAction: "Empieza gratis",
+      },
+    },
+    home: {
+      ...homePageContent,
+      hero: {
+        ...homePageContent.hero,
+        eyebrow: "Inteligencia de efectivo y margen",
+        title: "Tu negocio de servicios funciona por intuicion. Empieza a operarlo con hechos.",
+        description:
+          "PulseOps entrega un brief semanal en lenguaje claro que te dice por donde se fuga el dinero, que facturas perseguir y que corregir antes del viernes.",
+        actions: [
+          { href: "/signup", label: "Empieza gratis", variant: "primary" },
+          { href: "/#how-it-works", label: "Ver como funciona", variant: "secondary" },
+        ],
+        stats: [
+          { value: "56%", detail: "de las pequenas empresas tienen facturas vencidas" },
+          { value: "$17.5K", detail: "saldo promedio pendiente por empresa" },
+          { value: "75%", detail: "citan el alza de costos como el principal reto" },
+          { value: "#1", detail: "la claridad de margen es el punto ciego mas comun" },
+        ],
+        footerNote: "Fuentes: encuesta crediticia de la Fed para pequenas empresas e investigacion SMB de Intuit.",
+      },
+      pain: {
+        ...homePageContent.pain,
+        eyebrow: "El problema real",
+        title: "Los numeros ya existen. Simplemente no se pueden usar con la suficiente rapidez para actuar.",
+        description:
+          "Las ventas viven en un sistema, los costos en otro, los horarios en una hoja de calculo y las facturas en una bandeja de entrada. Los problemas se acumulan en silencio hasta que ya duelen.",
+        items: [
+          {
+            icon: "Cash",
+            title: "Trabajos con precio bajo",
+            description:
+              "La mano de obra supera el estimado, los materiales suben y el precio nunca alcanza al costo real.",
+          },
+          {
+            icon: "AR",
+            title: "Facturas que nadie persigue",
+            description:
+              "El efectivo ya se gano, pero la cobranza se retrasa porque las cuentas correctas no aparecen a tiempo.",
+          },
+          {
+            icon: "Margin",
+            title: "Fugas por linea",
+            description:
+              "Un tipo de servicio o un proveedor puede borrar margen sin hacerse visible en un dashboard resumido.",
+          },
+          {
+            icon: "Timing",
+            title: "Latigazos de flujo de caja",
+            description:
+              "Los proveedores quieren cobrar antes de que los clientes paguen, y el faltante se vuelve obvio demasiado tarde.",
+          },
+        ],
+      },
+      workflow: {
+        ...homePageContent.workflow,
+        eyebrow: "Como funciona",
+        title: "Conectado en un dia. Accionable el lunes.",
+        description:
+          "Hacemos el trabajo sucio de integracion y normalizacion para que el dueno reciba un brief corto y util en lugar de otro reporte que mantener.",
+        steps: [
+          {
+            step: "1",
+            title: "Conecta los sistemas que ya usas",
+            description:
+              "QuickBooks, ServiceTitan, hojas de calculo, adjuntos de email y cargas manuales entran por una sola superficie.",
+          },
+          {
+            step: "2",
+            title: "Construye una vista limpia del negocio",
+            description:
+              "PulseOps reconcilia trabajos, costos, pagos y documentos en una sola vista operativa.",
+          },
+          {
+            step: "3",
+            title: "Muestra la evidencia fuente",
+            description:
+              "Cada recomendacion incluye procedencia, confianza y los registros exactos que la respaldan.",
+          },
+          {
+            step: "4",
+            title: "Entrega el brief semanal",
+            description:
+              "El dueno recibe seis respuestas enfocadas en decisiones, en lenguaje claro y con las siguientes acciones ordenadas por impacto.",
+          },
+        ],
+        connectors: [
+          "QuickBooks",
+          "Jobber",
+          "ServiceTitan",
+          "Housecall Pro",
+          "Google Sheets",
+          "Excel",
+          "Exportaciones bancarias",
+        ],
+      },
+      questions: {
+        ...homePageContent.questions,
+        eyebrow: "El brief semanal",
+        title: "Seis preguntas. Respondidas cada lunes.",
+        description:
+          "Estas son las preguntas que los duenos ya hacen. PulseOps se asegura de que alguien las responda con evidencia.",
+        items: [
+          {
+            icon: "?",
+            title: "Que trabajos estan mal cotizados?",
+            description:
+              "Encuentra los servicios donde el costo real supera de forma consistente el precio cotizado.",
+          },
+          {
+            icon: "?",
+            title: "Por donde se fuga el margen?",
+            description:
+              "Los retrabajos, las horas extra y la variacion de materiales se ordenan por impacto en dolares.",
+          },
+          {
+            icon: "?",
+            title: "Que facturas debemos perseguir hoy?",
+            description:
+              "Obten una lista corta y urgente de quien debe efectivo y que hacer primero.",
+          },
+          {
+            icon: "?",
+            title: "Que clientes necesitan deposito?",
+            description:
+              "Marca cuentas lentas para pagar y trabajos grandes proximos que deberian requerir efectivo por adelantado.",
+          },
+          {
+            icon: "?",
+            title: "Que facturas son sensibles al timing?",
+            description:
+              "Saca a la luz compras y pagos a proveedores que deben alinearse con las entradas de efectivo.",
+          },
+          {
+            icon: "?",
+            title: "Que merece mas atencion?",
+            description:
+              "Recibe una lista ordenada de las acciones de mayor impacto para la semana.",
+          },
+        ],
+      },
+      preview: {
+        ...homePageContent.preview,
+        eyebrow: "Como se ve",
+        title: "Consejos, no un reporte.",
+        description:
+          "Cada recomendacion te dice que cambio, que significa en dolares y que hacer despues.",
+        checklist: [
+          "Solo destaca lo que cambio o necesita accion.",
+          "Muestra evidencia fuente y confianza para cada recomendacion.",
+          "Ordena los problemas por impacto en dolares para empezar por lo que mas importa.",
+          "Funciona por email o dentro de la app con la misma superficie clara de decision.",
+          "Toma menos de cinco minutos leerlo y actuar.",
+        ],
+        recommendations: [
+          {
+            title: "Brecha de precio en instalaciones de calentadores de agua",
+            summary:
+              "La mano de obra promedio fue de 3.4 horas frente a un estimado de 2.5 horas en 17 trabajos recientes.",
+            detail: "Recuperacion estimada: $2,400 al mes.",
+          },
+          {
+            title: "Tres facturas vencidas necesitan escalamiento",
+            summary:
+              "Riverdale Commercial y otras dos cuentas ya representan la mayor concentracion de cuentas por cobrar abiertas.",
+            detail: "Efectivo en riesgo: $8,750.",
+          },
+          {
+            title: "El calendario de un proveedor genera un bache de caja el viernes",
+            summary:
+              "Una factura de proveedor vence antes de que entren los cobros esperados, generando un faltante salvo que la cobranza se adelante.",
+            detail: "Brecha proyectada: $1,400.",
+          },
+        ],
+      },
+      difference: {
+        ...homePageContent.difference,
+        eyebrow: "Lo que nos diferencia",
+        title: "Otras herramientas muestran datos. Nosotros te decimos que hacer con ellos.",
+        description:
+          "La mayoria de los productos lee un sistema limpio y te entrega una grafica. PulseOps reconcilia la realidad desordenada y la convierte en una decision.",
+        items: [
+          {
+            icon: "Merge",
+            title: "Una imagen clara",
+            description:
+              "Datos bancarios, sistemas de trabajo, hojas de calculo y archivos de bandeja de entrada se reconcilian en una sola vista operativa.",
+          },
+          {
+            icon: "Proof",
+            title: "Muestra tu trabajo",
+            description:
+              "Las recomendaciones incluyen los trabajos, las facturas y los calculos detras de ellas para que el usuario pueda juzgar el consejo.",
+          },
+          {
+            icon: "Learn",
+            title: "Aprende de tu negocio",
+            description:
+              "Las correcciones, aprobaciones y recomendaciones rechazadas ajustan el sistema a como el negocio opera en realidad.",
+          },
+        ],
+      },
+      industries: {
+        ...homePageContent.industries,
+        eyebrow: "Creado para",
+        title: "Negocios locales de servicio basados en proyectos con 5 a 50 empleados.",
+        description:
+          "El primer paquete de decision esta optimizado para negocios de field service y oficios que viven las mismas preguntas de caja y margen cada semana.",
+        items: [
+          "HVAC",
+          "Plomeria",
+          "Electricidad",
+          "Paisajismo",
+          "Servicio de albercas",
+          "Limpieza",
+          "Control de plagas",
+          "Puertas de garaje",
+          "Construccion ligera",
+          "Reparacion de electrodomesticos",
+        ],
+        note: "Los paquetes adicionales para otros verticales llegan despues, una vez que el brief de efectivo y margen funcione de punta a punta.",
+      },
+      testimonials: {
+        ...homePageContent.testimonials,
+        eyebrow: "Desde el campo",
+        title: "Duenos que dejaron de volar a ciegas.",
+        items: [
+          {
+            quote:
+              "PulseOps nos mostro que las visitas de mantenimiento costaban mas de lo que cobraban cuando cuentas el tiempo de traslado y los retrabajos. Cambiamos precios y el margen se recupero en seis semanas.",
+            name: "Marcus R.",
+            company: "HVAC - 14 tecnicos",
+            initials: "MR",
+          },
+          {
+            quote:
+              "El primer brief me dio una lista de tres facturas para perseguir esa misma manana. Cobramos la mayor parte del atraso esa misma semana.",
+            name: "Diana V.",
+            company: "Plomeria - 9 empleados",
+            initials: "DV",
+          },
+          {
+            quote:
+              "Arreglamos el proceso de estimacion, no a la cuadrilla, porque el sistema mostro exactamente donde empezaba el problema de margen.",
+            name: "Tariq B.",
+            company: "Paisajismo - 11 empleados",
+            initials: "TB",
+          },
+        ],
+      },
+      pricing: {
+        ...homePageContent.pricing,
+        eyebrow: "Precios",
+        title: "Tarifa plana. Sin analistas. Sin sorpresas.",
+        description:
+          "Todo esta incluido. Sin tarifas por asiento, sin contrato oculto de implementacion y sin sorpresas de uso en el primer producto.",
+        tiers: [
+          {
+            name: "Brief de efectivo y margen",
+            price: "$149",
+            priceSuffix: "/mes",
+            description:
+              "Para negocios de servicio operados por sus duenos que quieren dejar de adivinar sobre caja y margen.",
+            points: [
+              "1 negocio y hasta 4 fuentes de datos",
+              "Brief semanal de efectivo y margen",
+              "Analisis de rentabilidad por trabajo",
+              "Seguimiento de facturas y cuentas por cobrar",
+              "Referencias de la industria",
+              "Soporte por email",
+            ],
+            ctaLabel: "Empieza la prueba gratis",
+          },
+          {
+            name: "Paquete completo de operaciones",
+            price: "$299",
+            priceSuffix: "/mes",
+            description:
+              "Para operadores en crecimiento que necesitan visibilidad de caja, margen, personal y excepciones en una sola superficie.",
+            points: [
+              "Hasta 3 ubicaciones y fuentes ilimitadas",
+              "Capturas diarias mas brief semanal",
+              "Seguimiento de rentabilidad por cuadrilla y trabajo",
+              "Recomendaciones de depositos de clientes",
+              "Alertas basadas en excepciones",
+              "Soporte prioritario",
+            ],
+            ctaLabel: "Empieza la prueba gratis",
+            featured: true,
+            featuredLabel: "Mas popular",
+          },
+          {
+            name: "Multiubicacion",
+            price: "Personalizado",
+            priceSuffix: "",
+            description:
+              "Para grupos y franquicias que necesitan visibilidad consolidada y comparativos.",
+            points: [
+              "Ubicaciones ilimitadas",
+              "Benchmarking entre ubicaciones",
+              "Conectores personalizados",
+              "Soporte dedicado de onboarding",
+              "Opcion white-label",
+              "Soporte con SLA",
+            ],
+            ctaLabel: "Contactar ventas",
+          },
+        ],
+      },
+      cta: {
+        ...homePageContent.cta,
+        title: "Empieza a conocer tus numeros esta semana.",
+        description:
+          "Conecta tu primera fuente de datos en menos de 10 minutos. Tu primer brief llega el lunes.",
+        primaryAction: "Empieza gratis",
+        secondaryAction: "Hablar con ventas",
+      },
+    },
+    login: {
+      ...loginPageContent,
+      eyebrow: "Iniciar sesion",
+      title: "Bienvenido de nuevo",
+      highlight:
+        "Abre el ultimo brief de efectivo y margen, inspecciona la evidencia y revisa acciones del operador desde un solo espacio de trabajo.",
+      details: [
+        "Revision del brief semanal con evidencia y metadatos de confianza.",
+        "Acceso al explorador para registros parseados y hechos extraidos.",
+        "Visibilidad del pipeline para salud de fuentes y registros fallidos.",
+      ],
+      form: {
+        ...loginPageContent.form,
+        title: "Bienvenido de nuevo",
+        subtitle: "Inicia sesion para entrar al espacio de trabajo de PulseOps.",
+        fields: [
+          { label: "Email de trabajo", placeholder: "jamie@browardhvac.com", type: "email" },
+          { label: "Contrasena", placeholder: "Ingresa tu contrasena", type: "password" },
+        ],
+        actions: [
+          { label: "Entrar", href: "/dashboard", variant: "primary" },
+          { label: "Olvidaste tu contrasena?", href: "/help", variant: "secondary" },
+        ],
+        footerPrompt: "Necesitas una cuenta?",
+        footerLinkLabel: "Empieza una prueba gratis",
+        footerLinkHref: "/signup",
+      },
+    },
+    press: {
+      ...pressPageContent,
+      hero: {
+        ...pressPageContent.hero,
+        eyebrow: "Prensa",
+        title: "Recursos para prensa y medios.",
+        description:
+          "Material de contexto, posicionamiento del producto y datos de contacto para cobertura.",
+      },
+      boilerplate:
+        "PulseOps ayuda a los negocios locales de servicio a proteger caja y margen por medio de un brief semanal de decision sustentado en sus datos operativos reales.",
+      facts: [
+        { value: "Field service", detail: "Foco inicial del ICP" },
+        { value: "1 producto", detail: "Brief semanal de efectivo y margen" },
+        { value: "Confianza primero", detail: "Evidencia y confianza en cada recomendacion" },
+        { value: "Next.js", detail: "Superficie local actual del producto" },
+      ],
+      coverage: [
+        "La nueva clase de herramientas analiticas para field service por fin esta hecha para el dueno, no para el contador.",
+        "PulseOps entrega lo que QuickBooks no puede: una respuesta semanal a si el negocio realmente es rentable.",
+        "Un brief de $149 que le dice a operadores de oficios que trabajos pierden dinero? Lo probamos.",
+      ],
+    },
+    privacy: {
+      ...privacyPageContent,
+      title: "Politica de privacidad",
+      updatedLabel: "Actualizado el 9 de abr de 2026",
+      intro:
+        "Esta politica explica que informacion recopila PulseOps, como se usa y como se protege mientras el producto se construye alrededor de un modelo operativo centrado en la confianza.",
+      sections: [
+        {
+          title: "1. Informacion que recopilamos",
+          body: [
+            "Recopilamos informacion de cuenta, documentos subidos, datos de sistemas conectados, mensajes de soporte y senales de uso necesarias para operar el servicio.",
+            "Minimizamos la recopilacion a lo necesario para ingestion, normalizacion, salida de decisiones, seguridad y soporte operativo.",
+          ],
+        },
+        {
+          title: "2. Como usamos la informacion",
+          body: [
+            "La informacion se usa para procesar cargas, generar recomendaciones, mejorar la calidad del modelo, atender clientes, asegurar el producto y cumplir obligaciones legales.",
+          ],
+        },
+        {
+          title: "3. Conexiones de datos y acceso de terceros",
+          body: [
+            "Los sistemas conectados y procesadores de carga se usan solo para operar el producto. No damos a los modelos acceso irrestricto a tus bases de datos ni a entornos arbitrarios de ejecucion de codigo.",
+          ],
+        },
+        {
+          title: "4. Seguridad de datos",
+          body: [
+            "Disenamos para aislamiento por tenant, control de acceso, auditabilidad, estrategia de redaccion y retencion desde el inicio, no como una etapa de endurecimiento posterior.",
+          ],
+        },
+        {
+          title: "5. Retencion de datos",
+          body: [
+            "Las ventanas de retencion se atan al flujo del producto, a la necesidad del negocio y a las obligaciones contractuales. Los artefactos y logs no se conservan indefinidamente por defecto.",
+          ],
+        },
+        {
+          title: "6. Tus derechos",
+          body: [
+            "Puedes solicitar acceso, correccion, exportacion o eliminacion de tus datos sujeto a obligaciones legales y operativas.",
+          ],
+        },
+        {
+          title: "7. Cookies",
+          body: [
+            "Usamos un conjunto limitado de cookies y mecanismos de almacenamiento local para autenticacion, seguridad y funcionalidad del producto.",
+          ],
+        },
+        {
+          title: "8. Cambios",
+          body: [
+            "Si esta politica cambia de forma material, actualizaremos la fecha de vigencia y comunicaremos el cambio por el producto o por email cuando corresponda.",
+          ],
+        },
+      ],
+    },
+    shell: {
+      content: {
+        ctaHref: "/signup",
+        ctaLabel: "Empieza gratis",
+        footerDescription:
+          "Claridad semanal de efectivo y margen para negocios locales de servicio sin analistas, sin dashboards y sin adivinanzas.",
+        footerTagline: "Construido para negocios locales de servicio en cualquier lugar.",
+      },
+      footerGroups: [
+        {
+          title: "Producto",
+          links: [
+            { href: "/#questions", label: "Lo que recibes" },
+            { href: "/#how-it-works", label: "Como funciona" },
+            { href: "/#pricing", label: "Precios" },
+            { href: "/#difference", label: "Por que es diferente" },
+          ],
+        },
+        {
+          title: "Empresa",
+          links: [
+            { href: "/about", label: "Nosotros" },
+            { href: "/blog", label: "Blog" },
+            { href: "/careers", label: "Carreras" },
+            { href: "/press", label: "Prensa" },
+          ],
+        },
+        {
+          title: "Soporte",
+          links: [
+            { href: "/help", label: "Centro de ayuda" },
+            { href: "/contact", label: "Contacto" },
+            { href: "/privacy", label: "Privacidad" },
+            { href: "/terms", label: "Terminos" },
+          ],
+        },
+      ],
+      navigationLinks: [
+        { href: "/#how-it-works", label: "Como funciona" },
+        { href: "/#questions", label: "Lo que recibes" },
+        { href: "/#difference", label: "Por que es diferente" },
+        { href: "/#pricing", label: "Precios" },
+        { href: "/blog", label: "Blog" },
+      ],
+    },
+    shared: {
+      aboutMissionEyebrow: "Mision",
+      aboutTeamEyebrow: "Equipo",
+      aboutTeamTitle: "Personas que realmente han operado el problema.",
+      careersApplyInterest: "Aplicar interes",
+      aboutValuesEyebrow: "Lo que nos importa",
+      aboutValuesTitle: "Algunas cosas que nos importan de verdad.",
+      blogFeaturedEyebrow: "Destacado",
+      blogRequestArticle: "Solicitar este articulo",
+      careersOpenRolesEyebrow: "Vacantes",
+      careersOpenRolesTitle: "Puestos abiertos",
+      careersWhyJoinEyebrow: "Por que unirte",
+      careersWhyJoinTitle: "Somos pequenos por diseno. Todos entregan trabajo real.",
+      contactReachEyebrow: "Contactanos",
+      contactReachTitle: "Otras formas de llegar al equipo",
+      contactSendAction: "Enviar mensaje",
+      contactSendTitle: "Envianos un mensaje",
+      footerCopyright: "(c) 2026 PulseOps. Todos los derechos reservados.",
+      footerNavigationLabel: "Navegacion del pie de pagina",
+      helpSearchPlaceholder: "Buscar en el centro de ayuda",
+      pressBoilerplateEyebrow: "Boilerplate de la empresa",
+      pressBoilerplateTitle: "Texto base de la empresa",
+      pressBrandEyebrow: "Marca",
+      pressBrandTitle: "Logos y paleta de colores",
+      pressCoverageEyebrow: "Cobertura",
+      pressCoverageTitle: "Cobertura reciente",
+      pressMediaDescription:
+        "Para entrevistas, logos, capturas del producto o material de contexto, contacta al equipo de medios.",
+      pressMediaPrimary: "press@pulseops.io",
+      pressMediaSecondary: "Contactanos",
+      pressMediaTitle: "Consultas de medios",
+      sampleBriefSubtitle: "Semana del 14 de abr de 2026 - Precision Plumbing Co.",
+      sampleBriefTitle: "Informe semanal de efectivo y margen",
+      worksWithLabel: "Funciona con",
+    },
+    signup: {
+      ...signupPageContent,
+      eyebrow: "Empieza gratis",
+      title: "Empieza tu prueba gratis",
+      highlight:
+        "Conecta un negocio, sube registros reales y recibe el primer brief de efectivo y margen antes de ampliar el alcance.",
+      details: [
+        "Precio plano sin impuesto por asiento.",
+        "Soporte de carga manual para CSV y XLSX desde el primer dia.",
+        "Recomendaciones centradas en la confianza con citas y confianza.",
+      ],
+      form: {
+        ...signupPageContent.form,
+        title: "Crea tu cuenta",
+        subtitle: "Comparte lo necesario para levantar el primer espacio de trabajo y brief.",
+        fields: [
+          { label: "Nombre completo", placeholder: "Jamie Reynolds" },
+          { label: "Email de trabajo", placeholder: "jamie@browardhvac.com", type: "email" },
+          { label: "Empresa", placeholder: "Broward HVAC Co." },
+          { label: "Contrasena", placeholder: "Elige una contrasena", type: "password" },
+        ],
+        actions: [
+          { label: "Crear cuenta", href: "/dashboard", variant: "primary" },
+          { label: "Hablar con ventas", href: "/contact", variant: "secondary" },
+        ],
+        footerPrompt: "Ya tienes una cuenta?",
+        footerLinkLabel: "Inicia sesion",
+        footerLinkHref: "/login",
+      },
+    },
+    terms: {
+      ...termsPageContent,
+      title: "Terminos del servicio",
+      updatedLabel: "Actualizado el 9 de abr de 2026",
+      intro:
+        "Estos terminos regulan el acceso a PulseOps y describen el uso de la suscripcion, el comportamiento aceptable y los limites del alcance actual del producto.",
+      sections: [
+        {
+          title: "1. El servicio",
+          body: [
+            "PulseOps ofrece actualmente un producto acotado centrado en un brief semanal de efectivo y margen y en los flujos de ingestion, revision y recomendacion necesarios para producirlo.",
+          ],
+        },
+        {
+          title: "2. Registro de cuenta",
+          body: [
+            "Eres responsable de mantener seguras las credenciales de tu cuenta y de la actividad que ocurra bajo ella.",
+          ],
+        },
+        {
+          title: "3. Suscripciones y facturacion",
+          body: [
+            "Las suscripciones se renuevan segun el periodo de facturacion seleccionado salvo cancelacion antes de la renovacion.",
+          ],
+        },
+        {
+          title: "4. Tus datos",
+          body: [
+            "Conservas la propiedad de tus datos. Nos otorgas los derechos necesarios para almacenarlos, procesarlos y transformarlos con el fin de operar el servicio.",
+          ],
+        },
+        {
+          title: "5. Uso aceptable",
+          body: [
+            "No puedes usar el servicio para violar la ley, abusar del sistema, interferir con otros o intentar obtener acceso no autorizado a datos o infraestructura.",
+          ],
+        },
+        {
+          title: "6. Limitaciones del servicio",
+          body: [
+            "El servicio esta evolucionando. Algunas funciones mostradas en el diseno o la documentacion pueden estar planificadas y no totalmente implementadas, y buscamos etiquetar esos casos con claridad.",
+          ],
+        },
+        {
+          title: "7. Descargo y responsabilidad",
+          body: [
+            "Salvo donde la ley exija lo contrario, el servicio se ofrece segun disponibilidad y la responsabilidad se limita al maximo permitido.",
+          ],
+        },
+        {
+          title: "8. Cambios en los terminos",
+          body: [
+            "Podemos actualizar estos terminos con el tiempo. El uso continuado despues de una actualizacion constituye aceptacion de los terminos revisados.",
+          ],
+        },
+      ],
+    },
+  },
+  packsPage: {
+    ...defaultUiMessagesEnUs.packsPage,
+    actions: {
+      export: "Exportar PDF",
+      exporting: "Exportando...",
+      generate: "Generar brief",
+      generating: "Generando...",
+      markReviewed: "Marcar como revisado",
+      markingReviewed: "Marcando...",
+    },
+    dataHeaders: {
+      class: "Clase",
+      confidence: "Confianza",
+      contribution: "Contribucion",
+      sourceFile: "Archivo fuente",
+    },
+    detailEyebrow: "Paquete de decision",
+    emptyDraftRecommendations:
+      "Este paquete sigue en borrador y todavia no tiene recomendaciones.",
+    emptyPackList: "Ningun paquete coincide con el filtro actual.",
+    feedbackAccepted: "Aceptado para esta recomendacion.",
+    feedbackDismissed: "Descartado para esta recomendacion.",
+    feedbackSaving: "Guardando feedback...",
+    labels: {
+      breadcrumbs: ["Panel", "Paquetes de decision"],
+      description: "Briefs semanales y recomendaciones sustentadas en datos ingeridos.",
+      title: "Paquetes de decision",
+    },
+    recommendationsHeading: "Recomendaciones",
+    searchPlaceholder: "Buscar paquetes",
+    sourceDataEmpty: "Todavia no hay registros fuente adjuntos.",
+    sourceDataHeading: "Datos fuente",
+  },
+  pipelinePage: {
+    ...defaultUiMessagesEnUs.pipelinePage,
+    dismissAction: "Descartar alerta",
+    labels: {
+      actions: {
+        primary: "Probar pipeline",
+        secondary: "Subir archivo",
+      },
+      breadcrumbs: ["Aplicacion", "Pipeline"],
+      description:
+        "Monitorea fuentes de datos, controla como se procesa cada tipo de documento y sigue que alimenta el brief semanal.",
+      sectionDescriptions: {
+        rules:
+          "Cada regla controla hasta donde viaja un documento: extraccion, almacenamiento SQL, recuperacion vectorial y elegibilidad para el brief.",
+        runs: "Cada documento procesado hoy. Las advertencias indican ejecuciones parciales o fallas que necesitan revision.",
+        sources:
+          "Por donde entra la informacion al sistema. Cada fuente se sincroniza de forma independiente y produce uno o mas tipos de documentos.",
+      },
+      sectionTitles: {
+        rules: "Reglas del pipeline",
+        runs: "Actividad reciente del pipeline",
+        sources: "Fuentes conectadas",
+      },
+      title: "Pipeline de datos",
+    },
+    stageHeaders: {
+      brief: "Brief",
+      depth: "Profundidad del pipeline",
+      documentType: "Tipo de documento",
+      llm: "LLM",
+      source: "Fuente",
+      sql: "SQL",
+      vector: "Vector",
+    },
+    tableHeaders: [
+      "Hora",
+      "Fuente",
+      "Tipo de documento",
+      "Registros",
+      "Resultado",
+      "Confianza",
+      "Duracion",
+    ],
+    testPipelineDescription:
+      "Los diagnosticos del pipeline estan planeados, pero la orquestacion de ejecucion de prueba todavia no esta implementada.",
+  },
+  settingsPage: {
+    ...defaultUiMessagesEnUs.settingsPage,
+    actionDescriptions: {
+      authentication:
+        "Configuracion de autenticacion y control de acceso para el espacio de trabajo.",
+      businessProfile:
+        "Esta informacion moldea como PulseOps interpreta tus datos y construye tu brief de efectivo y margen.",
+      colorModePersisted: "Se mantiene entre sesiones.",
+      connectedSources:
+        "Conecta tus sistemas de negocio para alimentar el pipeline de ingestion.",
+      currentCycle: "Ciclo actual en todo el espacio de trabajo.",
+      notificationPreferences:
+        "Elige como y cuando PulseOps te contacta. Se requiere rol de operador o superior.",
+      preferences: "Valores por defecto de visualizacion y flujo a nivel espacio de trabajo.",
+      rolePermissions:
+        "Define que puede ver y hacer cada rol dentro de tu espacio de trabajo.",
+    },
+    actionTitles: {
+      colorMode: "Modo de color",
+      connectedSources: "Fuentes conectadas",
+      currentUsage: "Uso en este periodo",
+      notificationPreferences: "Preferencias de notificacion",
+      rolePermissions: "Permisos por rol",
+      teamMembers: "Miembros del equipo",
+    },
+    appearance: {
+      dark: "Oscuro",
+      light: "Claro",
+    },
+    dialogs: {
+      connect: {
+        apiKeyLabel: "Clave API",
+        connect: "Conectar",
+        connecting: "Conectando...",
+        description:
+          "La clave se envia por HTTPS y se guarda en la configuracion de tu espacio de trabajo. Puedes desconectarla en cualquier momento.",
+      },
+      invite: {
+        email: "Email",
+        name: "Nombre",
+        role: "Rol",
+      },
+      revokeKeyWarning:
+        "Cualquier servicio que use esta clave perdera acceso de inmediato y necesitara un reemplazo antes de que la integracion pueda recuperarse.",
+      twoFactorDescription:
+        "Escanea el codigo QR en tu app autenticadora, confirma el codigo de seis digitos y guarda los codigos de respaldo en un lugar seguro.",
+      twoFactorQrPlaceholder: "Marcador QR del autenticador",
+    },
+    labels: {
+      breadcrumbs: ["Panel", "Configuracion"],
+      description: "Administra tu organizacion, equipo, integraciones y preferencias de seguridad.",
+      dialogs: {
+        inviteDescription: "Invita a un companero al espacio de trabajo actual.",
+        inviteTitle: "Invitar miembro del equipo",
+        revokeDescription: "Revocar esta clave bloquea de inmediato el acceso programatico que depende de ella.",
+        revokeTitle: "Revocar clave API?",
+        twoFactorDescription: "Agrega un segundo factor antes de permitir acciones de cuenta de alto riesgo.",
+        twoFactorTitle: "Configurar autenticacion de dos factores",
+      },
+      title: "Configuracion",
+    },
+    options: {
+      goals: [
+        "Mejorar la visibilidad del flujo de caja",
+        "Aumentar el margen por trabajo",
+        "Reducir costos indirectos",
+        "Reducir tiempo dedicado a reportes",
+        "Bajar el costo por trabajo",
+      ],
+      industry: [
+        "HVAC / Field service",
+        "Plomeria",
+        "Electricidad",
+        "Paisajismo",
+        "Techos",
+        "Otro...",
+      ],
+      invoiceCycle: ["Semanal", "Quincenal", "Mensual", "Por trabajo"],
+      inviteRoles: ["Admin", "Operador", "Analista", "Viewer"],
+      revenueModel: ["Por trabajo", "Suscripcion", "Mixto"],
+      teamSize: [
+        "1-4 personas",
+        "5-10 personas",
+        "11-25 personas",
+        "26-50 personas",
+        "51+ personas",
+      ],
+    },
+    placeholders: {
+      apiKey: "Pega aqui tu clave API",
+      email: "jamie@browardhvac.com",
+      name: "Jamie Reynolds",
+    },
+  },
+  uploadModal: {
+    acceptsDescription: "Acepta archivos CSV y XLSX de hasta 20 MB.",
+    cancel: "Cancelar",
+    done: "Listo",
+    duplicateDescription:
+      "Este archivo ya se habia subido. El registro existente se actualizo.",
+    duplicateNotice: "Duplicado detectado - documento existente actualizado.",
+    fileQueuedDescription: "Archivo subido y puesto en cola para procesamiento.",
+    fileTypeFallback: "tipo desconocido",
+    title: "Subir archivos",
+    upload: "Subir",
+    uploadFailed: "La carga fallo.",
+    uploadPrompt: "Suelta un archivo aqui o haz clic para buscar",
+    uploading: "Subiendo...",
+    uploadTypes: "CSV - XLSX - hasta 20 MB",
+  },
+};
+
+const defaultUiMessagesByLocale = {
+  "es-ES": defaultUiMessagesEs,
+  "es-MX": defaultUiMessagesEs,
+  "en-GB": defaultUiMessagesEnUs,
+  "en-US": defaultUiMessagesEnUs,
+} satisfies Record<SupportedUiLocale, UiMessages>;
+
+export const defaultUiTranslationBundles = Object.fromEntries(
+  supportedUiLocales.map((locale) => [
+    locale.code,
+    defaultUiMessagesByLocale[locale.code],
+  ]),
+) as Record<SupportedUiLocale, UiMessages>;

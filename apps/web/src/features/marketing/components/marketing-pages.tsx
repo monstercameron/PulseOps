@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -36,6 +38,7 @@ import {
   MarketingSection,
 } from "@/features/marketing/components/marketing-page-blocks";
 import { MarketingShell } from "@/features/marketing/components/marketing-shell";
+import { useUiI18n } from "@/features/i18n/components/ui-i18n-provider";
 
 type ShellPath =
   | "/"
@@ -67,26 +70,29 @@ function renderShell(pathName: ShellPath, children: ReactNode) {
 }
 
 export function MarketingHomePage() {
+  const { messages, resolveTree } = useUiI18n();
+  const content = resolveTree("marketing.home", homePageContent);
+
   return renderShell(
     "/",
     <>
       <MarketingPageHero
-        actions={homePageContent.hero.actions}
-        description={homePageContent.hero.description}
-        eyebrow={homePageContent.hero.eyebrow}
-        footerNote={homePageContent.hero.footerNote}
-        stats={homePageContent.hero.stats}
-        title={homePageContent.hero.title}
+        actions={content.hero.actions}
+        description={content.hero.description}
+        eyebrow={content.hero.eyebrow}
+        footerNote={content.hero.footerNote}
+        stats={content.hero.stats}
+        title={content.hero.title}
       />
 
       <MarketingSection
-        description={homePageContent.pain.description}
-        eyebrow={homePageContent.pain.eyebrow}
-        title={homePageContent.pain.title}
+        description={content.pain.description}
+        eyebrow={content.pain.eyebrow}
+        title={content.pain.title}
         tone="white"
       >
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {homePageContent.pain.items.map((item) => (
+          {content.pain.items.map((item) => (
             <MarketingInfoCard
               key={item.title}
               description={item.description}
@@ -99,13 +105,13 @@ export function MarketingHomePage() {
       </MarketingSection>
 
       <MarketingSection
-        description={homePageContent.workflow.description}
-        eyebrow={homePageContent.workflow.eyebrow}
+        description={content.workflow.description}
+        eyebrow={content.workflow.eyebrow}
         id="how-it-works"
-        title={homePageContent.workflow.title}
+        title={content.workflow.title}
       >
         <div className="grid gap-5 lg:grid-cols-2">
-          {homePageContent.workflow.steps.map((step) => (
+          {content.workflow.steps.map((step) => (
             <WorkflowStepCard
               key={step.step}
               description={step.description}
@@ -116,9 +122,9 @@ export function MarketingHomePage() {
         </div>
         <div className="mt-8 flex flex-wrap items-center gap-3 border-t border-border pt-6">
           <span className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">
-            Works with
+            {messages.marketing.shared.worksWithLabel}
           </span>
-          {homePageContent.workflow.connectors.map((connector) => (
+          {content.workflow.connectors.map((connector) => (
             <span
               key={connector}
               className="rounded-xl border border-border bg-white px-3 py-1.5 text-sm font-medium text-muted"
@@ -130,14 +136,14 @@ export function MarketingHomePage() {
       </MarketingSection>
 
       <MarketingSection
-        description={homePageContent.questions.description}
-        eyebrow={homePageContent.questions.eyebrow}
+        description={content.questions.description}
+        eyebrow={content.questions.eyebrow}
         id="questions"
-        title={homePageContent.questions.title}
+        title={content.questions.title}
         tone="dark"
       >
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {homePageContent.questions.items.map((item) => (
+          {content.questions.items.map((item) => (
             <QuestionCard
               key={item.title}
               description={item.description}
@@ -149,14 +155,14 @@ export function MarketingHomePage() {
       </MarketingSection>
 
       <MarketingSection
-        description={homePageContent.preview.description}
-        eyebrow={homePageContent.preview.eyebrow}
-        title={homePageContent.preview.title}
+        description={content.preview.description}
+        eyebrow={content.preview.eyebrow}
+        title={content.preview.title}
         tone="white"
       >
         <div className="grid gap-8 lg:grid-cols-[0.95fr_1.05fr]">
           <div>
-            <MarketingChecklist items={homePageContent.preview.checklist} />
+            <MarketingChecklist items={content.preview.checklist} />
           </div>
           <CatalogCard
             className="bg-[linear-gradient(145deg,#0d1b2a_0%,#12304b_100%)] p-6 text-white"
@@ -164,14 +170,14 @@ export function MarketingHomePage() {
           >
             <div className="border-b border-white/[0.08] pb-4">
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent">
-                Weekly Cash and Margin Brief
+                {messages.marketing.shared.sampleBriefTitle}
               </p>
               <p className="mt-2 text-sm text-[#84a0ba]">
-                Week of Apr 14, 2026 - Precision Plumbing Co.
+                {messages.marketing.shared.sampleBriefSubtitle}
               </p>
             </div>
             <div className="mt-5 space-y-3">
-              {homePageContent.preview.recommendations.map((recommendation) => (
+              {content.preview.recommendations.map((recommendation) => (
                 <div
                   key={recommendation.title}
                   className="rounded-2xl border border-white/[0.08] bg-white/[0.05] p-4"
@@ -191,13 +197,13 @@ export function MarketingHomePage() {
       </MarketingSection>
 
       <MarketingSection
-        description={homePageContent.difference.description}
-        eyebrow={homePageContent.difference.eyebrow}
+        description={content.difference.description}
+        eyebrow={content.difference.eyebrow}
         id="difference"
-        title={homePageContent.difference.title}
+        title={content.difference.title}
       >
         <div className="grid gap-5 md:grid-cols-3">
-          {homePageContent.difference.items.map((item) => (
+          {content.difference.items.map((item) => (
             <MarketingInfoCard
               key={item.title}
               description={item.description}
@@ -209,27 +215,27 @@ export function MarketingHomePage() {
       </MarketingSection>
 
       <MarketingSection
-        description={homePageContent.industries.description}
-        eyebrow={homePageContent.industries.eyebrow}
-        title={homePageContent.industries.title}
+        description={content.industries.description}
+        eyebrow={content.industries.eyebrow}
+        title={content.industries.title}
         tone="white"
       >
         <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5">
-          {homePageContent.industries.items.map((item) => (
+          {content.industries.items.map((item) => (
             <CatalogCard key={item} className="p-4 text-center shadow-none">
               <p className="text-sm font-semibold text-foreground">{item}</p>
             </CatalogCard>
           ))}
         </div>
-        <p className="mt-6 text-sm text-muted">{homePageContent.industries.note}</p>
+        <p className="mt-6 text-sm text-muted">{content.industries.note}</p>
       </MarketingSection>
 
       <MarketingSection
-        eyebrow={homePageContent.testimonials.eyebrow}
-        title={homePageContent.testimonials.title}
+        eyebrow={content.testimonials.eyebrow}
+        title={content.testimonials.title}
       >
         <div className="grid gap-5 lg:grid-cols-3">
-          {homePageContent.testimonials.items.map((item) => (
+          {content.testimonials.items.map((item) => (
             <TestimonialCard
               key={item.name}
               company={item.company}
@@ -242,14 +248,14 @@ export function MarketingHomePage() {
       </MarketingSection>
 
       <MarketingSection
-        description={homePageContent.pricing.description}
-        eyebrow={homePageContent.pricing.eyebrow}
+        description={content.pricing.description}
+        eyebrow={content.pricing.eyebrow}
         id="pricing"
-        title={homePageContent.pricing.title}
+        title={content.pricing.title}
         tone="white"
       >
         <div className="grid gap-5 lg:grid-cols-3">
-          {homePageContent.pricing.tiers.map((tier) => (
+          {content.pricing.tiers.map((tier) => (
             <PricingCard
               key={tier.name}
               ctaLabel={tier.ctaLabel}
@@ -270,10 +276,10 @@ export function MarketingHomePage() {
       <div className="px-6 py-12 md:px-10 md:py-16">
         <div className="mx-auto max-w-7xl">
           <CallToActionBanner
-            description={homePageContent.cta.description}
-            primaryAction={homePageContent.cta.primaryAction}
-            secondaryAction={homePageContent.cta.secondaryAction}
-            title={homePageContent.cta.title}
+            description={content.cta.description}
+            primaryAction={content.cta.primaryAction}
+            secondaryAction={content.cta.secondaryAction}
+            title={content.cta.title}
           />
         </div>
       </div>
@@ -282,22 +288,25 @@ export function MarketingHomePage() {
 }
 
 export function AboutPage() {
+  const { messages, resolveTree } = useUiI18n();
+  const content = resolveTree("marketing.about", aboutPageContent);
+
   return renderShell(
     "/about",
     <>
       <MarketingPageHero
-        description={aboutPageContent.hero.description}
-        eyebrow={aboutPageContent.hero.eyebrow}
-        title={aboutPageContent.hero.title}
+        description={content.hero.description}
+        eyebrow={content.hero.eyebrow}
+        title={content.hero.title}
       />
       <MarketingSection
-        description={aboutPageContent.story}
-        eyebrow="Mission"
-        title={aboutPageContent.mission}
+        description={content.story}
+        eyebrow={messages.marketing.shared.aboutMissionEyebrow}
+        title={content.mission}
         tone="white"
       >
         <div className="grid gap-4 md:grid-cols-3">
-          {aboutPageContent.stats.map((stat) => (
+          {content.stats.map((stat) => (
             <CatalogCard key={stat.detail} className="p-6 shadow-none">
               <p className="text-3xl font-semibold tracking-tight text-foreground">
                 {stat.value}
@@ -307,9 +316,12 @@ export function AboutPage() {
           ))}
         </div>
       </MarketingSection>
-      <MarketingSection eyebrow="What We Care About" title="A few things we care about deeply.">
+      <MarketingSection
+        eyebrow={messages.marketing.shared.aboutValuesEyebrow}
+        title={messages.marketing.shared.aboutValuesTitle}
+      >
         <div className="grid gap-5 md:grid-cols-3">
-          {aboutPageContent.values.map((value) => (
+          {content.values.map((value) => (
             <MarketingInfoCard
               key={value.title}
               description={value.description}
@@ -318,9 +330,12 @@ export function AboutPage() {
           ))}
         </div>
       </MarketingSection>
-      <MarketingSection eyebrow="Team" title="People who have actually run the problem.">
+      <MarketingSection
+        eyebrow={messages.marketing.shared.aboutTeamEyebrow}
+        title={messages.marketing.shared.aboutTeamTitle}
+      >
         <div className="grid gap-5 md:grid-cols-3">
-          {aboutPageContent.team.map((member) => (
+          {content.team.map((member) => (
             <CatalogCard key={member.name} className="p-6 shadow-none">
               <p className="text-lg font-semibold tracking-tight text-foreground">
                 {member.name}
@@ -334,10 +349,10 @@ export function AboutPage() {
       <div className="px-6 py-12 md:px-10 md:py-16">
         <div className="mx-auto max-w-7xl">
           <CallToActionBanner
-            description={aboutPageContent.cta.description}
-            primaryAction={aboutPageContent.cta.primaryAction}
-            secondaryAction={aboutPageContent.cta.secondaryAction}
-            title={aboutPageContent.cta.title}
+            description={content.cta.description}
+            primaryAction={content.cta.primaryAction}
+            secondaryAction={content.cta.secondaryAction}
+            title={content.cta.title}
           />
         </div>
       </div>
@@ -346,29 +361,36 @@ export function AboutPage() {
 }
 
 export function BlogPage() {
+  const { messages, resolveTree } = useUiI18n();
+  const content = resolveTree("marketing.blog", blogPageContent);
+
   return renderShell(
     "/blog",
     <>
       <MarketingPageHero
-        description={blogPageContent.hero.description}
-        eyebrow={blogPageContent.hero.eyebrow}
-        title={blogPageContent.hero.title}
+        description={content.hero.description}
+        eyebrow={content.hero.eyebrow}
+        title={content.hero.title}
       />
-      <MarketingSection eyebrow="Featured" title={blogPageContent.featuredPost.title} tone="white">
+      <MarketingSection
+        eyebrow={messages.marketing.shared.blogFeaturedEyebrow}
+        title={content.featuredPost.title}
+        tone="white"
+      >
         <CatalogCard className="p-7">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent">
-            {blogPageContent.featuredPost.meta}
+            {content.featuredPost.meta}
           </p>
           <p className="mt-4 text-base leading-8 text-muted">
-            {blogPageContent.featuredPost.summary}
+            {content.featuredPost.summary}
           </p>
         </CatalogCard>
         <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {blogPageContent.posts.map((post) => (
+          {content.posts.map((post) => (
             <CatalogCard key={post} className="flex h-full flex-col p-6 shadow-none">
               <p className="text-lg font-semibold tracking-tight text-foreground">{post}</p>
               <Link className="mt-4 text-sm font-semibold text-accent" href="/contact">
-                Request this article
+                {messages.marketing.shared.blogRequestArticle}
               </Link>
             </CatalogCard>
           ))}
@@ -377,10 +399,10 @@ export function BlogPage() {
       <div className="px-6 py-12 md:px-10 md:py-16">
         <div className="mx-auto max-w-7xl">
           <CallToActionBanner
-            description={blogPageContent.cta.description}
-            primaryAction={blogPageContent.cta.primaryAction}
-            secondaryAction={blogPageContent.cta.secondaryAction}
-            title={blogPageContent.cta.title}
+            description={content.cta.description}
+            primaryAction={content.cta.primaryAction}
+            secondaryAction={content.cta.secondaryAction}
+            title={content.cta.title}
           />
         </div>
       </div>
@@ -389,17 +411,23 @@ export function BlogPage() {
 }
 
 export function CareersPage() {
+  const { messages, resolveTree } = useUiI18n();
+  const content = resolveTree("marketing.careers", careersPageContent);
+
   return renderShell(
     "/careers",
     <>
       <MarketingPageHero
-        description={careersPageContent.hero.description}
-        eyebrow={careersPageContent.hero.eyebrow}
-        title={careersPageContent.hero.title}
+        description={content.hero.description}
+        eyebrow={content.hero.eyebrow}
+        title={content.hero.title}
       />
-      <MarketingSection eyebrow="Why Join" title="We are small by design. Everyone ships real work.">
+      <MarketingSection
+        eyebrow={messages.marketing.shared.careersWhyJoinEyebrow}
+        title={messages.marketing.shared.careersWhyJoinTitle}
+      >
         <div className="grid gap-5 md:grid-cols-3">
-          {careersPageContent.reasons.map((reason) => (
+          {content.reasons.map((reason) => (
             <MarketingInfoCard
               key={reason.title}
               description={reason.description}
@@ -408,9 +436,13 @@ export function CareersPage() {
           ))}
         </div>
       </MarketingSection>
-      <MarketingSection eyebrow="Open Roles" title="Current openings" tone="white">
+      <MarketingSection
+        eyebrow={messages.marketing.shared.careersOpenRolesEyebrow}
+        title={messages.marketing.shared.careersOpenRolesTitle}
+        tone="white"
+      >
         <div className="space-y-4">
-          {careersPageContent.openings.map((opening) => (
+          {content.openings.map((opening) => (
             <CatalogCard key={opening.title} className="p-6 shadow-none">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                 <div>
@@ -421,7 +453,7 @@ export function CareersPage() {
                   <p className="mt-3 text-sm leading-7 text-muted">{opening.description}</p>
                 </div>
                 <Link className="text-sm font-semibold text-accent" href="/contact">
-                  Apply interest
+                  {messages.marketing.shared.careersApplyInterest}
                 </Link>
               </div>
             </CatalogCard>
@@ -433,18 +465,25 @@ export function CareersPage() {
 }
 
 export function ContactPage() {
+  const { messages, resolveTree } = useUiI18n();
+  const content = resolveTree("marketing.contact", contactPageContent);
+
   return renderShell(
     "/contact",
     <>
       <MarketingPageHero
-        description={contactPageContent.hero.description}
-        eyebrow={contactPageContent.hero.eyebrow}
-        title={contactPageContent.hero.title}
+        description={content.hero.description}
+        eyebrow={content.hero.eyebrow}
+        title={content.hero.title}
       />
-      <MarketingSection eyebrow="Reach Us" title="Other ways to reach the team" tone="white">
+      <MarketingSection
+        eyebrow={messages.marketing.shared.contactReachEyebrow}
+        title={messages.marketing.shared.contactReachTitle}
+        tone="white"
+      >
         <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
           <div className="grid gap-4">
-            {contactPageContent.channels.map((channel) => (
+            {content.channels.map((channel) => (
               <CatalogCard key={channel.title} className="p-6 shadow-none">
                 <p className="text-lg font-semibold tracking-tight text-foreground">
                   {channel.title}
@@ -456,10 +495,10 @@ export function ContactPage() {
           </div>
           <CatalogCard className="p-7">
             <p className="text-xl font-semibold tracking-tight text-foreground">
-              Send us a message
+              {messages.marketing.shared.contactSendTitle}
             </p>
             <div className="mt-6 space-y-4">
-              {contactPageContent.formFields.map((field) => (
+              {content.formFields.map((field) => (
                 <label key={field.label} className="block">
                   <span className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
                     {field.label}
@@ -482,7 +521,7 @@ export function ContactPage() {
             <div className="mt-6">
               <Link href="/contact">
                 <span className="inline-flex rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-slate-950">
-                  Send message
+                  {messages.marketing.shared.contactSendAction}
                 </span>
               </Link>
             </div>
@@ -494,35 +533,42 @@ export function ContactPage() {
 }
 
 export function HelpPage() {
+  const { messages, resolveTree } = useUiI18n();
+  const content = resolveTree("marketing.help", helpPageContent);
+
   return renderShell(
     "/help",
     <>
       <MarketingPageHero
-        description={helpPageContent.hero.description}
-        eyebrow={helpPageContent.hero.eyebrow}
-        title={helpPageContent.hero.title}
+        description={content.hero.description}
+        eyebrow={content.hero.eyebrow}
+        title={content.hero.title}
       />
       <div className="mx-auto max-w-7xl px-6 py-8 md:px-10">
         <CatalogCard className="p-4 shadow-none">
+          <label className="sr-only" htmlFor="help-search">
+            {messages.marketing.shared.helpSearchPlaceholder}
+          </label>
           <input
+            id="help-search"
             className="w-full border-none bg-transparent text-base text-foreground outline-none placeholder:text-muted"
-            placeholder="Search the help center"
+            placeholder={messages.marketing.shared.helpSearchPlaceholder}
             type="text"
           />
         </CatalogCard>
       </div>
       <div className="mx-auto grid max-w-7xl gap-5 px-6 pb-14 md:grid-cols-2 md:px-10 md:pb-20">
-        {helpPageContent.groups.map((group) => (
+        {content.groups.map((group) => (
           <MarketingFaqGroup key={group.title} items={group.items} title={group.title} />
         ))}
       </div>
       <div className="px-6 py-12 md:px-10 md:py-16">
         <div className="mx-auto max-w-7xl">
           <CallToActionBanner
-            description={helpPageContent.cta.description}
-            primaryAction={helpPageContent.cta.primaryAction}
-            secondaryAction={helpPageContent.cta.secondaryAction}
-            title={helpPageContent.cta.title}
+            description={content.cta.description}
+            primaryAction={content.cta.primaryAction}
+            secondaryAction={content.cta.secondaryAction}
+            title={content.cta.title}
           />
         </div>
       </div>
@@ -531,21 +577,28 @@ export function HelpPage() {
 }
 
 export function PressPage() {
+  const { messages, resolveTree } = useUiI18n();
+  const content = resolveTree("marketing.press", pressPageContent);
+
   return renderShell(
     "/press",
     <>
       <MarketingPageHero
-        description={pressPageContent.hero.description}
-        eyebrow={pressPageContent.hero.eyebrow}
-        title={pressPageContent.hero.title}
+        description={content.hero.description}
+        eyebrow={content.hero.eyebrow}
+        title={content.hero.title}
       />
-      <MarketingSection eyebrow="Company Boilerplate" title="Company boilerplate" tone="white">
+      <MarketingSection
+        eyebrow={messages.marketing.shared.pressBoilerplateEyebrow}
+        title={messages.marketing.shared.pressBoilerplateTitle}
+        tone="white"
+      >
         <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
           <CatalogCard className="p-7 shadow-none">
-            <p className="text-base leading-8 text-muted">{pressPageContent.boilerplate}</p>
+            <p className="text-base leading-8 text-muted">{content.boilerplate}</p>
           </CatalogCard>
           <div className="grid gap-4 md:grid-cols-2">
-            {pressPageContent.facts.map((fact) => (
+            {content.facts.map((fact) => (
               <CatalogCard key={fact.detail} className="p-6 shadow-none">
                 <p className="text-2xl font-semibold tracking-tight text-foreground">
                   {fact.value}
@@ -556,9 +609,12 @@ export function PressPage() {
           </div>
         </div>
       </MarketingSection>
-      <MarketingSection eyebrow="Brand" title="Logos and color palette">
+      <MarketingSection
+        eyebrow={messages.marketing.shared.pressBrandEyebrow}
+        title={messages.marketing.shared.pressBrandTitle}
+      >
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {pressPageContent.colors.map((color) => (
+          {content.colors.map((color) => (
             <CatalogCard key={color.name} className="p-5 shadow-none">
               <div
                 className="h-24 rounded-2xl"
@@ -570,9 +626,13 @@ export function PressPage() {
           ))}
         </div>
       </MarketingSection>
-      <MarketingSection eyebrow="Coverage" title="Recent press coverage" tone="white">
+      <MarketingSection
+        eyebrow={messages.marketing.shared.pressCoverageEyebrow}
+        title={messages.marketing.shared.pressCoverageTitle}
+        tone="white"
+      >
         <div className="grid gap-4 lg:grid-cols-3">
-          {pressPageContent.coverage.map((quote) => (
+          {content.coverage.map((quote) => (
             <CatalogCard key={quote} className="p-6 shadow-none">
               <p className="text-sm leading-7 text-foreground-soft">{quote}</p>
             </CatalogCard>
@@ -580,10 +640,10 @@ export function PressPage() {
         </div>
         <div className="mt-8">
           <CallToActionBanner
-            description="For interviews, logos, product screenshots, or background material, contact the media team."
-            primaryAction="press@pulseops.io"
-            secondaryAction="Contact Us"
-            title="Media inquiries"
+            description={messages.marketing.shared.pressMediaDescription}
+            primaryAction={messages.marketing.shared.pressMediaPrimary}
+            secondaryAction={messages.marketing.shared.pressMediaSecondary}
+            title={messages.marketing.shared.pressMediaTitle}
           />
         </div>
       </MarketingSection>
@@ -592,78 +652,90 @@ export function PressPage() {
 }
 
 export function PrivacyPage() {
+  const { resolveTree } = useUiI18n();
+  const content = resolveTree("marketing.privacy", privacyPageContent);
+
   return renderShell(
     "/privacy",
     <LegalDocument
-      intro={privacyPageContent.intro}
-      sections={privacyPageContent.sections}
-      title={privacyPageContent.title}
-      updatedLabel={privacyPageContent.updatedLabel}
+      intro={content.intro}
+      sections={content.sections}
+      title={content.title}
+      updatedLabel={content.updatedLabel}
     />,
   );
 }
 
 export function TermsPage() {
+  const { resolveTree } = useUiI18n();
+  const content = resolveTree("marketing.terms", termsPageContent);
+
   return renderShell(
     "/terms",
     <LegalDocument
-      intro={termsPageContent.intro}
-      sections={termsPageContent.sections}
-      title={termsPageContent.title}
-      updatedLabel={termsPageContent.updatedLabel}
+      intro={content.intro}
+      sections={content.sections}
+      title={content.title}
+      updatedLabel={content.updatedLabel}
     />,
   );
 }
 
 export function LoginPage() {
+  const { resolveTree } = useUiI18n();
+  const content = resolveTree("marketing.login", loginPageContent);
+
   return renderShell(
     "/login",
     <AuthSplitLayout
-      details={loginPageContent.details}
-      eyebrow={loginPageContent.eyebrow}
-      highlight={loginPageContent.highlight}
-      title={loginPageContent.title}
+      details={content.details}
+      eyebrow={content.eyebrow}
+      highlight={content.highlight}
+      title={content.title}
     >
       <AuthFormCard
-        actions={loginPageContent.form.actions}
-        fields={loginPageContent.form.fields}
+        actions={content.form.actions}
+        fields={content.form.fields}
         footer={
           <>
-            {loginPageContent.form.footerPrompt}{" "}
-            <Link className="font-semibold text-accent" href={loginPageContent.form.footerLinkHref}>
-              {loginPageContent.form.footerLinkLabel}
+            {content.form.footerPrompt}{" "}
+            <Link className="font-semibold text-accent" href={content.form.footerLinkHref}>
+              {content.form.footerLinkLabel}
             </Link>
           </>
         }
-        subtitle={loginPageContent.form.subtitle}
-        title={loginPageContent.form.title}
+        subtitle={content.form.subtitle}
+        title={content.form.title}
       />
     </AuthSplitLayout>,
   );
 }
 
 export function SignupPage() {
+  const { resolveTree } = useUiI18n();
+  const content = resolveTree("marketing.signup", signupPageContent);
+
   return renderShell(
     "/signup",
     <AuthSplitLayout
-      details={signupPageContent.details}
-      eyebrow={signupPageContent.eyebrow}
-      highlight={signupPageContent.highlight}
-      title={signupPageContent.title}
+      details={content.details}
+      eyebrow={content.eyebrow}
+      highlight={content.highlight}
+      title={content.title}
     >
       <AuthFormCard
-        actions={signupPageContent.form.actions}
-        fields={signupPageContent.form.fields}
+        actions={content.form.actions}
+        fields={content.form.fields}
         footer={
           <>
-            {signupPageContent.form.footerPrompt}{" "}
-            <Link className="font-semibold text-accent" href={signupPageContent.form.footerLinkHref}>
-              {signupPageContent.form.footerLinkLabel}
+            {content.form.footerPrompt}{" "}
+            <Link className="font-semibold text-accent" href={content.form.footerLinkHref}>
+              {content.form.footerLinkLabel}
             </Link>
           </>
         }
-        subtitle={signupPageContent.form.subtitle}
-        title={signupPageContent.form.title}
+        subtitle={content.form.subtitle}
+        title={content.form.title}
       />
     </AuthSplitLayout>,
   );

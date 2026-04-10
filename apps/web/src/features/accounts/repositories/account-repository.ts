@@ -5,6 +5,10 @@ export interface AccountRepository {
     orgId: string,
     email: string,
   ): Promise<OrganizationAccountRecord | null>;
+  getByOrgIdAndUserId(
+    orgId: string,
+    userId: string,
+  ): Promise<OrganizationAccountRecord | null>;
   listByOrgId(orgId: string): Promise<OrganizationAccountRecord[]>;
   put(
     organizationAccount: OrganizationAccountRecord,

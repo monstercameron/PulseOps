@@ -32,6 +32,15 @@ export function createLocalAccountRepository({
         ) ?? null
       );
     },
+    async getByOrgIdAndUserId(orgId, userId) {
+      const organizationAccounts = await collection.list();
+
+      return (
+        organizationAccounts.find(
+          (account) => account.orgId === orgId && account.userId === userId,
+        ) ?? null
+      );
+    },
     async listByOrgId(orgId) {
       const organizationAccounts = await collection.list();
 

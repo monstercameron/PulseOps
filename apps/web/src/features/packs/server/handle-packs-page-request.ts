@@ -47,18 +47,21 @@ export async function handlePacksPageRequest(
 
 type GetPacksPageDataInput = PacksDependencies &
   Readonly<{
+    locale?: string;
     orgId: string;
   }>;
 
 export async function getPacksPageData({
   documentRepository,
   factRepository,
+  locale = "en-US",
   orgId,
   packRepository,
 }: GetPacksPageDataInput): Promise<PacksPageData> {
   const packRecords = await listPackRecordsForOrg({
     documentRepository,
     factRepository,
+    locale,
     orgId,
     packRepository,
   });

@@ -1,7 +1,11 @@
+"use client";
+
 import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { CatalogButton } from "@/features/catalog/components/catalog-primitives";
+import { LocaleSwitcher } from "@/features/i18n/components/locale-switcher";
+import { useUiI18n } from "@/features/i18n/components/ui-i18n-provider";
 
 export type MarketingNavLink = Readonly<{
   href: string;
@@ -34,6 +38,8 @@ export function MarketingShell({
   navLinks,
   pathName,
 }: MarketingShellProps) {
+  const { messages } = useUiI18n();
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-[#0d1b2a]/95 backdrop-blur">
@@ -41,7 +47,10 @@ export function MarketingShell({
           <Link className="text-xl font-bold tracking-tight text-white" href="/">
             Pulse<span className="text-accent">Ops</span>
           </Link>
-          <nav className="hidden items-center gap-7 md:flex">
+          <nav
+            aria-label={messages.marketing.shared.footerNavigationLabel}
+            className="hidden items-center gap-7 md:flex"
+          >
             {navLinks.map((link) => {
               const isActive =
                 link.href !== "/" &&
@@ -50,6 +59,7 @@ export function MarketingShell({
               return (
                 <Link
                   key={link.href}
+                  aria-current={isActive ? "page" : undefined}
                   className={
                     isActive
                       ? "text-sm font-medium text-white"
@@ -62,13 +72,16 @@ export function MarketingShell({
               );
             })}
           </nav>
-          <Link className="hidden md:block" href={ctaHref}>
-            <CatalogButton variant="primary">{ctaLabel}</CatalogButton>
-          </Link>
+          <div className="hidden items-center gap-3 md:flex">
+            <LocaleSwitcher tone="dark" />
+            <Link href={ctaHref}>
+              <CatalogButton variant="primary">{ctaLabel}</CatalogButton>
+            </Link>
+          </div>
         </div>
       </header>
 
-      <main>{children}</main>
+      <main id="main-content">{children}</main>
 
       <footer className="bg-[#0d1b2a] px-6 pb-8 pt-12 text-[#7a95ad] md:px-10">
         <div className="mx-auto grid max-w-7xl gap-10 md:grid-cols-[1.8fr_1fr_1fr_1fr]">
@@ -99,7 +112,7 @@ export function MarketingShell({
           ))}
         </div>
         <div className="mx-auto mt-10 flex max-w-7xl flex-col gap-2 border-t border-white/[0.07] pt-5 text-xs text-[#3d576b] sm:flex-row sm:items-center sm:justify-between">
-          <span>© 2026 PulseOps. All rights reserved.</span>
+          <span>{messages.marketing.shared.footerCopyright}</span>
           <span>{footerTagline}</span>
         </div>
       </footer>
