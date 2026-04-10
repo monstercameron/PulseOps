@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { createBillingAccount } from "@/features/cost/domain/billing-account";
-import { createLlmCostTracker } from "@/features/cost/server/llm-cost-tracker";
+import {
+  createLlmCostTracker,
+  LLM_USAGE_CAP_REACHED_MESSAGE,
+} from "@/features/cost/server/llm-cost-tracker";
 
 describe("llm cost tracker", () => {
   it("records token usage with provider and billable costs", async () => {
@@ -73,5 +76,71 @@ describe("llm cost tracker", () => {
         totalTokens: 1_500,
       }),
     );
+  });
+
+  it("blocks new requests after the usage cap is reached", async () => {
+    const tracker = createLlmCostTracker({
+      billingAccountRepository: {
+        async getByOrgId(orgId) {
+          return createBillingAccount({
+            billingAnchorDayOfMonth: 9,
+            createdAt: "2026-04-09T10:00:00.000Z",
+            id: orgId,
+            monthlyPlatformFeeCents: 14_900,
+            orgId,
+            planName: "Growth",
+            profitPremiumBasisPoints: 2_500,
+            status: "active",
+            updatedAt: "2026-04-09T10:00:00.000Z",
+            usageCapCents: 200,
+          });
+        },
+        async put(value) {
+          return value;
+        },
+      },
+      llmUsageEventRepository: {
+        async listByOrgIdInPeriod() {
+          return [
+            {
+              billableCostNanoUsd: 2_000_000_000,
+              cachedInputTokens: 0,
+              createdAt: "2026-04-09T12:00:00.000Z",
+              feature: "extraction",
+              id: "usage_1",
+              inputTokens: 100,
+              model: "gpt-5-mini",
+              operation: "generic-document-extraction",
+              orgId: "org_123",
+              outputTokens: 50,
+              pricingAvailable: true,
+              pricingSource: "gpt-5-mini",
+              pricingVersion: "openai-api-pricing-2026-04-09",
+              profitPremiumBasisPoints: 2_500,
+              provider: "openai" as const,
+              providerInputCostNanoUsd: 10,
+              providerOutputCostNanoUsd: 20,
+              providerTotalCostNanoUsd: 30,
+              totalTokens: 150,
+              version: "llm-usage-event.v1" as const,
+            },
+          ];
+        },
+        async put(value) {
+          return value;
+        },
+      },
+      now: () => "2026-04-10T12:00:00.000Z",
+    });
+
+    await expect(
+      tracker.assertWithinUsageCap({
+        context: {
+          feature: "extraction",
+          operation: "generic-document-extraction",
+          orgId: "org_123",
+        },
+      }),
+    ).rejects.toThrow(LLM_USAGE_CAP_REACHED_MESSAGE);
   });
 });

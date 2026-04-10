@@ -9,10 +9,28 @@ export type SettingsTabId =
 
 export type SettingsPageData = Readonly<{
   billing: Readonly<{
+    graphMetrics: Readonly<{
+      currentTotalCents: number;
+      flatFeeCents: number;
+      usageThisPeriodCents: number;
+    }>;
+    paymentMethods: readonly {
+      brandLabel: string;
+      cardholderName: string;
+      expMonth: number;
+      expYear: number;
+      id: string;
+      last4: string;
+      postalCode: string | null;
+      role: "backup" | "primary";
+      roleLabel: string;
+    }[];
     planDescription: string;
     planTitle: string;
+    usageCapCents: number | null;
     usage: readonly {
       detail: string;
+      id: "current_total" | "flat_fee" | "usage_this_period";
       label: string;
       value: string;
     }[];
@@ -25,6 +43,16 @@ export type SettingsPageData = Readonly<{
     statusTone: "danger" | "neutral" | "success" | "warning";
     title: string;
   }[];
+  currentUser: Readonly<{
+    accessSummary: string;
+    canInviteMembers: boolean;
+    canManageAccounts: boolean;
+    email: string;
+    isFallbackSession: boolean;
+    name: string;
+    role: string;
+    userId: string;
+  }>;
   notifications: readonly {
     id: string;
     items: readonly {
@@ -73,11 +101,21 @@ export type SettingsPageData = Readonly<{
   team: Readonly<{
     members: readonly {
       accessSummary: string;
+      canEditAuthorization: boolean;
+      canEditIdentity: boolean;
+      canOpenAccountControls: boolean;
+      canResetPassword: boolean;
       email: string;
+      id: string;
+      isCurrentUser: boolean;
       name: string;
+      operationsAccess: boolean;
+      reportAccess: boolean;
       role: string;
+      setupAccess: boolean;
       status: "active" | "invited";
       statusLabel: string;
+      userId: string;
     }[];
     permissions: readonly {
       admin: boolean;
@@ -105,16 +143,35 @@ export const settingsPageLabels = {
 
 export const fallbackSettingsPageData: SettingsPageData = {
   billing: {
+    graphMetrics: {
+      currentTotalCents: 14_900,
+      flatFeeCents: 14_900,
+      usageThisPeriodCents: 0,
+    },
+    paymentMethods: [],
     planDescription:
-      "$149.00 platform access fee • AI usage billed at provider cost + 20% premium • Period Apr 9, 2026 to May 9, 2026",
+      "Flat monthly fee plus usage-based billing. Current cycle Apr 9, 2026 to May 9, 2026.",
     planTitle: "Growth plan",
+    usageCapCents: null,
     usage: [
-      { label: "Platform access fee", value: "$149.00", detail: "Monthly recurring" },
-      { label: "Prompt tokens", value: "0", detail: "0 cached" },
-      { label: "Generated tokens", value: "0", detail: "0 total" },
-      { label: "Provider AI cost", value: "$0.00", detail: "0 tracked runs" },
-      { label: "Billable AI usage", value: "$0.00", detail: "Cost + 20% premium" },
-      { label: "Estimated current total", value: "$149.00", detail: "Renews May 9, 2026" },
+      {
+        detail: "Monthly recurring",
+        id: "flat_fee",
+        label: "Flat fee",
+        value: "$149.00",
+      },
+      {
+        detail: "0 tracked runs",
+        id: "usage_this_period",
+        label: "Usage this period",
+        value: "$0.00",
+      },
+      {
+        detail: "Renews May 9, 2026",
+        id: "current_total",
+        label: "Current total",
+        value: "$149.00",
+      },
     ],
   },
   integrations: [
@@ -148,6 +205,16 @@ export const fallbackSettingsPageData: SettingsPageData = {
       title: "Xero",
     },
   ],
+  currentUser: {
+    accessSummary: "Setup, Ops, Reports",
+    canInviteMembers: true,
+    canManageAccounts: true,
+    email: "jamie@browardhvac.com",
+    isFallbackSession: true,
+    name: "Jamie Reynolds",
+    role: "Admin",
+    userId: "user_jamie_reynolds",
+  },
   notifications: [
     {
       id: "briefs",
@@ -284,35 +351,75 @@ export const fallbackSettingsPageData: SettingsPageData = {
     members: [
       {
         accessSummary: "Setup, Ops, Reports",
+        canEditAuthorization: false,
+        canEditIdentity: true,
+        canOpenAccountControls: true,
+        canResetPassword: true,
         email: "jamie@browardhvac.com",
+        id: "member_jamie_reynolds",
+        isCurrentUser: true,
         name: "Jamie Reynolds",
+        operationsAccess: true,
+        reportAccess: true,
         role: "Admin",
+        setupAccess: true,
         status: "active",
         statusLabel: "Active",
+        userId: "user_jamie_reynolds",
       },
       {
         accessSummary: "Setup, Ops",
+        canEditAuthorization: true,
+        canEditIdentity: true,
+        canOpenAccountControls: true,
+        canResetPassword: true,
         email: "tara@browardhvac.com",
+        id: "member_tara_nguyen",
+        isCurrentUser: false,
         name: "Tara Nguyen",
+        operationsAccess: true,
+        reportAccess: false,
         role: "Operator",
+        setupAccess: true,
         status: "active",
         statusLabel: "Active",
+        userId: "user_tara_nguyen",
       },
       {
         accessSummary: "Reports",
+        canEditAuthorization: true,
+        canEditIdentity: true,
+        canOpenAccountControls: true,
+        canResetPassword: true,
         email: "maria@browardhvac.com",
+        id: "member_maria_patel",
+        isCurrentUser: false,
         name: "Maria Patel",
+        operationsAccess: false,
+        reportAccess: true,
         role: "Analyst",
+        setupAccess: false,
         status: "active",
         statusLabel: "Active",
+        userId: "user_maria_patel",
       },
       {
         accessSummary: "Reports",
+        canEditAuthorization: true,
+        canEditIdentity: true,
+        canOpenAccountControls: true,
+        canResetPassword: true,
         email: "mkim@gmail.com",
+        id: "member_marcus_kim",
+        isCurrentUser: false,
         name: "Marcus Kim",
+        operationsAccess: false,
+        reportAccess: true,
         role: "Viewer",
+        setupAccess: false,
         status: "invited",
         statusLabel: "Invited",
+        userId: "user_marcus_kim",
       },
     ],
     permissions: [

@@ -15,6 +15,19 @@ describe("settings record service", () => {
         async getByOrgIdAndEmail() {
           return null;
         },
+        async getByOrgIdAndUserId(_orgId, userId) {
+          return userId === "user_admin"
+            ? createOrganizationAccount({
+                createdAt: "2026-04-10T00:00:00.000Z",
+                email: "admin@example.com",
+                name: "Admin User",
+                orgId: "org_123",
+                role: "admin",
+                status: "active",
+                userId: "user_admin",
+              })
+            : null;
+        },
         async listByOrgId() {
           return [
             createOrganizationAccount({
@@ -32,6 +45,7 @@ describe("settings record service", () => {
               orgId: "org_123",
               role: "admin",
               status: "active",
+              userId: "user_admin",
             }),
             createOrganizationAccount({
               createdAt: "2026-04-10T02:00:00.000Z",
@@ -47,6 +61,7 @@ describe("settings record service", () => {
           return account;
         },
       },
+      currentActorUserId: "user_admin",
       orgId: "org_123",
       organizationRepository: {
         async getById() {
@@ -89,20 +104,32 @@ describe("settings record service", () => {
     expect(pageData.security.authRows[0]).toMatchObject({
       description: "admin@example.com",
     });
+    expect(pageData.currentUser).toMatchObject({
+      canInviteMembers: true,
+      email: "admin@example.com",
+      role: "Admin",
+      userId: "user_admin",
+    });
     expect(pageData.team.members).toEqual([
       expect.objectContaining({
         accessSummary: "Setup, Ops, Reports",
+        canEditAuthorization: false,
         email: "admin@example.com",
+        isCurrentUser: true,
         role: "Admin",
       }),
       expect.objectContaining({
         accessSummary: "Reports",
+        canEditAuthorization: true,
         email: "viewer@example.com",
+        isCurrentUser: false,
         role: "Viewer",
       }),
       expect.objectContaining({
         accessSummary: "Setup, Ops",
+        canEditAuthorization: true,
         email: "operator@example.com",
+        isCurrentUser: false,
         role: "Operator",
         status: "invited",
       }),

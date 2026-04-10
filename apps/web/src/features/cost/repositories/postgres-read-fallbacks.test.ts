@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { type Pool } from "pg";
 
 import { createPostgresBillingAccountRepository } from "@/features/cost/repositories/postgres-billing-account-repository";
+import { createPostgresBillingPaymentMethodRepository } from "@/features/cost/repositories/postgres-billing-payment-method-repository";
 import { createPostgresLlmUsageEventRepository } from "@/features/cost/repositories/postgres-llm-usage-event-repository";
 
 describe("postgres cost repository read fallbacks", () => {
@@ -12,11 +13,21 @@ describe("postgres cost repository read fallbacks", () => {
     const billingAccountRepository = createPostgresBillingAccountRepository({
       pool,
     });
+    const billingPaymentMethodRepository =
+      createPostgresBillingPaymentMethodRepository({
+        pool,
+      });
     const llmUsageEventRepository = createPostgresLlmUsageEventRepository({
       pool,
     });
 
     await expect(billingAccountRepository.getByOrgId("org_123")).resolves.toBeNull();
+    await expect(
+      billingPaymentMethodRepository.getByOrgIdAndRole("org_123", "primary"),
+    ).resolves.toBeNull();
+    await expect(
+      billingPaymentMethodRepository.listByOrgId("org_123"),
+    ).resolves.toEqual([]);
     await expect(
       llmUsageEventRepository.listByOrgIdInPeriod({
         endAtExclusive: "2026-04-10T00:00:00.000Z",

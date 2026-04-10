@@ -160,7 +160,8 @@ function mapLlmUsageEventRow(row: Record<string, unknown>): LlmUsageEvent {
       row.cached_input_tokens as string | number | null | undefined,
     ),
     createdAt: fromPostgresTimestamp(row.created_at as Date | string),
-    documentId: row.document_id,
+    documentId:
+      typeof row.document_id === "string" ? row.document_id : undefined,
     feature: row.feature,
     id: row.id,
     inputTokens: fromPostgresNumber(

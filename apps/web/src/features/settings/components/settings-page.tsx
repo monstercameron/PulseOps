@@ -43,13 +43,37 @@ type SettingsPageProps = Readonly<{
   orgId: string;
 }>;
 
-type DialogId = "invite" | "revoke-key" | "two-factor" | null;
+type DialogId = "account" | "invite" | "revoke-key" | "two-factor" | null;
 type PlaceholderAction = Readonly<{
   description?: string;
   title: string;
 }> | null;
 type OrganizationEditableField = Exclude<keyof SettingsPageData["organization"], "goals">;
 type InviteRoleLabel = "Admin" | "Operator" | "Analyst" | "Viewer";
+type AccountStatusLabel = "Active" | "Invited";
+type BillingPaymentMethodRecord = SettingsPageData["billing"]["paymentMethods"][number];
+type BillingPaymentMethodRole = BillingPaymentMethodRecord["role"];
+type BillingUsageMetricId = SettingsPageData["billing"]["usage"][number]["id"];
+type PaymentMethodDraft = Readonly<{
+  cardNumber: string;
+  cardholderName: string;
+  cvc: string;
+  expMonth: string;
+  expYear: string;
+  postalCode: string;
+}>;
+type TeamMemberRecord = SettingsPageData["team"]["members"][number];
+type TeamAccountDraft = Readonly<{
+  email: string;
+  id: string;
+  name: string;
+  operationsAccess: boolean;
+  password: string;
+  reportAccess: boolean;
+  roleLabel: InviteRoleLabel;
+  setupAccess: boolean;
+  statusLabel: AccountStatusLabel;
+}>;
 
 const INDUSTRY_OPTIONS = [
   "HVAC / Field service",
@@ -80,6 +104,7 @@ const ALL_GOALS = [
   "Reduce cost per job",
 ] as const;
 const INVITE_ROLE_OPTIONS = ["Admin", "Operator", "Analyst", "Viewer"] as const;
+const ACCOUNT_STATUS_OPTIONS = ["Active", "Invited"] as const;
 
 const settingsTabIcons: Record<SettingsTabId, React.ReactNode> = {
   organization: <svg fill="currentColor" height="14" viewBox="0 0 18 18" width="14"><path clipRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" fillRule="evenodd" /></svg>,
@@ -109,6 +134,19 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
       : "light";
   });
   const [pageData, setPageData] = useState(initialData);
+  const [billingCapDraft, setBillingCapDraft] = useState(() =>
+    formatBillingCapInput(initialData.billing.usageCapCents),
+  );
+  const [primaryPaymentMethodDraft, setPrimaryPaymentMethodDraft] = useState(() =>
+    createPaymentMethodDraft(
+      findBillingPaymentMethod(initialData.billing.paymentMethods, "primary"),
+    ),
+  );
+  const [backupPaymentMethodDraft, setBackupPaymentMethodDraft] = useState(() =>
+    createPaymentMethodDraft(
+      findBillingPaymentMethod(initialData.billing.paymentMethods, "backup"),
+    ),
+  );
   const [organizationDraft, setOrganizationDraft] = useState(initialData.organization);
   const [notificationGroups, setNotificationGroups] = useState(initialData.notifications);
   const [preferenceItems, setPreferenceItems] = useState(initialData.preferences);
@@ -119,6 +157,7 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
   });
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isSavingNotifications, setIsSavingNotifications] = useState(false);
+  const [isSavingBilling, setIsSavingBilling] = useState(false);
   const [isSavingPreferences, setIsSavingPreferences] = useState(false);
   const [isSendingInvite, setIsSendingInvite] = useState(false);
   const [pendingApiKeyName, setPendingApiKeyName] = useState<string | null>(null);
@@ -127,6 +166,31 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
   const [pendingConnectIntegration, setPendingConnectIntegration] = useState<string | null>(null);
   const [connectApiKeyDraft, setConnectApiKeyDraft] = useState("");
   const [isConnectingIntegration, setIsConnectingIntegration] = useState(false);
+  const [accountDraft, setAccountDraft] = useState<TeamAccountDraft | null>(null);
+  const [isSavingAccount, setIsSavingAccount] = useState(false);
+  const [savingPaymentMethodRole, setSavingPaymentMethodRole] =
+    useState<BillingPaymentMethodRole | null>(null);
+  const primaryPaymentMethod = findBillingPaymentMethod(
+    pageData.billing.paymentMethods,
+    "primary",
+  );
+  const backupPaymentMethod = findBillingPaymentMethod(
+    pageData.billing.paymentMethods,
+    "backup",
+  );
+  const usageGraphCapCents = getBillingGraphUsageCapCents({
+    billingCapDraft,
+    savedUsageCapCents: pageData.billing.usageCapCents,
+  });
+  const selectedTeamMember =
+    accountDraft === null
+      ? null
+      : pageData.team.members.find((member) => member.id === accountDraft.id) ?? null;
+
+  function closeAccountDialog() {
+    setAccountDraft(null);
+    setActiveDialog(null);
+  }
 
   function openPlaceholderAction(title: string, description?: string) {
     setPlaceholderAction({ description, title });
@@ -138,6 +202,17 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
     setPageData(nextPageData);
 
     if ("tabs" in response) {
+      setBillingCapDraft(formatBillingCapInput(nextPageData.billing.usageCapCents));
+      setPrimaryPaymentMethodDraft(
+        createPaymentMethodDraft(
+          findBillingPaymentMethod(nextPageData.billing.paymentMethods, "primary"),
+        ),
+      );
+      setBackupPaymentMethodDraft(
+        createPaymentMethodDraft(
+          findBillingPaymentMethod(nextPageData.billing.paymentMethods, "backup"),
+        ),
+      );
       setOrganizationDraft(nextPageData.organization);
       setNotificationGroups(nextPageData.notifications);
       setPreferenceItems(nextPageData.preferences);
@@ -176,6 +251,88 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
       ...current,
       [field]: value,
     }));
+  }
+
+  function openAccountDialog(member: TeamMemberRecord) {
+    if (!member.canOpenAccountControls) {
+      return;
+    }
+
+    setAccountDraft({
+      email: member.email,
+      id: member.id,
+      name: member.name,
+      operationsAccess: member.operationsAccess,
+      password: "",
+      reportAccess: member.reportAccess,
+      roleLabel: member.role as InviteRoleLabel,
+      setupAccess: member.setupAccess,
+      statusLabel: member.status === "active" ? "Active" : "Invited",
+    });
+    setActiveDialog("account");
+  }
+
+  function updateAccountDraftField(
+    field: keyof Omit<TeamAccountDraft, "id">,
+    value: string | boolean,
+  ) {
+    setAccountDraft((current) =>
+      current === null
+        ? current
+        : {
+            ...current,
+            [field]: value,
+          },
+    );
+  }
+
+  async function handleSaveAccount() {
+    if (accountDraft === null || isSavingAccount || selectedTeamMember === null) {
+      return;
+    }
+
+    setIsSavingAccount(true);
+
+    try {
+      const accountPayload: Record<string, unknown> = {
+        email: accountDraft.email,
+        name: accountDraft.name,
+      };
+
+      if (
+        selectedTeamMember.canResetPassword &&
+        accountDraft.password.trim().length > 0
+      ) {
+        accountPayload.password = accountDraft.password;
+      }
+
+      if (selectedTeamMember.canEditAuthorization) {
+        accountPayload.operationsAccess = accountDraft.operationsAccess;
+        accountPayload.reportAccess = accountDraft.reportAccess;
+        accountPayload.role = normalizeInviteDraftRole(accountDraft.roleLabel);
+        accountPayload.setupAccess = accountDraft.setupAccess;
+        accountPayload.status = normalizeAccountDraftStatus(accountDraft.statusLabel);
+      }
+
+      const payload = await requestSettingsMutation({
+        body: {
+          account: accountPayload,
+          orgId,
+        },
+        method: "PATCH",
+        url: `/api/settings/team/accounts/${accountDraft.id}`,
+      });
+
+      applyMutationResponse(payload);
+      closeAccountDialog();
+    } catch (error) {
+      openPlaceholderAction(
+        "Could not update account",
+        error instanceof Error ? error.message : "The request could not be completed.",
+      );
+    } finally {
+      setIsSavingAccount(false);
+    }
   }
 
   function toggleNotification(groupId: string, itemTitle: string) {
@@ -342,6 +499,160 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
       );
     } finally {
       setIsSavingPreferences(false);
+    }
+  }
+
+  async function handleSaveBilling() {
+    if (isSavingBilling) {
+      return;
+    }
+
+    let usageCapCents: number | null;
+
+    try {
+      usageCapCents = parseBillingCapInput(billingCapDraft);
+    } catch (error) {
+      openPlaceholderAction(
+        "Could not save usage cap",
+        error instanceof Error ? error.message : "Enter a valid dollar amount.",
+      );
+      return;
+    }
+
+    setIsSavingBilling(true);
+
+    try {
+      const payload = await requestSettingsMutation({
+        body: {
+          billing: {
+            usageCapCents,
+          },
+          orgId,
+        },
+        method: "PATCH",
+        url: "/api/settings",
+      });
+
+      applyMutationResponse(payload);
+    } catch (error) {
+      openPlaceholderAction(
+        "Could not save usage cap",
+        error instanceof Error ? error.message : "The request could not be completed.",
+      );
+    } finally {
+      setIsSavingBilling(false);
+    }
+  }
+
+  function handleResetBilling() {
+    setBillingCapDraft(formatBillingCapInput(pageData.billing.usageCapCents));
+  }
+
+  function updatePaymentMethodDraft(
+    role: BillingPaymentMethodRole,
+    field: keyof PaymentMethodDraft,
+    value: string,
+  ) {
+    const updateDraft = (current: PaymentMethodDraft) => ({
+      ...current,
+      [field]: value,
+    });
+
+    if (role === "primary") {
+      setPrimaryPaymentMethodDraft((current) => updateDraft(current));
+      return;
+    }
+
+    setBackupPaymentMethodDraft((current) => updateDraft(current));
+  }
+
+  function handleResetPaymentMethod(role: BillingPaymentMethodRole) {
+    const currentPaymentMethod = findBillingPaymentMethod(
+      pageData.billing.paymentMethods,
+      role,
+    );
+    const nextDraft = createPaymentMethodDraft(currentPaymentMethod);
+
+    if (role === "primary") {
+      setPrimaryPaymentMethodDraft(nextDraft);
+      return;
+    }
+
+    setBackupPaymentMethodDraft(nextDraft);
+  }
+
+  async function handleSavePaymentMethod(role: BillingPaymentMethodRole) {
+    if (savingPaymentMethodRole !== null) {
+      return;
+    }
+
+    const draft =
+      role === "primary" ? primaryPaymentMethodDraft : backupPaymentMethodDraft;
+    let paymentMethodInput: ReturnType<typeof parsePaymentMethodDraft>;
+
+    try {
+      paymentMethodInput = parsePaymentMethodDraft(draft);
+    } catch (error) {
+      openPlaceholderAction(
+        `Could not save ${role === "primary" ? "business" : "backup"} card`,
+        error instanceof Error ? error.message : "Enter valid card details.",
+      );
+      return;
+    }
+
+    setSavingPaymentMethodRole(role);
+
+    try {
+      const payload = await requestSettingsMutation({
+        body: {
+          billing:
+            role === "primary"
+              ? { primaryCard: paymentMethodInput }
+              : { backupCard: paymentMethodInput },
+          orgId,
+        },
+        method: "PATCH",
+        url: "/api/settings",
+      });
+
+      applyMutationResponse(payload);
+    } catch (error) {
+      openPlaceholderAction(
+        `Could not save ${role === "primary" ? "business" : "backup"} card`,
+        error instanceof Error ? error.message : "The request could not be completed.",
+      );
+    } finally {
+      setSavingPaymentMethodRole(null);
+    }
+  }
+
+  async function handleRemoveBackupPaymentMethod() {
+    if (savingPaymentMethodRole !== null) {
+      return;
+    }
+
+    setSavingPaymentMethodRole("backup");
+
+    try {
+      const payload = await requestSettingsMutation({
+        body: {
+          billing: {
+            backupCard: null,
+          },
+          orgId,
+        },
+        method: "PATCH",
+        url: "/api/settings",
+      });
+
+      applyMutationResponse(payload);
+    } catch (error) {
+      openPlaceholderAction(
+        "Could not remove backup card",
+        error instanceof Error ? error.message : "The request could not be completed.",
+      );
+    } finally {
+      setSavingPaymentMethodRole(null);
     }
   }
 
@@ -578,20 +889,44 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
                       {pageData.team.members.length} members
                     </span>
                   </div>
-                  <CatalogButton
-                    onClick={() => setActiveDialog("invite")}
-                    variant="primary"
-                  >
-                    + Invite member
-                  </CatalogButton>
+                  {pageData.currentUser.canInviteMembers ? (
+                    <CatalogButton
+                      onClick={() => setActiveDialog("invite")}
+                      variant="primary"
+                    >
+                      + Invite member
+                    </CatalogButton>
+                  ) : null}
+                </div>
+                <div className="border-b border-border bg-surface-subtle/60 px-[18px] py-[10px] text-[11.5px] text-muted">
+                  Signed in as <span className="font-semibold text-foreground">{pageData.currentUser.name}</span> ({pageData.currentUser.role}).{" "}
+                  {pageData.currentUser.canManageAccounts
+                    ? "You can manage team accounts and access policy."
+                    : "You can only adjust your own account profile and password."}
+                  {pageData.currentUser.isFallbackSession
+                    ? " This local workspace is currently using the fallback development session."
+                    : null}
                 </div>
                 <div>
                   {pageData.team.members.map((member) => (
                     <TeamMemberRow
                       accessSummary={member.accessSummary}
-                      key={member.email}
+                      actionLabel={
+                        member.canOpenAccountControls
+                          ? member.isCurrentUser
+                            ? "My account"
+                            : "Manage"
+                          : undefined
+                      }
+                      key={member.id}
                       email={member.email}
+                      isCurrentUser={member.isCurrentUser}
                       name={member.name}
+                      onAction={
+                        member.canOpenAccountControls
+                          ? () => openAccountDialog(member)
+                          : undefined
+                      }
                       role={member.role}
                       status={member.status}
                       statusLabel={member.statusLabel}
@@ -818,10 +1153,10 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
                       Billing model
                     </p>
                     <p className="mt-1 text-[13px] font-semibold text-foreground">
-                      Platform access + usage
+                      Flat fee + usage
                     </p>
                     <p className="mt-1 text-[11.5px] text-muted">
-                      Totals update automatically from tracked LLM token usage.
+                      Totals update automatically from tracked AI usage.
                     </p>
                   </div>
                 </div>
@@ -832,20 +1167,123 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
                   <p className="mt-[2px] text-[11.5px] leading-[1.4] text-muted">Current cycle across the workspace.</p>
                 </div>
                 <div className="grid gap-[18px] p-[18px] md:grid-cols-2 xl:grid-cols-3">
-                  {pageData.billing.usage.map((usage) => (
-                    <div key={usage.label}>
-                      <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.07em] text-muted">
-                        {usage.label}
-                      </p>
-                      <div className="mb-[5px] h-[4px] overflow-hidden rounded-[2px] bg-white/[0.07]">
-                        <div className="h-full w-1/2 rounded-[2px] bg-accent" />
+                  {pageData.billing.usage.map((usage) => {
+                    const progressPercent = getBillingUsageGraphPercent({
+                      graphMetrics: pageData.billing.graphMetrics,
+                      metricId: usage.id,
+                      usageCapCents: usageGraphCapCents,
+                    });
+
+                    return (
+                      <div key={usage.id}>
+                        <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.07em] text-muted">
+                          {usage.label}
+                        </p>
+                        <div className="mb-[5px] h-[4px] overflow-hidden rounded-[2px] bg-white/[0.07]">
+                          <div
+                            className="h-full rounded-[2px] bg-accent transition-[width] duration-150 ease-out"
+                            style={{ width: `${progressPercent}%` }}
+                          />
+                        </div>
+                        <p className="text-[13px] font-semibold text-foreground">
+                          {usage.value}{" "}
+                          <span className="font-normal text-muted">/ {usage.detail}</span>
+                        </p>
                       </div>
-                      <p className="text-[13px] font-semibold text-foreground">
-                        {usage.value}{" "}
-                        <span className="font-normal text-muted">/ {usage.detail}</span>
-                      </p>
-                    </div>
-                  ))}
+                    );
+                  })}
+                </div>
+              </CatalogCard>
+              <CatalogCard className="overflow-hidden">
+                <div className="border-b border-border px-[18px] py-[13px]">
+                  <h3 className="text-[13px] font-semibold tracking-[-0.015em] text-foreground">Usage cap</h3>
+                  <p className="mt-[2px] text-[11.5px] leading-[1.4] text-muted">
+                    Optional monthly cap on AI usage. Leave blank for no cap.
+                  </p>
+                </div>
+                <div className="grid gap-4 p-[18px] md:grid-cols-[minmax(0,1fr)_220px] md:items-end">
+                  <FieldGroup
+                    hint="New AI runs pause once the current billing cycle reaches this amount."
+                    label="Monthly cap (USD)"
+                  >
+                    <TextField
+                      onChange={setBillingCapDraft}
+                      placeholder="No cap"
+                      value={billingCapDraft}
+                    />
+                  </FieldGroup>
+                  <div className="rounded-[10px] border border-border bg-surface-subtle px-4 py-3">
+                    <p className="text-[11px] font-bold uppercase tracking-[0.07em] text-muted">
+                      Current cap
+                    </p>
+                    <p className="mt-1 text-[16px] font-semibold text-foreground">
+                      {formatBillingCapSummary(pageData.billing.usageCapCents)}
+                    </p>
+                    <p className="mt-1 text-[11.5px] text-muted">
+                      Applies to the current workspace billing cycle.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-3 border-t border-border px-[18px] py-3">
+                  <CatalogButton
+                    disabled={isSavingBilling}
+                    onClick={() => {
+                      void handleSaveBilling();
+                    }}
+                    variant="primary"
+                  >
+                    {isSavingBilling ? "Saving..." : "Save cap"}
+                  </CatalogButton>
+                  <CatalogButton
+                    disabled={isSavingBilling}
+                    onClick={handleResetBilling}
+                    variant="secondary"
+                  >
+                    Reset
+                  </CatalogButton>
+                </div>
+              </CatalogCard>
+              <CatalogCard className="overflow-hidden">
+                <div className="border-b border-border px-[18px] py-[13px]">
+                  <h3 className="text-[13px] font-semibold tracking-[-0.015em] text-foreground">Payment methods</h3>
+                  <p className="mt-[2px] text-[11.5px] leading-[1.4] text-muted">
+                    Add a business card for the service and an optional backup card. Only masked card details are stored.
+                  </p>
+                </div>
+                <div className="grid gap-4 p-[18px] lg:grid-cols-2">
+                  <BillingPaymentMethodEditor
+                    currentPaymentMethod={primaryPaymentMethod}
+                    draft={primaryPaymentMethodDraft}
+                    isSaving={savingPaymentMethodRole === "primary"}
+                    onChange={(field, value) =>
+                      updatePaymentMethodDraft("primary", field, value)
+                    }
+                    onReset={() => handleResetPaymentMethod("primary")}
+                    onSave={() => {
+                      void handleSavePaymentMethod("primary");
+                    }}
+                    role="primary"
+                  />
+                  <BillingPaymentMethodEditor
+                    currentPaymentMethod={backupPaymentMethod}
+                    draft={backupPaymentMethodDraft}
+                    isSaving={savingPaymentMethodRole === "backup"}
+                    onChange={(field, value) =>
+                      updatePaymentMethodDraft("backup", field, value)
+                    }
+                    onRemove={
+                      backupPaymentMethod === null
+                        ? undefined
+                        : () => {
+                            void handleRemoveBackupPaymentMethod();
+                          }
+                    }
+                    onReset={() => handleResetPaymentMethod("backup")}
+                    onSave={() => {
+                      void handleSavePaymentMethod("backup");
+                    }}
+                    role="backup"
+                  />
                 </div>
               </CatalogCard>
             </div>
@@ -977,6 +1415,152 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
         </CatalogModalOverlay>
       ) : null}
 
+      {activeDialog === "account" && accountDraft !== null && selectedTeamMember !== null ? (
+        <CatalogModalOverlay>
+          <DialogFrame
+            description={
+              selectedTeamMember.isCurrentUser
+                ? "Update your account email and password. Role and access controls remain admin-governed."
+                : "Update account identity, password, and access settings for this team member."
+            }
+            footer={
+              <>
+                <CatalogButton
+                  disabled={!selectedTeamMember.canOpenAccountControls || isSavingAccount}
+                  onClick={handleSaveAccount}
+                  variant="primary"
+                >
+                  {isSavingAccount ? "Saving..." : "Save changes"}
+                </CatalogButton>
+                <CatalogButton
+                  onClick={closeAccountDialog}
+                  variant="secondary"
+                >
+                  Cancel
+                </CatalogButton>
+              </>
+            }
+            onClose={closeAccountDialog}
+            title={selectedTeamMember.isCurrentUser ? "My account" : "Manage account"}
+          >
+            <div className="rounded-2xl border border-border bg-surface-subtle/60 px-4 py-3 text-[11.5px] leading-[1.5] text-muted">
+              <p>
+                Role: <span className="font-semibold text-foreground">{selectedTeamMember.role}</span>
+              </p>
+              <p className="mt-1">
+                Access buckets:{" "}
+                <span className="font-semibold text-foreground">
+                  {selectedTeamMember.accessSummary}
+                </span>
+              </p>
+              {selectedTeamMember.isCurrentUser ? (
+                <p className="mt-1">This is the currently signed-in account.</p>
+              ) : null}
+            </div>
+            <FieldGroup label="Name">
+              <TextField
+                disabled={!selectedTeamMember.canEditIdentity}
+                onChange={(value) => updateAccountDraftField("name", value)}
+                value={accountDraft.name}
+              />
+            </FieldGroup>
+            <FieldGroup label="Email">
+              <TextField
+                disabled={!selectedTeamMember.canEditIdentity}
+                onChange={(value) => updateAccountDraftField("email", value)}
+                type="email"
+                value={accountDraft.email}
+              />
+            </FieldGroup>
+            {selectedTeamMember.canResetPassword ? (
+              <FieldGroup
+                hint="Leave blank to keep the current password."
+                label={selectedTeamMember.isCurrentUser ? "New password" : "Reset password"}
+              >
+                <TextField
+                  onChange={(value) => updateAccountDraftField("password", value)}
+                  type="password"
+                  value={accountDraft.password}
+                />
+              </FieldGroup>
+            ) : null}
+            {selectedTeamMember.canEditAuthorization ? (
+              <>
+                <FieldGroup label="Role">
+                  <SelectField
+                    onChange={(value) =>
+                      updateAccountDraftField(
+                        "roleLabel",
+                        value as InviteRoleLabel,
+                      )
+                    }
+                    options={INVITE_ROLE_OPTIONS}
+                    value={accountDraft.roleLabel}
+                  />
+                </FieldGroup>
+                <FieldGroup label="Status">
+                  <SelectField
+                    onChange={(value) =>
+                      updateAccountDraftField(
+                        "statusLabel",
+                        value as AccountStatusLabel,
+                      )
+                    }
+                    options={ACCOUNT_STATUS_OPTIONS}
+                    value={accountDraft.statusLabel}
+                  />
+                </FieldGroup>
+                <FieldGroup label="Access policy">
+                  <div className="rounded-2xl border border-border px-4 py-2">
+                    <ToggleRow
+                      description="Can connect approved sources and ingestion scope."
+                      disabled={!selectedTeamMember.canEditAuthorization}
+                      enabled={accountDraft.setupAccess}
+                      onToggle={() =>
+                        updateAccountDraftField(
+                          "setupAccess",
+                          !accountDraft.setupAccess,
+                        )
+                      }
+                      title="Setup access"
+                    />
+                    <ToggleRow
+                      description="Can review ingestion queues, parse issues, and file operations."
+                      disabled={!selectedTeamMember.canEditAuthorization}
+                      enabled={accountDraft.operationsAccess}
+                      onToggle={() =>
+                        updateAccountDraftField(
+                          "operationsAccess",
+                          !accountDraft.operationsAccess,
+                        )
+                      }
+                      title="Operations access"
+                    />
+                    <ToggleRow
+                      description="Can view dashboards, briefs, and approved insight outputs."
+                      disabled={!selectedTeamMember.canEditAuthorization}
+                      enabled={accountDraft.reportAccess}
+                      onToggle={() =>
+                        updateAccountDraftField(
+                          "reportAccess",
+                          !accountDraft.reportAccess,
+                        )
+                      }
+                      title="Report access"
+                    />
+                  </div>
+                </FieldGroup>
+              </>
+            ) : null}
+            {!selectedTeamMember.canEditAuthorization ? (
+              <div className="rounded-2xl border border-border bg-surface-subtle/60 px-4 py-3 text-[11.5px] leading-[1.5] text-muted">
+                Only another active admin can change role, status, or the setup, data-ops, and report access buckets for this account.
+              </div>
+            ) : null}
+          </DialogFrame>
+        </CatalogModalOverlay>
+      ) : null}
+
       {activeDialog === "two-factor" ? (
         <CatalogModalOverlay>
           <DialogFrame
@@ -1103,6 +1687,114 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
   );
 }
 
+type BillingPaymentMethodEditorProps = Readonly<{
+  currentPaymentMethod: BillingPaymentMethodRecord | null;
+  draft: PaymentMethodDraft;
+  isSaving: boolean;
+  onChange: (field: keyof PaymentMethodDraft, value: string) => void;
+  onRemove?: () => void;
+  onReset: () => void;
+  onSave: () => void;
+  role: BillingPaymentMethodRole;
+}>;
+
+function BillingPaymentMethodEditor({
+  currentPaymentMethod,
+  draft,
+  isSaving,
+  onChange,
+  onRemove,
+  onReset,
+  onSave,
+  role,
+}: BillingPaymentMethodEditorProps) {
+  return (
+    <div className="rounded-[10px] border border-border bg-surface-subtle p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[12px] font-semibold text-foreground">
+            {role === "primary" ? "Business card" : "Backup card"}
+          </p>
+          <p className="mt-1 text-[11.5px] leading-[1.5] text-muted">
+            {currentPaymentMethod === null
+              ? "No card on file."
+              : `${currentPaymentMethod.brandLabel} ending in ${currentPaymentMethod.last4} • Expires ${formatExpiration(currentPaymentMethod.expMonth, currentPaymentMethod.expYear)}`}
+          </p>
+          {currentPaymentMethod?.postalCode ? (
+            <p className="mt-1 text-[11.5px] leading-[1.5] text-muted">
+              Billing ZIP {currentPaymentMethod.postalCode}
+            </p>
+          ) : null}
+        </div>
+      </div>
+      <div className="mt-4 grid gap-3 md:grid-cols-2">
+        <div className="md:col-span-2">
+          <FieldGroup label="Cardholder name">
+            <TextField
+              onChange={(value) => onChange("cardholderName", value)}
+              placeholder="Broward HVAC Co."
+              value={draft.cardholderName}
+            />
+          </FieldGroup>
+        </div>
+        <div className="md:col-span-2">
+          <FieldGroup label="Card number">
+            <TextField
+              onChange={(value) => onChange("cardNumber", value)}
+              placeholder="4242 4242 4242 4242"
+              value={draft.cardNumber}
+            />
+          </FieldGroup>
+        </div>
+        <FieldGroup label="Exp. month">
+          <TextField
+            onChange={(value) => onChange("expMonth", value)}
+            placeholder="05"
+            value={draft.expMonth}
+          />
+        </FieldGroup>
+        <FieldGroup label="Exp. year">
+          <TextField
+            onChange={(value) => onChange("expYear", value)}
+            placeholder="2028"
+            value={draft.expYear}
+          />
+        </FieldGroup>
+        <FieldGroup label="Security code">
+          <TextField
+            onChange={(value) => onChange("cvc", value)}
+            placeholder="123"
+            value={draft.cvc}
+          />
+        </FieldGroup>
+        <FieldGroup label="Billing ZIP">
+          <TextField
+            onChange={(value) => onChange("postalCode", value)}
+            placeholder="33301"
+            value={draft.postalCode}
+          />
+        </FieldGroup>
+      </div>
+      <p className="mt-3 text-[11.5px] leading-[1.5] text-muted">
+        Card number and security code are used only to update the card and are not stored in this local prototype.
+      </p>
+      <div className="mt-4 flex flex-wrap gap-3">
+        <CatalogButton disabled={isSaving} onClick={onSave} variant="primary">
+          {isSaving ? "Saving..." : "Save card"}
+        </CatalogButton>
+        <CatalogButton disabled={isSaving} onClick={onReset} variant="secondary">
+          Reset
+        </CatalogButton>
+        {onRemove ? (
+          <CatalogButton disabled={isSaving} onClick={onRemove} variant="secondary">
+            Remove
+          </CatalogButton>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 function normalizeInviteDraftRole(roleLabel: InviteRoleLabel): OrganizationAccountRole {
   switch (roleLabel) {
     case "Admin":
@@ -1114,4 +1806,182 @@ function normalizeInviteDraftRole(roleLabel: InviteRoleLabel): OrganizationAccou
     case "Viewer":
       return "viewer";
   }
+}
+
+function normalizeAccountDraftStatus(statusLabel: AccountStatusLabel) {
+  switch (statusLabel) {
+    case "Active":
+      return "active" as const;
+    case "Invited":
+      return "invited" as const;
+  }
+}
+
+function formatBillingCapInput(usageCapCents: number | null): string {
+  if (usageCapCents === null) {
+    return "";
+  }
+
+  return (usageCapCents / 100).toFixed(2);
+}
+
+function formatBillingCapSummary(usageCapCents: number | null): string {
+  return usageCapCents === null ? "No cap" : formatUsdFromCents(usageCapCents);
+}
+
+function getBillingGraphUsageCapCents(input: Readonly<{
+  billingCapDraft: string;
+  savedUsageCapCents: number | null;
+}>): number | null {
+  try {
+    return parseBillingCapInput(input.billingCapDraft);
+  } catch {
+    return input.savedUsageCapCents;
+  }
+}
+
+function getBillingUsageGraphPercent(input: Readonly<{
+  graphMetrics: SettingsPageData["billing"]["graphMetrics"];
+  metricId: BillingUsageMetricId;
+  usageCapCents: number | null;
+}>): number {
+  const { currentTotalCents, flatFeeCents, usageThisPeriodCents } = input.graphMetrics;
+
+  if (input.usageCapCents !== null) {
+    const totalAvailableCents = flatFeeCents + input.usageCapCents;
+
+    switch (input.metricId) {
+      case "flat_fee":
+        return clampPercentage(
+          totalAvailableCents === 0 ? 0 : (flatFeeCents / totalAvailableCents) * 100,
+        );
+      case "usage_this_period":
+        return clampPercentage(
+          input.usageCapCents === 0
+            ? usageThisPeriodCents > 0
+              ? 100
+              : 0
+            : (usageThisPeriodCents / input.usageCapCents) * 100,
+        );
+      case "current_total":
+        return clampPercentage(
+          totalAvailableCents === 0 ? 0 : (currentTotalCents / totalAvailableCents) * 100,
+        );
+    }
+  }
+
+  const uncappedDenominator = Math.max(
+    flatFeeCents,
+    usageThisPeriodCents,
+    currentTotalCents,
+    1,
+  );
+
+  switch (input.metricId) {
+    case "flat_fee":
+      return clampPercentage((flatFeeCents / uncappedDenominator) * 100);
+    case "usage_this_period":
+      return clampPercentage((usageThisPeriodCents / uncappedDenominator) * 100);
+    case "current_total":
+      return clampPercentage((currentTotalCents / uncappedDenominator) * 100);
+  }
+}
+
+function clampPercentage(value: number): number {
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+
+  return Math.min(100, Math.max(0, value));
+}
+
+function formatUsdFromCents(value: number): string {
+  return new Intl.NumberFormat("en-US", {
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+    style: "currency",
+  }).format(value / 100);
+}
+
+function parseBillingCapInput(value: string): number | null {
+  const normalizedValue = value.replace(/[$,\s]/g, "");
+
+  if (normalizedValue.length === 0) {
+    return null;
+  }
+
+  if (!/^\d+(\.\d{0,2})?$/.test(normalizedValue)) {
+    throw new Error("Enter a valid dollar amount with up to two decimal places.");
+  }
+
+  const usageCapCents = Math.round(Number(normalizedValue) * 100);
+
+  if (!Number.isFinite(usageCapCents) || usageCapCents < 0) {
+    throw new Error("Enter a valid non-negative dollar amount.");
+  }
+
+  return usageCapCents;
+}
+
+function createPaymentMethodDraft(
+  paymentMethod: BillingPaymentMethodRecord | null,
+): PaymentMethodDraft {
+  return {
+    cardNumber: "",
+    cardholderName: paymentMethod?.cardholderName ?? "",
+    cvc: "",
+    expMonth:
+      paymentMethod === null ? "" : paymentMethod.expMonth.toString().padStart(2, "0"),
+    expYear: paymentMethod?.expYear.toString() ?? "",
+    postalCode: paymentMethod?.postalCode ?? "",
+  };
+}
+
+function findBillingPaymentMethod(
+  paymentMethods: SettingsPageData["billing"]["paymentMethods"],
+  role: BillingPaymentMethodRole,
+): BillingPaymentMethodRecord | null {
+  return paymentMethods.find((paymentMethod) => paymentMethod.role === role) ?? null;
+}
+
+function formatExpiration(expMonth: number, expYear: number): string {
+  return `${expMonth.toString().padStart(2, "0")}/${expYear}`;
+}
+
+function parsePaymentMethodDraft(draft: PaymentMethodDraft) {
+  const expMonth = parseIntegerField(draft.expMonth, "expiration month");
+  const expYear = parseIntegerField(draft.expYear, "expiration year");
+  const cardholderName = draft.cardholderName.trim();
+
+  if (cardholderName.length === 0) {
+    throw new Error("Enter the cardholder name.");
+  }
+
+  if (draft.cardNumber.trim().length === 0) {
+    throw new Error("Enter the card number.");
+  }
+
+  if (draft.cvc.trim().length === 0) {
+    throw new Error("Enter the security code.");
+  }
+
+  return {
+    cardNumber: draft.cardNumber,
+    cardholderName,
+    cvc: draft.cvc,
+    expMonth,
+    expYear,
+    postalCode: draft.postalCode.trim().length === 0 ? null : draft.postalCode.trim(),
+  };
+}
+
+function parseIntegerField(value: string, label: string): number {
+  const normalizedValue = value.trim();
+
+  if (!/^\d+$/.test(normalizedValue)) {
+    throw new Error(`Enter a valid ${label}.`);
+  }
+
+  return Number(normalizedValue);
 }

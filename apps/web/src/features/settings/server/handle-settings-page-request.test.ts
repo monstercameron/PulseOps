@@ -7,8 +7,10 @@ import { afterEach, describe, expect, it } from "vitest";
 import { createOrganizationAccount } from "@/features/accounts/domain/organization-account";
 import { createLocalAccountRepository } from "@/features/accounts/repositories/local-account-repository";
 import { createBillingAccount } from "@/features/cost/domain/billing-account";
+import { createBillingPaymentMethod } from "@/features/cost/domain/billing-payment-method";
 import { createLlmUsageEvent } from "@/features/cost/domain/llm-usage-event";
 import { createLocalBillingAccountRepository } from "@/features/cost/repositories/local-billing-account-repository";
+import { createLocalBillingPaymentMethodRepository } from "@/features/cost/repositories/local-billing-payment-method-repository";
 import { createLocalLlmUsageEventRepository } from "@/features/cost/repositories/local-llm-usage-event-repository";
 import { handleSettingsPageRequest } from "@/features/settings/server/handle-settings-page-request";
 import { createLocalSettingsRepository } from "@/features/settings/repositories/local-settings-repository";
@@ -127,6 +129,9 @@ describe("handleSettingsPageRequest", () => {
     const billingAccountRepository = createLocalBillingAccountRepository({
       rootDirectory,
     });
+    const billingPaymentMethodRepository = createLocalBillingPaymentMethodRepository({
+      rootDirectory,
+    });
     const llmUsageEventRepository = createLocalLlmUsageEventRepository({
       rootDirectory,
     });
@@ -141,6 +146,37 @@ describe("handleSettingsPageRequest", () => {
         planName: "Growth",
         profitPremiumBasisPoints: 2_000,
         status: "active",
+        updatedAt: "2026-04-01T00:00:00.000Z",
+        usageCapCents: 25_000,
+      }),
+    );
+    await billingPaymentMethodRepository.put(
+      createBillingPaymentMethod({
+        brand: "visa",
+        cardholderName: "Broward HVAC Co.",
+        createdAt: "2026-04-01T00:00:00.000Z",
+        expMonth: 5,
+        expYear: 2028,
+        id: "billing_payment_method_org_123_primary",
+        last4: "4242",
+        orgId: "org_123",
+        postalCode: "33301",
+        role: "primary",
+        updatedAt: "2026-04-01T00:00:00.000Z",
+      }),
+    );
+    await billingPaymentMethodRepository.put(
+      createBillingPaymentMethod({
+        brand: "mastercard",
+        cardholderName: "Broward HVAC Backup",
+        createdAt: "2026-04-01T00:00:00.000Z",
+        expMonth: 6,
+        expYear: 2029,
+        id: "billing_payment_method_org_123_backup",
+        last4: "4444",
+        orgId: "org_123",
+        postalCode: "33309",
+        role: "backup",
         updatedAt: "2026-04-01T00:00:00.000Z",
       }),
     );
@@ -172,6 +208,7 @@ describe("handleSettingsPageRequest", () => {
       new Request("http://localhost/api/settings?orgId=org_123"),
       {
         billingAccountRepository,
+        billingPaymentMethodRepository,
         llmUsageEventRepository,
         now: () => "2026-04-11T02:00:00.000Z",
       },
@@ -180,14 +217,29 @@ describe("handleSettingsPageRequest", () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
       billing: expect.objectContaining({
-        planTitle: "Growth plan",
-        usage: expect.arrayContaining([
+        paymentMethods: expect.arrayContaining([
           expect.objectContaining({
-            label: "Generated tokens",
-            value: "2,000",
+            brandLabel: "Visa",
+            last4: "4242",
+            role: "primary",
+            roleLabel: "Business card",
           }),
           expect.objectContaining({
-            label: "Estimated current total",
+            brandLabel: "Mastercard",
+            last4: "4444",
+            role: "backup",
+            roleLabel: "Backup card",
+          }),
+        ]),
+        planTitle: "Growth plan",
+        usageCapCents: 25_000,
+        usage: expect.arrayContaining([
+          expect.objectContaining({
+            label: "Usage this period",
+            value: "$4.80",
+          }),
+          expect.objectContaining({
+            label: "Current total",
             value: "$153.80",
           }),
         ]),

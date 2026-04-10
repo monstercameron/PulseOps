@@ -51,11 +51,12 @@ export function createPostgresBillingAccountRepository({
             monthly_platform_fee_cents,
             profit_premium_basis_points,
             billing_anchor_day_of_month,
+            usage_cap_cents,
             created_at,
             updated_at,
             version
           ) values (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
+            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
           )
           on conflict (id) do update set
             org_id = excluded.org_id,
@@ -65,6 +66,7 @@ export function createPostgresBillingAccountRepository({
             monthly_platform_fee_cents = excluded.monthly_platform_fee_cents,
             profit_premium_basis_points = excluded.profit_premium_basis_points,
             billing_anchor_day_of_month = excluded.billing_anchor_day_of_month,
+            usage_cap_cents = excluded.usage_cap_cents,
             created_at = excluded.created_at,
             updated_at = excluded.updated_at,
             version = excluded.version
@@ -78,6 +80,7 @@ export function createPostgresBillingAccountRepository({
           parsedBillingAccount.monthlyPlatformFeeCents,
           parsedBillingAccount.profitPremiumBasisPoints,
           parsedBillingAccount.billingAnchorDayOfMonth,
+          parsedBillingAccount.usageCapCents,
           parsedBillingAccount.createdAt,
           parsedBillingAccount.updatedAt,
           parsedBillingAccount.version,
@@ -137,6 +140,12 @@ function mapBillingAccountRow(row: Record<string, unknown>): BillingAccount {
     ),
     status: row.status,
     updatedAt: fromPostgresTimestamp(row.updated_at as Date | string),
+    usageCapCents:
+      row.usage_cap_cents === null || row.usage_cap_cents === undefined
+        ? null
+        : fromPostgresNumber(
+            row.usage_cap_cents as string | number | null | undefined,
+          ),
     version: row.version,
   });
 }

@@ -1,7 +1,9 @@
 import { z } from "zod";
 
+import { canInviteTeamMembers } from "@/features/accounts/domain/account-authorization";
 import { createOrganizationAccount } from "@/features/accounts/domain/organization-account";
 import { type AccountRepository } from "@/features/accounts/repositories/account-repository";
+import { type CurrentAppActor } from "@/features/auth/server/current-app-actor";
 import { createOrganizationRecordFromSettingsRecord } from "@/features/settings/domain/organization-record";
 import { type OrganizationRepository } from "@/features/settings/repositories/organization-repository";
 import { type SettingsRepository } from "@/features/settings/repositories/settings-repository";
@@ -20,6 +22,7 @@ const teamInviteRequestSchema = z.object({
 
 type TeamInviteDependencies = Readonly<{
   accountRepository?: AccountRepository;
+  currentActor?: CurrentAppActor | null;
   now?: () => string;
   organizationRepository?: OrganizationRepository;
   settingsRepository?: SettingsRepository;
@@ -37,6 +40,19 @@ export async function handleTeamInviteRequest(
         error: "Invalid invite payload.",
       },
       { status: 400 },
+    );
+  }
+
+  if (
+    dependencies.currentActor !== undefined &&
+    (dependencies.currentActor === null ||
+      !canInviteTeamMembers(dependencies.currentActor.account))
+  ) {
+    return Response.json(
+      {
+        error: "Only active admins can invite team members.",
+      },
+      { status: 403 },
     );
   }
 
@@ -84,6 +100,9 @@ export async function handleTeamInviteRequest(
 
   const data = await getSettingsPageDataFromRepository({
     accountRepository: dependencies.accountRepository,
+    currentActorUserId: dependencies.currentActor?.account.userId,
+    currentActorWasFallback:
+      dependencies.currentActor?.source === "fallback",
     orgId: parsedBody.data.orgId,
     organizationRepository: dependencies.organizationRepository,
     settingsRepository: dependencies.settingsRepository,

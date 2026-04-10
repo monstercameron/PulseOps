@@ -1,10 +1,17 @@
 import { createDefaultBillingAccount } from "@/features/cost/domain/billing-account";
+import { getBillingPeriodWindow } from "@/features/cost/domain/billing-period";
+import {
+  getBillingPaymentMethodBrandLabel,
+  getBillingPaymentMethodRoleLabel,
+} from "@/features/cost/domain/billing-payment-method";
 import { type BillingAccountRepository } from "@/features/cost/repositories/billing-account-repository";
+import { type BillingPaymentMethodRepository } from "@/features/cost/repositories/billing-payment-method-repository";
 import { type LlmUsageEventRepository } from "@/features/cost/repositories/llm-usage-event-repository";
 import { type SettingsPageData } from "@/features/settings/constants/settings-page-content";
 
 type GetSettingsBillingDataInput = Readonly<{
   billingAccountRepository?: BillingAccountRepository;
+  billingPaymentMethodRepository?: BillingPaymentMethodRepository;
   llmUsageEventRepository?: LlmUsageEventRepository;
   now?: () => string;
   orgId: string;
@@ -26,6 +33,7 @@ const dateFormatter = new Intl.DateTimeFormat("en-US", {
 
 export async function getSettingsBillingData({
   billingAccountRepository,
+  billingPaymentMethodRepository,
   llmUsageEventRepository,
   now = () => new Date().toISOString(),
   orgId,
@@ -44,153 +52,75 @@ export async function getSettingsBillingData({
       orgId,
       startAtInclusive: billingPeriod.startAt,
     })) ?? [];
+  const paymentMethods =
+    ((await billingPaymentMethodRepository?.listByOrgId(orgId)) ?? []).sort(
+      (left, right) =>
+        getPaymentMethodSortRank(left.role) - getPaymentMethodSortRank(right.role),
+    );
   const runCount = llmUsageEvents.length;
   const unpricedRunCount = llmUsageEvents.filter(
     (llmUsageEvent) => llmUsageEvent.pricingAvailable === false,
   ).length;
-  const inputTokens = llmUsageEvents.reduce(
-    (sum, llmUsageEvent) => sum + llmUsageEvent.inputTokens,
-    0,
-  );
-  const cachedInputTokens = llmUsageEvents.reduce(
-    (sum, llmUsageEvent) => sum + llmUsageEvent.cachedInputTokens,
-    0,
-  );
-  const outputTokens = llmUsageEvents.reduce(
-    (sum, llmUsageEvent) => sum + llmUsageEvent.outputTokens,
-    0,
-  );
-  const totalTokens = llmUsageEvents.reduce(
-    (sum, llmUsageEvent) => sum + llmUsageEvent.totalTokens,
-    0,
-  );
-  const providerCostNanoUsd = llmUsageEvents.reduce(
-    (sum, llmUsageEvent) => sum + llmUsageEvent.providerTotalCostNanoUsd,
-    0,
-  );
   const billableUsageNanoUsd = llmUsageEvents.reduce(
     (sum, llmUsageEvent) => sum + llmUsageEvent.billableCostNanoUsd,
     0,
   );
-  const estimatedCurrentTotalNanoUsd =
-    centsToNanoUsd(billingAccount.monthlyPlatformFeeCents) + billableUsageNanoUsd;
-  const baseUsage = [
+  const usageThisPeriodCents = nanoUsdToRoundedCents(billableUsageNanoUsd);
+  const currentTotalCents =
+    billingAccount.monthlyPlatformFeeCents + usageThisPeriodCents;
+  const usage: SettingsPageData["billing"]["usage"] = [
     {
       detail: "Monthly recurring",
-      label: "Platform access fee",
+      id: "flat_fee",
+      label: "Flat fee",
       value: formatUsdFromCents(billingAccount.monthlyPlatformFeeCents),
     },
     {
-      detail: `${formatInteger(cachedInputTokens)} cached`,
-      label: "Prompt tokens",
-      value: formatInteger(inputTokens),
-    },
-    {
-      detail: `${formatInteger(totalTokens)} total`,
-      label: "Generated tokens",
-      value: formatInteger(outputTokens),
-    },
-    {
-      detail: `${formatInteger(runCount)} tracked runs`,
-      label: "Provider AI cost",
-      value: formatUsdFromNanoUsd(providerCostNanoUsd),
-    },
-    {
-      detail: `Cost + ${formatBasisPointsAsPercentage(billingAccount.profitPremiumBasisPoints)} premium`,
-      label: "Billable AI usage",
+      detail:
+        unpricedRunCount > 0
+          ? `${formatInteger(runCount)} tracked runs, ${formatInteger(unpricedRunCount)} settling`
+          : `${formatInteger(runCount)} tracked runs`,
+      id: "usage_this_period",
+      label: "Usage this period",
       value: formatUsdFromNanoUsd(billableUsageNanoUsd),
     },
     {
       detail: `Renews ${formatDate(billingPeriod.endAt)}`,
-      label: "Estimated current total",
-      value: formatUsdFromNanoUsd(estimatedCurrentTotalNanoUsd),
+      id: "current_total",
+      label: "Current total",
+      value: formatUsdFromCents(currentTotalCents),
     },
   ];
-  const usage: SettingsPageData["billing"]["usage"] =
-    unpricedRunCount > 0
-      ? [
-          ...baseUsage,
-          {
-            detail:
-              "Tokens are tracked, but provider cost is pending a pricing map.",
-            label: "Unpriced runs",
-            value: formatInteger(unpricedRunCount),
-          },
-        ]
-      : baseUsage;
 
   return {
+    graphMetrics: {
+      currentTotalCents,
+      flatFeeCents: billingAccount.monthlyPlatformFeeCents,
+      usageThisPeriodCents,
+    },
+    paymentMethods: paymentMethods.map((paymentMethod) => ({
+      brandLabel: getBillingPaymentMethodBrandLabel(paymentMethod.brand),
+      cardholderName: paymentMethod.cardholderName,
+      expMonth: paymentMethod.expMonth,
+      expYear: paymentMethod.expYear,
+      id: paymentMethod.id,
+      last4: paymentMethod.last4,
+      postalCode: paymentMethod.postalCode,
+      role: paymentMethod.role,
+      roleLabel: getBillingPaymentMethodRoleLabel(paymentMethod.role),
+    })),
     planDescription: [
-      `${formatUsdFromCents(billingAccount.monthlyPlatformFeeCents)} platform access fee`,
-      `AI usage billed at provider cost + ${formatBasisPointsAsPercentage(billingAccount.profitPremiumBasisPoints)} premium`,
-      `Period ${formatDate(billingPeriod.startAt)} to ${formatDate(billingPeriod.endAt)}`,
-    ].join(" - "),
+      "Flat monthly fee plus usage-based billing.",
+      `Current cycle ${formatDate(billingPeriod.startAt)} to ${formatDate(billingPeriod.endAt)}.`,
+    ].join(" "),
     planTitle: `${billingAccount.planName} plan`,
     usage,
+    usageCapCents: billingAccount.usageCapCents,
   };
 }
 
-function getBillingPeriodWindow(
-  nowIso: string,
-  billingAnchorDayOfMonth: number,
-): Readonly<{
-  endAt: string;
-  startAt: string;
-}> {
-  const nowDate = new Date(nowIso);
-  const currentMonthAnchor = new Date(
-    Date.UTC(
-      nowDate.getUTCFullYear(),
-      nowDate.getUTCMonth(),
-      billingAnchorDayOfMonth,
-      0,
-      0,
-      0,
-      0,
-    ),
-  );
-  const startAt =
-    nowDate >= currentMonthAnchor
-      ? currentMonthAnchor
-      : new Date(
-          Date.UTC(
-            nowDate.getUTCFullYear(),
-            nowDate.getUTCMonth() - 1,
-            billingAnchorDayOfMonth,
-            0,
-            0,
-            0,
-            0,
-          ),
-        );
-  const endAt = new Date(
-    Date.UTC(
-      startAt.getUTCFullYear(),
-      startAt.getUTCMonth() + 1,
-      billingAnchorDayOfMonth,
-      0,
-      0,
-      0,
-      0,
-    ),
-  );
-
-  return {
-    endAt: endAt.toISOString(),
-    startAt: startAt.toISOString(),
-  };
-}
-
-function centsToNanoUsd(cents: number): number {
-  return cents * 10_000_000;
-}
-
-function formatBasisPointsAsPercentage(basisPoints: number): string {
-  const percentage = basisPoints / 100;
-
-  return percentage % 1 === 0
-    ? `${percentage.toFixed(0)}%`
-    : `${percentage.toFixed(2)}%`;
+function nanoUsdToRoundedCents(value: number): number {
+  return Math.round(value / 10_000_000);
 }
 
 function formatDate(isoTimestamp: string): string {
@@ -207,4 +137,8 @@ function formatUsdFromCents(value: number): string {
 
 function formatUsdFromNanoUsd(value: number): string {
   return currencyFormatter.format(value / 1_000_000_000);
+}
+
+function getPaymentMethodSortRank(role: "backup" | "primary") {
+  return role === "primary" ? 0 : 1;
 }

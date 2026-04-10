@@ -19,6 +19,7 @@ describe("settings billing data", () => {
             profitPremiumBasisPoints: 2_000,
             status: "active",
             updatedAt: "2026-04-01T00:00:00.000Z",
+            usageCapCents: 50_000,
           });
         },
         async put(value) {
@@ -60,22 +61,32 @@ describe("settings billing data", () => {
     });
 
     expect(billing.planTitle).toBe("Growth plan");
-    expect(billing.planDescription).toContain("$149.00 platform access fee");
-    expect(billing.usage).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          label: "Generated tokens",
-          value: "900",
-        }),
-        expect.objectContaining({
-          label: "Provider AI cost",
-          value: "$2.00",
-        }),
-        expect.objectContaining({
-          label: "Estimated current total",
-          value: "$151.40",
-        }),
-      ]),
-    );
+    expect(billing.planDescription).toContain("Flat monthly fee plus usage-based billing.");
+    expect(billing.graphMetrics).toEqual({
+      currentTotalCents: 15_140,
+      flatFeeCents: 14_900,
+      usageThisPeriodCents: 240,
+    });
+    expect(billing.usageCapCents).toBe(50_000);
+    expect(billing.usage).toEqual([
+      {
+        detail: "Monthly recurring",
+        id: "flat_fee",
+        label: "Flat fee",
+        value: "$149.00",
+      },
+      {
+        detail: "1 tracked runs",
+        id: "usage_this_period",
+        label: "Usage this period",
+        value: "$2.40",
+      },
+      {
+        detail: "Renews May 9, 2026",
+        id: "current_total",
+        label: "Current total",
+        value: "$151.40",
+      },
+    ]);
   });
 });

@@ -3,6 +3,13 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 
 import {
+  canEditAccountIdentity,
+  canInviteTeamMembers,
+  canManageAccountAuthorization,
+  canOpenAccountControls,
+  canResetAccountPassword,
+} from "@/features/accounts/domain/account-authorization";
+import {
   getOrganizationAccountAccessSummary,
   getOrganizationAccountRoleLabel,
   getOrganizationAccountStatusLabel,
@@ -77,6 +84,8 @@ export async function getSettingsRecord(
 export async function getSettingsPageDataFromRepository(input: Readonly<{
   accountRepository?: AccountRepository;
   billing?: SettingsPageData["billing"];
+  currentActorUserId?: string;
+  currentActorWasFallback?: boolean;
   orgId: string;
   organizationRepository?: OrganizationRepository;
   settingsRepository?: SettingsRepository;
@@ -84,27 +93,60 @@ export async function getSettingsPageDataFromRepository(input: Readonly<{
   const settingsRecord = await getSettingsRecord(input.settingsRepository, input.orgId);
   const organizationRecord = await input.organizationRepository?.getById(input.orgId);
   const persistedAccounts = await input.accountRepository?.listByOrgId(input.orgId);
+  const currentAccount =
+    persistedAccounts?.find((account) => account.userId === input.currentActorUserId) ??
+    persistedAccounts?.find(
+      (account) => account.status === "active" && account.role === "admin",
+    ) ??
+    persistedAccounts?.find((account) => account.status === "active");
   const teamMembers =
     persistedAccounts !== undefined && persistedAccounts.length > 0
-      ? persistedAccounts
+        ? persistedAccounts
           .slice()
           .sort(compareOrganizationAccounts)
-          .map(mapOrganizationAccountToSettingsMember)
+          .map((account) =>
+            mapOrganizationAccountToSettingsMember(account, currentAccount),
+          )
       : settingsRecord.teamMembers.map((member) => ({
           ...member,
           accessSummary: getLegacyTeamMemberAccessSummary(member.role),
+          canEditAuthorization: false,
+          canEditIdentity: true,
+          canOpenAccountControls: true,
+          canResetPassword: true,
+          id: member.email,
+          isCurrentUser:
+            member.email.toLowerCase() ===
+            (
+              fallbackSettingsPageData.currentUser.email
+            ).toLowerCase(),
+          userId: member.email,
+          operationsAccess: member.role.toLowerCase() === "admin" || member.role.toLowerCase() === "operator",
+          reportAccess: member.role.toLowerCase() !== "operator",
+          setupAccess: member.role.toLowerCase() === "admin" || member.role.toLowerCase() === "operator",
         }));
+  const currentUser =
+    currentAccount === undefined || currentAccount === null
+      ? fallbackSettingsPageData.currentUser
+      : {
+          accessSummary: getOrganizationAccountAccessSummary(currentAccount),
+          canInviteMembers: canInviteTeamMembers(currentAccount),
+          canManageAccounts: currentAccount.role === "admin",
+          email: currentAccount.email,
+          isFallbackSession: input.currentActorWasFallback ?? false,
+          name: currentAccount.name,
+          role: getOrganizationAccountRoleLabel(currentAccount.role),
+          userId: currentAccount.userId,
+        };
   const primaryEmail =
-    persistedAccounts?.find(
-      (account) => account.status === "active" && account.role === "admin",
-    )?.email ??
-    persistedAccounts?.find((account) => account.status === "active")?.email ??
+    currentUser.email ??
     fallbackSettingsPageData.security.authRows[0]?.description ??
     "No primary email configured";
 
   return {
     ...fallbackSettingsPageData,
     billing: input.billing ?? fallbackSettingsPageData.billing,
+    currentUser,
     integrations: settingsRecord.integrations,
     notifications: settingsRecord.notifications,
     organization:
@@ -229,14 +271,39 @@ function getOrganizationAccountSortRank(account: OrganizationAccountRecord) {
 
 function mapOrganizationAccountToSettingsMember(
   account: OrganizationAccountRecord,
+  currentAccount: OrganizationAccountRecord | undefined,
 ): SettingsPageData["team"]["members"][number] {
+  const isCurrentUser = currentAccount?.userId === account.userId;
+
   return {
     accessSummary: getOrganizationAccountAccessSummary(account),
+    canEditAuthorization:
+      currentAccount === undefined
+        ? false
+        : canManageAccountAuthorization(currentAccount, account),
+    canEditIdentity:
+      currentAccount === undefined
+        ? false
+        : canEditAccountIdentity(currentAccount, account),
+    canOpenAccountControls:
+      currentAccount === undefined
+        ? false
+        : canOpenAccountControls(currentAccount, account),
+    canResetPassword:
+      currentAccount === undefined
+        ? false
+        : canResetAccountPassword(currentAccount, account),
     email: account.email,
+    id: account.id,
+    isCurrentUser,
     name: account.name,
+    operationsAccess: account.operationsAccess,
+    reportAccess: account.reportAccess,
     role: getOrganizationAccountRoleLabel(account.role),
+    setupAccess: account.setupAccess,
     status: account.status === "disabled" ? "invited" : account.status,
     statusLabel: getOrganizationAccountStatusLabel(account.status),
+    userId: account.userId,
   };
 }
 

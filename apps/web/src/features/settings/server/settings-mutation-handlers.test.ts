@@ -6,6 +6,8 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { createOrganizationAccount } from "@/features/accounts/domain/organization-account";
 import { createLocalAccountRepository } from "@/features/accounts/repositories/local-account-repository";
+import { createLocalBillingAccountRepository } from "@/features/cost/repositories/local-billing-account-repository";
+import { createLocalBillingPaymentMethodRepository } from "@/features/cost/repositories/local-billing-payment-method-repository";
 import { type OrganizationRecord } from "@/features/settings/domain/organization-record";
 import { createLocalSettingsRepository } from "@/features/settings/repositories/local-settings-repository";
 import { handleApiKeyRevokeRequest } from "@/features/settings/server/handle-api-key-revoke-request";
@@ -96,6 +98,125 @@ describe("settings mutation handlers", () => {
         name: "Precision Plumbing Co.",
       }),
     ]);
+  });
+
+  it("persists a monthly usage cap without requiring other settings changes", async () => {
+    const rootDirectory = await mkdtemp(
+      path.join(os.tmpdir(), "bizopsaccelerator-settings-billing-cap-"),
+    );
+    temporaryDirectories.push(rootDirectory);
+
+    const billingAccountRepository = createLocalBillingAccountRepository({
+      rootDirectory,
+    });
+    const settingsRepository = createLocalSettingsRepository({ rootDirectory });
+    const response = await handleSettingsUpdateRequest(
+      new Request("http://localhost/api/settings", {
+        body: JSON.stringify({
+          billing: {
+            usageCapCents: 35_000,
+          },
+          orgId: "org_123",
+        }),
+        method: "PATCH",
+      }),
+      {
+        billingAccountRepository,
+        now: () => "2026-04-10T02:00:00.000Z",
+        settingsRepository,
+      },
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      billing: expect.objectContaining({
+        usageCapCents: 35_000,
+      }),
+    });
+    await expect(
+      billingAccountRepository.getByOrgId("org_123"),
+    ).resolves.toMatchObject({
+      usageCapCents: 35_000,
+    });
+  });
+
+  it("stores masked primary and backup billing cards", async () => {
+    const rootDirectory = await mkdtemp(
+      path.join(os.tmpdir(), "bizopsaccelerator-settings-payment-methods-"),
+    );
+    temporaryDirectories.push(rootDirectory);
+
+    const billingAccountRepository = createLocalBillingAccountRepository({
+      rootDirectory,
+    });
+    const billingPaymentMethodRepository = createLocalBillingPaymentMethodRepository({
+      rootDirectory,
+    });
+    const settingsRepository = createLocalSettingsRepository({ rootDirectory });
+    const response = await handleSettingsUpdateRequest(
+      new Request("http://localhost/api/settings", {
+        body: JSON.stringify({
+          billing: {
+            backupCard: {
+              cardNumber: "5555 5555 5555 4444",
+              cardholderName: "Backup Ops Card",
+              cvc: "456",
+              expMonth: 6,
+              expYear: 2029,
+              postalCode: "33309",
+            },
+            primaryCard: {
+              cardNumber: "4242 4242 4242 4242",
+              cardholderName: "Broward HVAC Co.",
+              cvc: "123",
+              expMonth: 5,
+              expYear: 2028,
+              postalCode: "33301",
+            },
+          },
+          orgId: "org_123",
+        }),
+        method: "PATCH",
+      }),
+      {
+        billingAccountRepository,
+        billingPaymentMethodRepository,
+        now: () => "2026-04-10T02:00:00.000Z",
+        settingsRepository,
+      },
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      billing: expect.objectContaining({
+        paymentMethods: expect.arrayContaining([
+          expect.objectContaining({
+            brandLabel: "Visa",
+            last4: "4242",
+            role: "primary",
+          }),
+          expect.objectContaining({
+            brandLabel: "Mastercard",
+            last4: "4444",
+            role: "backup",
+          }),
+        ]),
+      }),
+    });
+    await expect(
+      billingPaymentMethodRepository.getByOrgIdAndRole("org_123", "primary"),
+    ).resolves.toMatchObject({
+      brand: "visa",
+      cardholderName: "Broward HVAC Co.",
+      last4: "4242",
+    });
+    await expect(
+      billingPaymentMethodRepository.getByOrgIdAndRole("org_123", "backup"),
+    ).resolves.toMatchObject({
+      brand: "mastercard",
+      cardholderName: "Backup Ops Card",
+      last4: "4444",
+    });
   });
 
   it("adds invited team members and revokes sessions and api keys", async () => {

@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { createDefaultBillingAccount } from "@/features/cost/domain/billing-account";
+import { getBillingPeriodWindow } from "@/features/cost/domain/billing-period";
 import { createLlmUsageEvent } from "@/features/cost/domain/llm-usage-event";
 import { estimateOpenAiUsageCost } from "@/features/cost/domain/openai-model-pricing";
 import { type BillingAccountRepository } from "@/features/cost/repositories/billing-account-repository";
@@ -31,7 +32,13 @@ type CreateLlmCostTrackerInput = Readonly<{
   now?: () => string;
 }>;
 
+export const LLM_USAGE_CAP_REACHED_MESSAGE =
+  "The workspace AI usage cap has been reached for the current billing period.";
+
 export interface LlmCostTracker {
+  assertWithinUsageCap(input: Readonly<{
+    context: LlmUsageTrackingContext;
+  }>): Promise<void>;
   recordOpenAiResponse(input: Readonly<{
     context: LlmUsageTrackingContext;
     model: string;
@@ -45,6 +52,56 @@ export function createLlmCostTracker({
   now = () => new Date().toISOString(),
 }: CreateLlmCostTrackerInput): LlmCostTracker {
   return {
+    async assertWithinUsageCap({ context }) {
+      if (llmUsageEventRepository === undefined) {
+        return;
+      }
+
+      const nowIso = now();
+      const billingAccount =
+        (await billingAccountRepository?.getByOrgId(context.orgId)) ??
+        createDefaultBillingAccount(context.orgId, nowIso);
+
+      if (billingAccount.usageCapCents === null) {
+        return;
+      }
+
+      const billingPeriod = getBillingPeriodWindow(
+        nowIso,
+        billingAccount.billingAnchorDayOfMonth,
+      );
+      const llmUsageEvents = await llmUsageEventRepository.listByOrgIdInPeriod({
+        endAtExclusive: billingPeriod.endAt,
+        orgId: context.orgId,
+        startAtInclusive: billingPeriod.startAt,
+      });
+      const currentUsageNanoUsd = llmUsageEvents.reduce(
+        (sum, llmUsageEvent) => sum + llmUsageEvent.billableCostNanoUsd,
+        0,
+      );
+      const usageCapNanoUsd = centsToNanoUsd(billingAccount.usageCapCents);
+
+      if (currentUsageNanoUsd < usageCapNanoUsd) {
+        return;
+      }
+
+      emitStructuredLog({
+        data: {
+          billingPeriodEndAt: billingPeriod.endAt,
+          billingPeriodStartAt: billingPeriod.startAt,
+          currentUsageNanoUsd,
+          usageCapNanoUsd,
+        },
+        documentId: context.documentId,
+        feature: "cost",
+        level: "warn",
+        message: "Blocked LLM request because the workspace usage cap was reached.",
+        orgId: context.orgId,
+        service: "web",
+      });
+
+      throw new Error(LLM_USAGE_CAP_REACHED_MESSAGE);
+    },
     async recordOpenAiResponse({ context, model, response }) {
       const usage = response.usage;
 
@@ -62,9 +119,10 @@ export function createLlmCostTracker({
         usage.total_tokens ?? inputTokens + outputTokens,
         0,
       );
+      const nowIso = now();
       const billingAccount =
         (await billingAccountRepository?.getByOrgId(context.orgId)) ??
-        createDefaultBillingAccount(context.orgId, now());
+        createDefaultBillingAccount(context.orgId, nowIso);
       const usageCostEstimate = estimateOpenAiUsageCost({
         cachedInputTokens,
         inputTokens,
@@ -78,7 +136,7 @@ export function createLlmCostTracker({
       const usageEvent = createLlmUsageEvent({
         billableCostNanoUsd,
         cachedInputTokens,
-        createdAt: now(),
+        createdAt: nowIso,
         documentId: context.documentId,
         feature: context.feature,
         id: `llm_usage_${randomUUID().replace(/-/g, "")}`,
@@ -121,6 +179,10 @@ export function createLlmCostTracker({
       });
     },
   };
+}
+
+function centsToNanoUsd(cents: number): number {
+  return cents * 10_000_000;
 }
 
 function applyProfitPremium(

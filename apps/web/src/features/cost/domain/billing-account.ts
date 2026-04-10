@@ -19,6 +19,7 @@ export const billingAccountSchema = z.object({
   profitPremiumBasisPoints: z.number().int().min(0).max(100_000),
   status: billingAccountStatusSchema,
   updatedAt: z.string().datetime(),
+  usageCapCents: z.number().int().nonnegative().nullable().default(null),
   version: z.literal("billing-account.v1"),
 });
 
@@ -26,10 +27,11 @@ export type BillingAccount = z.infer<typeof billingAccountSchema>;
 
 type CreateBillingAccountInput = Omit<
   BillingAccount,
-  "createdAt" | "currency" | "updatedAt" | "version"
+  "createdAt" | "currency" | "updatedAt" | "usageCapCents" | "version"
 > & {
   createdAt?: string;
   updatedAt?: string;
+  usageCapCents?: number | null;
 };
 
 export function createBillingAccount(
@@ -60,5 +62,6 @@ export function createDefaultBillingAccount(
     profitPremiumBasisPoints: DEFAULT_PROFIT_PREMIUM_BASIS_POINTS,
     status: "active",
     updatedAt: timestamp,
+    usageCapCents: null,
   });
 }

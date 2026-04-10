@@ -7,6 +7,7 @@ declare
   required_tables text[] := array[
     'organizations',
     'billing_accounts',
+    'billing_payment_methods',
     'llm_usage_events',
     'account_users',
     'organization_memberships',
@@ -32,6 +33,7 @@ declare
   ];
   required_indexes text[] := array[
     'billing_accounts_org_id_uidx',
+    'billing_payment_methods_org_role_uidx',
     'llm_usage_events_org_created_at_idx',
     'llm_usage_events_org_document_idx',
     'account_users_email_uidx',
@@ -78,6 +80,26 @@ begin
 
   if to_regclass('public.bizops_runtime_capabilities') is null then
     raise exception 'Missing bizops_runtime_capabilities view';
+  end if;
+
+  if not exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'billing_accounts'
+      and column_name = 'usage_cap_cents'
+  ) then
+    raise exception 'billing_accounts.usage_cap_cents is missing';
+  end if;
+
+  if not exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'billing_payment_methods'
+      and column_name = 'last4'
+  ) then
+    raise exception 'billing_payment_methods.last4 is missing';
   end if;
 
   if not exists (

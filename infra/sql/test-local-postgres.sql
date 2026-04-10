@@ -8,6 +8,8 @@ create temp table bizops_smoke_ids on commit drop as
 select
   'dbtest_org_' || :'run_suffix' as org_id,
   'dbtest_billing_' || :'run_suffix' as billing_id,
+  'dbtest_billing_pm_primary_' || :'run_suffix' as billing_payment_method_primary_id,
+  'dbtest_billing_pm_backup_' || :'run_suffix' as billing_payment_method_backup_id,
   'dbtest_llm_usage_' || :'run_suffix' as llm_usage_id,
   'dbtest_doc_' || :'run_suffix' as doc_id,
   'dbtest_job_' || :'run_suffix' as job_id,
@@ -62,7 +64,8 @@ insert into billing_accounts (
   currency,
   monthly_platform_fee_cents,
   profit_premium_basis_points,
-  billing_anchor_day_of_month
+  billing_anchor_day_of_month,
+  usage_cap_cents
 )
 values (
   (select billing_id from bizops_smoke_ids),
@@ -72,7 +75,41 @@ values (
   'USD',
   14900,
   2000,
-  9
+  9,
+  50000
+);
+
+insert into billing_payment_methods (
+  id,
+  org_id,
+  role,
+  cardholder_name,
+  brand,
+  last4,
+  exp_month,
+  exp_year,
+  postal_code
+)
+values (
+  (select billing_payment_method_primary_id from bizops_smoke_ids),
+  (select org_id from bizops_smoke_ids),
+  'primary',
+  'Smoke Test Services',
+  'visa',
+  '4242',
+  5,
+  2028,
+  '10001'
+), (
+  (select billing_payment_method_backup_id from bizops_smoke_ids),
+  (select org_id from bizops_smoke_ids),
+  'backup',
+  'Smoke Test Backup',
+  'mastercard',
+  '4444',
+  6,
+  2029,
+  '10002'
 );
 
 insert into llm_usage_events (

@@ -119,9 +119,26 @@ create table if not exists billing_accounts (
   monthly_platform_fee_cents integer not null,
   profit_premium_basis_points integer not null,
   billing_anchor_day_of_month integer not null,
+  usage_cap_cents integer,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   version text not null default 'billing-account.v1'
+);
+
+create table if not exists billing_payment_methods (
+  id text primary key,
+  org_id text not null,
+  role text not null,
+  cardholder_name text not null,
+  brand text not null,
+  last4 text not null,
+  exp_month integer not null,
+  exp_year integer not null,
+  postal_code text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  version text not null default 'billing-payment-method.v1',
+  unique (org_id, role)
 );
 
 create table if not exists llm_usage_events (
@@ -454,6 +471,17 @@ create table if not exists experiments (
   version text not null default 'experiment-record.v1'
 );
 
+create table if not exists ui_translation_bundles (
+  id text primary key,
+  org_id text,
+  locale text not null,
+  namespace text not null,
+  messages jsonb not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  version text not null default 'ui-translation-bundle.v1'
+);
+
 alter table documents add column if not exists file_extension text;
 alter table documents add column if not exists size_bytes bigint;
 alter table documents add column if not exists checksum_sha256 text;
@@ -475,6 +503,7 @@ alter table retrieval_chunks add column if not exists embedding_vector vector;
 alter table retrieval_chunks add column if not exists version text not null default 'retrieval-chunk.v1';
 
 alter table organizations add column if not exists version text not null default 'organization-record.v1';
+alter table billing_accounts add column if not exists usage_cap_cents integer;
 
 alter table memory_embeddings add column if not exists embedding_dimensions integer;
 alter table memory_embeddings add column if not exists embedding_vector vector;
@@ -551,9 +580,38 @@ alter table billing_accounts drop constraint if exists billing_accounts_billing_
 alter table billing_accounts add constraint billing_accounts_billing_anchor_day_of_month_check check (
   billing_anchor_day_of_month between 1 and 28
 );
+alter table billing_accounts drop constraint if exists billing_accounts_usage_cap_cents_check;
+alter table billing_accounts add constraint billing_accounts_usage_cap_cents_check check (
+  usage_cap_cents is null or usage_cap_cents >= 0
+);
 alter table billing_accounts drop constraint if exists billing_accounts_version_check;
 alter table billing_accounts add constraint billing_accounts_version_check check (
   version = 'billing-account.v1'
+);
+
+alter table billing_payment_methods drop constraint if exists billing_payment_methods_role_check;
+alter table billing_payment_methods add constraint billing_payment_methods_role_check check (
+  role in ('primary', 'backup')
+);
+alter table billing_payment_methods drop constraint if exists billing_payment_methods_brand_check;
+alter table billing_payment_methods add constraint billing_payment_methods_brand_check check (
+  brand in ('amex', 'discover', 'mastercard', 'other', 'visa')
+);
+alter table billing_payment_methods drop constraint if exists billing_payment_methods_last4_check;
+alter table billing_payment_methods add constraint billing_payment_methods_last4_check check (
+  last4 ~ '^[0-9]{4}$'
+);
+alter table billing_payment_methods drop constraint if exists billing_payment_methods_exp_month_check;
+alter table billing_payment_methods add constraint billing_payment_methods_exp_month_check check (
+  exp_month between 1 and 12
+);
+alter table billing_payment_methods drop constraint if exists billing_payment_methods_exp_year_check;
+alter table billing_payment_methods add constraint billing_payment_methods_exp_year_check check (
+  exp_year between 2000 and 2100
+);
+alter table billing_payment_methods drop constraint if exists billing_payment_methods_version_check;
+alter table billing_payment_methods add constraint billing_payment_methods_version_check check (
+  version = 'billing-payment-method.v1'
 );
 
 alter table llm_usage_events drop constraint if exists llm_usage_events_provider_check;
@@ -912,12 +970,23 @@ alter table experiments add constraint experiments_version_check check (
   version = 'experiment-record.v1'
 );
 
+alter table ui_translation_bundles drop constraint if exists ui_translation_bundles_messages_check;
+alter table ui_translation_bundles add constraint ui_translation_bundles_messages_check check (
+  jsonb_typeof(messages) = 'object'
+);
+alter table ui_translation_bundles drop constraint if exists ui_translation_bundles_version_check;
+alter table ui_translation_bundles add constraint ui_translation_bundles_version_check check (
+  version = 'ui-translation-bundle.v1'
+);
+
 create unique index if not exists entities_org_type_key_uidx
   on entities (org_id, entity_type, canonical_key);
 create unique index if not exists account_users_email_uidx
   on account_users (lower(email));
 create unique index if not exists billing_accounts_org_id_uidx
   on billing_accounts (org_id);
+create unique index if not exists billing_payment_methods_org_role_uidx
+  on billing_payment_methods (org_id, role);
 create index if not exists llm_usage_events_org_created_at_idx
   on llm_usage_events (org_id, created_at desc);
 create index if not exists llm_usage_events_org_document_idx
@@ -974,6 +1043,8 @@ create index if not exists recommendations_org_status_idx
   on recommendations (org_id, status, created_at desc);
 create index if not exists experiments_org_status_idx
   on experiments (org_id, status, created_at desc);
+create index if not exists ui_translation_bundles_locale_namespace_idx
+  on ui_translation_bundles (locale, namespace, updated_at desc);
 
 drop trigger if exists trg_organizations_touch_updated_at on organizations;
 create trigger trg_organizations_touch_updated_at
@@ -983,6 +1054,11 @@ for each row execute function bizops_touch_updated_at();
 drop trigger if exists trg_billing_accounts_touch_updated_at on billing_accounts;
 create trigger trg_billing_accounts_touch_updated_at
 before update on billing_accounts
+for each row execute function bizops_touch_updated_at();
+
+drop trigger if exists trg_billing_payment_methods_touch_updated_at on billing_payment_methods;
+create trigger trg_billing_payment_methods_touch_updated_at
+before update on billing_payment_methods
 for each row execute function bizops_touch_updated_at();
 
 drop trigger if exists trg_account_users_touch_updated_at on account_users;
@@ -1048,6 +1124,11 @@ for each row execute function bizops_touch_updated_at();
 drop trigger if exists trg_experiments_touch_updated_at on experiments;
 create trigger trg_experiments_touch_updated_at
 before update on experiments
+for each row execute function bizops_touch_updated_at();
+
+drop trigger if exists trg_ui_translation_bundles_touch_updated_at on ui_translation_bundles;
+create trigger trg_ui_translation_bundles_touch_updated_at
+before update on ui_translation_bundles
 for each row execute function bizops_touch_updated_at();
 
 create or replace view bizops_runtime_capabilities as
