@@ -19,10 +19,16 @@
 - Wired website details into the home and contact marketing pages, restored blog admin copy and shell fallbacks, and added Playwright coverage for public blog, content admin, and website-detail flows.
 - Replaced modal blog editing with a full-page authoring workflow, dedicated content editor routes, markdown preview and toolbar controls, and image uploads for rich post drafts.
 - Moved the public `/blog` experience onto the API-backed marketing shell so published posts render through the shared marketing layout instead of a standalone page.
+- Expanded the public blog with reusable seed content, an editorial landing page, RSS metadata, load-more post browsing, and long-form article rendering components for richer marketing content.
+
+### Document Review
+- Added fact-presentation helpers so explorer and document detail surfaces show business-friendly labels, formatted money and date values, evidence summaries, and source excerpts instead of raw canonical IDs.
+- Added explorer key findings, richer fact-review cards, and end-to-end review coverage so operators can scan the most important document takeaways before reading the full fact list.
 
 ### Extraction and Uploads
 - Improved generic tabular extraction prompts with computed business summaries, date-range and top-contributor profiling, and tighter guidance for high-value business observations.
 - Added manual PDF upload support, resolved the local `pdfjs` worker path for server-side parsing, and backfilled duplicate upload jobs when an extracted document exists without recorded ingestion state.
+- Reworked the upload modal with explicit progress steps, duplicate and review-ready outcomes, direct navigation into Explorer or Pipeline, localized status copy, and clearer validation error messages.
 
 ### Settings Localization
 - Localized organization profile controls and added the matching UI bundle labels so the settings surface stays consistent across supported locales.
@@ -34,6 +40,7 @@
 
 ### Quality
 - Stabilized the cookie-backed auth actor test against time-sensitive session expiry and removed unused prototype images from the docs folder.
+- Added manual QA guides for upload processing and document fact review, improved modal dialog accessibility semantics, and kept the settings navigation pinned during long review sessions.
 
 ## 2026-04-09
 
