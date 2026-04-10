@@ -1,12 +1,19 @@
 import Link from "next/link";
-import { blogRepository } from "@/features/blog/server/blog-repository";
+import type { BlogPost } from "@/features/blog/domain/blog-post";
 
 export const dynamic = "force-dynamic";
 
-export default function Blog() {
-  const allPosts = blogRepository.list();
-  const published = allPosts.filter((p) => p.status === "published");
+async function fetchPublishedPosts(): Promise<BlogPost[]> {
+  const res = await fetch("http://localhost:3001/api/blog", { cache: "no-store" });
+  if (!res.ok) return [];
+  const data = (await res.json()) as { posts: BlogPost[] };
+  return data.posts.filter((p) => p.status === "published");
+}
+
+export default async function Blog() {
+  const published = await fetchPublishedPosts();
   const [featured, ...rest] = published;
+
 
   return (
     <main className="min-h-screen bg-background px-6 py-12 md:px-10 md:py-16">
