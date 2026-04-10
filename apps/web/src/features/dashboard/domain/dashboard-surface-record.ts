@@ -98,9 +98,9 @@ const dashboardPageDataSchema = z.object({
     .optional()
     .default({
       globalScopeLabel:
-        "KPI strip covers Broward HVAC Co. over the last 7 days.",
+        "Top metrics cover Broward HVAC Co. over the last 7 days.",
       scopedResultsLabel:
-        "Activity, queue, and signals show all document activity in that window.",
+        "The sections below include all document work in that window.",
     }),
   filters: z.union([dashboardFiltersSchema, legacyDashboardFiltersSchema]),
   labels: dashboardPageLabelsSchema,
@@ -143,7 +143,9 @@ export const dashboardSurfaceRecordSchema = z.object({
   version: z.literal("dashboard-surface-record.v1"),
 });
 
-export type DashboardSurfaceRecord = z.infer<typeof dashboardSurfaceRecordSchema>;
+export type DashboardSurfaceRecord = z.infer<
+  typeof dashboardSurfaceRecordSchema
+>;
 
 type CreateDashboardSurfaceRecordInput = Omit<
   DashboardSurfaceRecord,
@@ -170,13 +172,14 @@ export function createDefaultDashboardSurfaceRecord(
     businessSummary: {
       actionLabel: "Open this week's brief",
       description:
-        "Eight recommendations generated. Three flagged high priority. Last run six hours ago.",
-      title: "Cash and Margin Brief - week of Apr 14",
+        "Eight cited recommendations are ready. Three deserve attention first, and the latest brief finished six hours ago.",
+      title: "Weekly cash and margin brief is ready",
     },
     filterSummary: {
-      globalScopeLabel: "KPI strip covers Broward HVAC Co. over the last 7 days.",
+      globalScopeLabel:
+        "Top metrics cover Broward HVAC Co. over the last 7 days.",
       scopedResultsLabel:
-        "Activity, queue, and signals show all document activity in that window.",
+        "The sections below include all document work in that window.",
     },
     filters: buildDashboardFilters({
       documents: [],
@@ -263,37 +266,42 @@ export function createDefaultDashboardSurfaceRecord(
       {
         id: "queue_vendor_merge",
         actions: ["Merge", "Keep separate"],
-        context: "Appears across 14 invoices totaling $33,400.",
+        context:
+          "HVAC Parts Ltd and HVAC Parts LLC appear across 14 invoices totaling $33,400, so someone should confirm whether they are the same supplier.",
         priority: "danger",
         priorityLabel: "High",
-        title: "HVAC Parts Ltd and HVAC Parts LLC detected as a possible duplicate vendor.",
+        title: "A supplier duplicate may be splitting spend across two names.",
         typeLabel: "Vendor merge",
       },
       {
         id: "queue_parse_failure",
         actions: ["Inspect files", "Dismiss"],
-        context: "Held in staging and not sent downstream yet.",
+        context:
+          "Acme Supply invoices are still on hold, so facts and metrics will stay incomplete until someone inspects the files.",
         priority: "danger",
         priorityLabel: "High",
-        title: "Three invoices from Acme Supply failed before extraction.",
-        typeLabel: "Parse failure",
+        title: "Three invoices need help before they can be used.",
+        typeLabel: "Blocked import",
       },
       {
         id: "queue_new_bucket",
-        actions: ["Approve", "Rename", "Discard"],
-        context: "Detected in six service reports this week.",
+        actions: ["Approve", "Discard"],
+        context:
+          "Equipment Rental showed up in six service reports this week and may need to become an approved spend category.",
         priority: "warning",
         priorityLabel: "Medium",
-        title: "Approve a new cost bucket for Equipment Rental.",
+        title: "A new spend category is waiting for approval.",
         typeLabel: "New bucket",
       },
       {
         id: "queue_date_review",
         actions: ["Service date", "Invoice date"],
-        context: "This affects revenue timing for the current margin calculation.",
+        context:
+          "Choosing the right date keeps the current margin view aligned with how this work should be recognized.",
         priority: "info",
         priorityLabel: "Review",
-        title: "Choose the primary event date for one invoice packet.",
+        title:
+          "One invoice packet needs a date rule before margin timing is locked in.",
         typeLabel: "Date ambiguity",
       },
     ],
@@ -305,28 +313,33 @@ export function createDefaultDashboardSurfaceRecord(
           {
             id: "activity_import",
             actionLabel: "Review",
-            detail: "Parsed, classified, and queued for extraction.",
-            label: "Import",
+            detail:
+              "The batch cleared intake and is ready for a quick operator pass before broader use.",
+            label: "Needs review",
             time: "14m ago",
-            title: "47 invoices imported from Gmail and the AP inbox.",
+            title:
+              "47 invoices arrived from Gmail and are moving through review.",
             tone: "info",
           },
           {
             id: "activity_failure",
             actionLabel: "Inspect",
-            detail: "Unsupported template may need manual review or a parser update.",
-            label: "Failure",
+            detail:
+              "The layout did not match what we expected, so the files need inspection before facts can be trusted.",
+            label: "Needs attention",
             time: "14m ago",
-            title: "Three PDF invoices failed layout parsing.",
+            title:
+              "Three PDF invoices stopped before we could extract details.",
             tone: "danger",
           },
           {
             id: "activity_classification",
             actionLabel: "Approve",
-            detail: "Equipment Rental and Subcontract Labor are pending approval.",
-            label: "AI",
+            detail:
+              "Equipment Rental and Subcontract Labor are waiting on a yes or no before they become part of the working model.",
+            label: "Review",
             time: "1h ago",
-            title: "Two new vendor categories were detected.",
+            title: "Two new cost categories were suggested during review.",
             tone: "accent",
           },
         ],
@@ -338,19 +351,22 @@ export function createDefaultDashboardSurfaceRecord(
           {
             id: "activity_pack",
             actionLabel: "Open brief",
-            detail: "Eight recommendations generated and three flagged high priority.",
-            label: "Pack",
+            detail:
+              "Eight cited recommendations were generated, and three are flagged as the first items to work through.",
+            label: "Brief",
             time: "6h ago",
-            title: "Cash and Margin Brief ran for Broward HVAC Co.",
+            title: "This week's cash and margin brief finished successfully.",
             tone: "accent",
           },
           {
             id: "activity_warning",
             actionLabel: "Fix",
-            detail: "Job #4821 is missing parts and labor cost detail from ServiceTitan.",
-            label: "Warning",
+            detail:
+              "Job #4821 is still missing parts and labor cost detail, so the margin view for that job is incomplete.",
+            label: "Needs review",
             time: "9h ago",
-            title: "One job is missing cost data so margin is incomplete.",
+            title:
+              "One job is still missing cost data needed for a full margin read.",
             tone: "warning",
           },
         ],

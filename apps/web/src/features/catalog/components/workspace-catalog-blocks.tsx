@@ -23,9 +23,9 @@ export function WorkspaceHeader({
   title,
 }: WorkspaceHeaderProps) {
   return (
-    <header className="border-b border-border bg-background px-[22px] py-[9px]">
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex min-w-0 items-center gap-0 text-[12px]">
+    <header className="border-b border-border bg-background px-6 py-3">
+      <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+        <div className="flex min-w-0 flex-wrap items-center gap-0 text-[12px]">
           {breadcrumbs.slice(0, -1).map((crumb) => (
             <span key={crumb} className="flex items-center gap-0 text-muted">
               <span>{crumb}</span>
@@ -33,21 +33,24 @@ export function WorkspaceHeader({
             </span>
           ))}
           <h1 className="text-[13px] font-semibold text-foreground">{title}</h1>
-          <span className="mx-[8px] text-border-strong opacity-60">·</span>
-          <p className="hidden truncate text-[12px] text-muted min-[600px]:block">{description}</p>
+          <span className="mx-[8px] text-border-strong opacity-60">|</span>
+          <p className="min-w-0 text-[12px] text-muted max-[599px]:basis-full max-[599px]:pt-1 min-[600px]:truncate">
+            {description}
+          </p>
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2 xl:shrink-0 xl:flex-nowrap">
           {actions.map((action) => (
-            <button
+            <CatalogButton
               key={action.label}
-              className="inline-flex cursor-pointer items-center gap-[7px] rounded-[7px] border border-border-strong bg-surface-subtle px-[11px] py-[6px] text-[12px] font-semibold text-muted transition hover:bg-surface-muted hover:text-foreground active:scale-[.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              className="min-h-[34px] px-3.5 py-[6px]"
               onClick={action.onClick}
               type="button"
+              variant={action.variant ?? "secondary"}
             >
               {action.label}
-            </button>
+            </CatalogButton>
           ))}
-          <div className="ml-1 border-l border-border pl-3">
+          <div className="ml-1 flex shrink-0 items-center border-l border-border pl-3">
             <TopBarControls />
           </div>
         </div>
@@ -112,7 +115,7 @@ export function MetricTile({
       <p className="mb-[6px] text-[10.5px] font-semibold uppercase tracking-[0.07em] text-muted">
         {label}
       </p>
-      <div className="text-[22px] font-bold tracking-[-0.03em] leading-none text-foreground mb-1">
+      <div className="mb-1 text-[22px] font-bold leading-none tracking-[-0.03em] text-foreground">
         {value}
       </div>
       <div className={cx("text-[11px] font-medium", metricTrendClasses[tone])}>
@@ -140,7 +143,7 @@ export function WorkspaceStatStrip({ items }: WorkspaceStatStripProps) {
             <p className="text-[10px] font-bold uppercase tracking-[0.07em] text-muted">
               {item.label}
             </p>
-            <p className="mt-[5px] text-[20px] font-extrabold tracking-[-0.03em] leading-none text-foreground">
+            <p className="mt-[5px] text-[20px] font-extrabold leading-none tracking-[-0.03em] text-foreground">
               {item.value}
             </p>
             <p className="mt-1 text-[11px] leading-[1.4] text-muted">{item.detail}</p>
@@ -425,7 +428,7 @@ export function SignalCard({ detail, label, tone, value }: SignalCardProps) {
           {label}
         </p>
       </div>
-      <div className="text-[22px] font-bold tracking-[-0.03em] leading-none mb-1">{value}</div>
+      <div className="mb-1 text-[22px] font-bold leading-none tracking-[-0.03em]">{value}</div>
       <p className="text-[11.5px] leading-[1.4] text-current/70">{detail}</p>
     </CatalogCard>
   );
@@ -485,6 +488,7 @@ type PackSidebarItemProps = Readonly<{
   active?: boolean;
   meta: readonly string[];
   onClick?: () => void;
+  summary?: string;
   statusLabel: string;
   statusTone: "success" | "warning";
   title: string;
@@ -495,6 +499,7 @@ export function PackSidebarItem({
   active = false,
   meta,
   onClick,
+  summary,
   statusLabel,
   statusTone,
   title,
@@ -532,7 +537,12 @@ export function PackSidebarItem({
             {statusLabel}
           </span>
         </div>
-        <div className="mt-1">
+        {summary ? (
+          <p className="mt-1 text-[11.5px] leading-[1.5] text-foreground/85">
+            {summary}
+          </p>
+        ) : null}
+        <div className="mt-2">
           {meta.map((row) => (
             <p key={row} className="text-[11.5px] text-muted">
               {row}

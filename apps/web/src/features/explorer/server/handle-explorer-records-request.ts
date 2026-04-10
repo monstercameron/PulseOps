@@ -18,9 +18,7 @@ import {
   resolveFactLabel,
 } from "@/features/facts/domain/fact-presentation";
 import { type FactRepository } from "@/features/facts/repositories/fact-repository";
-import {
-  type SupportedDocumentFamilyId,
-} from "@/features/foundation/domain/document-families";
+import { type SupportedDocumentFamilyId } from "@/features/foundation/domain/document-families";
 import { getDefaultUiMessages } from "@/features/i18n/constants/default-ui-translation-bundles";
 import {
   getUiDocumentFamilyLabel,
@@ -32,14 +30,27 @@ import { type TextParserArtifact } from "@/features/parsing/domain/text-parser-a
 import { type ParserArtifactRepository } from "@/features/parsing/repositories/parser-artifact-repository";
 import { type TextParserArtifactRepository } from "@/features/parsing/repositories/text-parser-artifact-repository";
 
+export const EXPLORER_RECORDS_PAGE_SIZE = 10;
+const MAX_EXPLORER_RECORDS_PAGE_SIZE = 50;
+
 const explorerSearchParamsSchema = z.object({
   documentId: z.string().min(1).optional(),
+  locale: z.string().trim().min(1).optional(),
   orgId: z.string().min(1),
+  page: z.coerce.number().int().min(1).optional(),
+  pageSize: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(MAX_EXPLORER_RECORDS_PAGE_SIZE)
+    .optional(),
+  query: z.string().trim().min(1).optional(),
   status: z.preprocess(
     (value) =>
       typeof value === "string" && value.length > 0 ? value : undefined,
     documentStatusListSearchParamSchema.optional(),
   ),
+  type: z.string().trim().min(1).optional(),
 });
 
 type ExplorerRecordDetailField = Readonly<{
@@ -94,7 +105,17 @@ export type ExplorerRecord = Readonly<{
 }>;
 
 export type ExplorerPageData = Readonly<{
+  activeType?: string;
   filters: readonly string[];
+  pagination: Readonly<{
+    endRecord: number;
+    page: number;
+    pageSize: number;
+    startRecord: number;
+    totalPages: number;
+    totalRecords: number;
+  }>;
+  query: string;
   records: readonly ExplorerRecord[];
   summary: Readonly<{
     averageConfidence: string;
@@ -102,6 +123,9 @@ export type ExplorerPageData = Readonly<{
     totalRecords: string;
   }>;
 }>;
+
+type ExplorerFactRecord =
+  Awaited<ReturnType<FactRepository["listByDocumentId"]>>[number];
 
 type ExplorerDependencies = Readonly<{
   documentRepository: DocumentRepository;
@@ -115,7 +139,11 @@ type GetExplorerPageDataInput = ExplorerDependencies &
     documentId?: string;
     locale?: string;
     orgId: string;
+    page?: number;
+    pageSize?: number;
+    query?: string;
     statuses?: readonly DocumentStatus[];
+    type?: string;
   }>;
 
 export async function handleExplorerRecordsRequest(
@@ -125,8 +153,13 @@ export async function handleExplorerRecordsRequest(
   const url = new URL(request.url);
   const parsedSearchParams = explorerSearchParamsSchema.safeParse({
     documentId: url.searchParams.get("documentId") ?? undefined,
+    locale: url.searchParams.get("locale") ?? undefined,
     orgId: url.searchParams.get("orgId"),
+    page: url.searchParams.get("page") ?? undefined,
+    pageSize: url.searchParams.get("pageSize") ?? undefined,
+    query: url.searchParams.get("query") ?? undefined,
     status: url.searchParams.get("status"),
+    type: url.searchParams.get("type") ?? undefined,
   });
 
   if (!parsedSearchParams.success) {
@@ -150,8 +183,13 @@ export async function handleExplorerRecordsRequest(
   const data = await getExplorerPageData({
     ...dependencies,
     documentId: parsedSearchParams.data.documentId,
+    locale: parsedSearchParams.data.locale,
     orgId: parsedSearchParams.data.orgId,
+    page: parsedSearchParams.data.page,
+    pageSize: parsedSearchParams.data.pageSize,
+    query: parsedSearchParams.data.query,
     statuses: parsedSearchParams.data.status,
+    type: parsedSearchParams.data.type,
   });
 
   return Response.json({
@@ -166,55 +204,85 @@ export async function getExplorerPageData({
   factRepository,
   locale = "en-US",
   orgId,
+  page,
+  pageSize,
   parserArtifactRepository,
+  query,
   statuses,
+  type,
   textParserArtifactRepository,
 }: GetExplorerPageDataInput): Promise<ExplorerPageData> {
   const messages = getDefaultUiMessages(locale);
-  const [allDocuments, allFacts] = await Promise.all([
-    documentRepository.listByOrgId(orgId),
-    factRepository.listByOrgId(orgId),
-  ]);
-  const factsByDocumentId = groupFactsByDocumentId(allFacts);
+  const normalizedQuery = query?.trim().toLowerCase() ?? "";
+  const allDocuments = await documentRepository.listByOrgId(orgId);
+  const scopedDocuments = allDocuments
+    .filter(
+      (document) =>
+        matchesDocumentStatusFilter(document, statuses) &&
+        (documentId === undefined || document.id === documentId),
+    )
+    .slice()
+    .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
+  const filters = buildTypeFilters(scopedDocuments, messages);
+  const activeType = normalizeExplorerType(type, filters);
+  const filteredDocuments = scopedDocuments
+    .map((document) => buildExplorerDocumentProjection(document, messages))
+    .filter((document) =>
+      matchesExplorerRecordFilters(document, {
+        query: normalizedQuery,
+        type: activeType,
+      }),
+    );
+  const pagination = buildExplorerPagination({
+    page,
+    pageSize,
+    totalRecords: filteredDocuments.length,
+  });
 
   const records = await Promise.all(
-    allDocuments
-      .filter(
-        (document) =>
-          matchesDocumentStatusFilter(document, statuses) &&
-          (documentId === undefined || document.id === documentId),
-      )
-      .slice()
-      .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
-      .map(async (document) => {
-        const facts =
-          factsByDocumentId.get(document.id)?.slice().sort((left, right) => {
+    filteredDocuments
+      .slice(pagination.startIndex, pagination.endIndex)
+      .map(async (documentProjection) => {
+        const facts = (
+          await factRepository.listByDocumentId(documentProjection.id)
+        )
+          .slice()
+          .sort((left, right) => {
             if (right.confidenceScore !== left.confidenceScore) {
               return right.confidenceScore - left.confidenceScore;
             }
 
             return left.id.localeCompare(right.id);
-          }) ?? [];
+          });
         const confidenceScore =
-          document.classificationConfidenceScore ??
+          documentProjection.confidenceScore ??
           (facts.length > 0
             ? facts.reduce((total, fact) => total + fact.confidenceScore, 0) /
               facts.length
             : null);
-        const parserContext = await resolveDocumentArtifact(document, {
-          parserArtifactRepository,
-          textParserArtifactRepository,
-        });
+        const parserContext = await resolveDocumentArtifact(
+          documentProjection.document,
+          {
+            parserArtifactRepository,
+            textParserArtifactRepository,
+          },
+        );
         const detailFacts = buildDetailFacts(facts, locale).slice(0, 10);
         const detailKeyFindings = buildDetailKeyFindings(facts, locale);
 
         return {
           confidenceScore,
-          dateLabel: formatDateLabel(document.updatedAt, locale),
-          detailCitations: buildCitationLabels(facts, document.fileName),
+          dateLabel: formatDateLabel(
+            documentProjection.document.updatedAt,
+            locale,
+          ),
+          detailCitations: buildCitationLabels(
+            facts,
+            documentProjection.document.fileName,
+          ),
           detailDocumentFields: buildDetailDocumentFields({
             confidenceScore,
-            document,
+            document: documentProjection.document,
             locale,
             messages,
             parserContext,
@@ -226,36 +294,71 @@ export async function getExplorerPageData({
             messages,
             parserContext,
           }),
-          downloadAvailable: document.rawObject !== undefined,
-          documentMeta: `${buildSourceLabel(messages, document.source)} - ${formatFileSize(document.sizeBytes, messages.dataLabels.generic.sizeUnavailable)}`,
-          documentName: document.fileName,
+          downloadAvailable:
+            documentProjection.document.rawObject !== undefined,
+          documentMeta: documentProjection.documentMeta,
+          documentName: documentProjection.document.fileName,
           factsSummary: buildFactsSummary(facts),
-          id: document.id,
+          id: documentProjection.id,
           reviewHealth: buildReviewHealth({
             detailFacts,
             detailKeyFindings,
             parserContext,
           }),
-          sourceLabel: buildSourceLabel(messages, document.source),
-          statusLabel: buildStatusLabel(messages, document.status),
-          statusTone: buildStatusTone(document.status),
-          typeLabel: buildDocumentTypeLabel(
+          sourceLabel: documentProjection.sourceLabel,
+          statusLabel: buildStatusLabel(
             messages,
-            document.suggestedDocumentFamily,
+            documentProjection.document.status,
           ),
-          typeTone: buildDocumentTypeTone(document.suggestedDocumentFamily),
+          statusTone: documentProjection.statusTone,
+          typeLabel: documentProjection.typeLabel,
+          typeTone: buildDocumentTypeTone(
+            documentProjection.document.suggestedDocumentFamily,
+          ),
         } satisfies ExplorerRecord;
       }),
   );
 
   return {
-    filters: [messages.explorerPage.allRecords, ...buildTypeFilters(records)],
+    activeType,
+    filters: [messages.explorerPage.allRecords, ...filters],
+    pagination: {
+      endRecord: pagination.endRecord,
+      page: pagination.page,
+      pageSize: pagination.pageSize,
+      startRecord: pagination.startRecord,
+      totalPages: pagination.totalPages,
+      totalRecords: pagination.totalRecords,
+    },
+    query: normalizedQuery,
     records,
-    summary: buildExplorerSummary(records),
+    summary: buildExplorerSummary(filteredDocuments),
   };
 }
 
-type ExplorerFactRecord = Awaited<ReturnType<FactRepository["listByOrgId"]>>[number];
+type ExplorerSummaryRecord = Pick<
+  ExplorerRecord,
+  "confidenceScore" | "statusTone"
+>;
+type ExplorerDocumentProjection = ExplorerSummaryRecord &
+  Readonly<{
+    document: DocumentRecord;
+    documentMeta: string;
+    id: string;
+    searchText: string;
+    sourceLabel: string;
+    typeLabel: string;
+  }>;
+type ExplorerPagination = Readonly<{
+  endIndex: number;
+  endRecord: number;
+  page: number;
+  pageSize: number;
+  startIndex: number;
+  startRecord: number;
+  totalPages: number;
+  totalRecords: number;
+}>;
 
 type ResolvedDocumentArtifact =
   | Readonly<{
@@ -267,23 +370,6 @@ type ResolvedDocumentArtifact =
       kind: "text";
     }>
   | null;
-
-function groupFactsByDocumentId(facts: readonly ExplorerFactRecord[]) {
-  const factsByDocumentId = new Map<string, ExplorerFactRecord[]>();
-
-  for (const fact of facts) {
-    const existingFacts = factsByDocumentId.get(fact.documentId);
-
-    if (existingFacts === undefined) {
-      factsByDocumentId.set(fact.documentId, [fact]);
-      continue;
-    }
-
-    existingFacts.push(fact);
-  }
-
-  return factsByDocumentId;
-}
 
 async function resolveDocumentArtifact(
   document: DocumentRecord,
@@ -304,8 +390,9 @@ async function resolveDocumentArtifact(
       };
     }
 
-    const textParserArtifact =
-      await input.textParserArtifactRepository.getById(document.parserArtifactId);
+    const textParserArtifact = await input.textParserArtifactRepository.getById(
+      document.parserArtifactId,
+    );
 
     if (textParserArtifact !== null) {
       return {
@@ -340,17 +427,131 @@ async function resolveDocumentArtifact(
   return null;
 }
 
-function buildTypeFilters(records: readonly ExplorerRecord[]) {
-  return Array.from(new Set(records.map((record) => record.typeLabel)));
+function buildExplorerDocumentProjection(
+  document: DocumentRecord,
+  messages: ReturnType<typeof getDefaultUiMessages>,
+): ExplorerDocumentProjection {
+  const sourceLabel = buildSourceLabel(messages, document.source);
+  const typeLabel = buildDocumentTypeLabel(
+    messages,
+    document.suggestedDocumentFamily,
+  );
+  const documentMeta = buildDocumentMeta(document, messages, sourceLabel);
+
+  return {
+    confidenceScore: document.classificationConfidenceScore ?? null,
+    document,
+    documentMeta,
+    id: document.id,
+    searchText:
+      `${document.fileName} ${documentMeta} ${typeLabel} ${sourceLabel}`.toLowerCase(),
+    sourceLabel,
+    statusTone: buildStatusTone(document.status),
+    typeLabel,
+  };
 }
 
-function buildDetailDocumentFields(input: Readonly<{
-  confidenceScore: number | null;
-  document: DocumentRecord;
-  locale: string;
-  messages: ReturnType<typeof getDefaultUiMessages>;
-  parserContext: ResolvedDocumentArtifact;
-}>): ExplorerRecordDetailField[] {
+function buildTypeFilters(
+  documents: readonly DocumentRecord[],
+  messages: ReturnType<typeof getDefaultUiMessages>,
+) {
+  return Array.from(
+    new Set(
+      documents.map((document) =>
+        buildDocumentTypeLabel(messages, document.suggestedDocumentFamily),
+      ),
+    ),
+  );
+}
+
+function normalizeExplorerType(
+  type: string | undefined,
+  filters: readonly string[],
+) {
+  if (type === undefined) {
+    return undefined;
+  }
+
+  return filters.includes(type) ? type : undefined;
+}
+
+function matchesExplorerRecordFilters(
+  document: ExplorerDocumentProjection,
+  filters: Readonly<{
+    query: string;
+    type?: string;
+  }>,
+) {
+  const matchesType =
+    filters.type === undefined || document.typeLabel === filters.type;
+
+  if (!matchesType) {
+    return false;
+  }
+
+  if (filters.query.length === 0) {
+    return true;
+  }
+
+  return document.searchText.includes(filters.query);
+}
+
+function buildExplorerPagination(
+  input: Readonly<{
+    page?: number;
+    pageSize?: number;
+    totalRecords: number;
+  }>,
+): ExplorerPagination {
+  const totalRecords = input.totalRecords;
+  const resolvedPageSize =
+    input.pageSize === undefined
+      ? Math.max(totalRecords, EXPLORER_RECORDS_PAGE_SIZE)
+      : Math.min(
+          Math.max(Math.trunc(input.pageSize), 1),
+          MAX_EXPLORER_RECORDS_PAGE_SIZE,
+        );
+  const totalPages = Math.max(1, Math.ceil(totalRecords / resolvedPageSize));
+  const requestedPage =
+    typeof input.page === "number" && Number.isFinite(input.page)
+      ? Math.max(Math.trunc(input.page), 1)
+      : 1;
+  const page = Math.min(requestedPage, totalPages);
+  const startIndex = totalRecords === 0 ? 0 : (page - 1) * resolvedPageSize;
+  const endIndex =
+    totalRecords === 0
+      ? 0
+      : Math.min(startIndex + resolvedPageSize, totalRecords);
+
+  return {
+    endIndex,
+    endRecord: endIndex,
+    page,
+    pageSize: resolvedPageSize,
+    startIndex,
+    startRecord: totalRecords === 0 ? 0 : startIndex + 1,
+    totalPages,
+    totalRecords,
+  };
+}
+
+function buildDocumentMeta(
+  document: DocumentRecord,
+  messages: ReturnType<typeof getDefaultUiMessages>,
+  sourceLabel: string,
+) {
+  return `${sourceLabel} - ${formatFileSize(document.sizeBytes, messages.dataLabels.generic.sizeUnavailable)}`;
+}
+
+function buildDetailDocumentFields(
+  input: Readonly<{
+    confidenceScore: number | null;
+    document: DocumentRecord;
+    locale: string;
+    messages: ReturnType<typeof getDefaultUiMessages>;
+    parserContext: ResolvedDocumentArtifact;
+  }>,
+): ExplorerRecordDetailField[] {
   const detailFields: ExplorerRecordDetailField[] = [
     {
       label: "Title",
@@ -434,11 +635,13 @@ function buildDetailDocumentFields(input: Readonly<{
   return detailFields;
 }
 
-function buildDetailParserFields(input: Readonly<{
-  locale: string;
-  messages: ReturnType<typeof getDefaultUiMessages>;
-  parserContext: ResolvedDocumentArtifact;
-}>): ExplorerRecordDetailField[] {
+function buildDetailParserFields(
+  input: Readonly<{
+    locale: string;
+    messages: ReturnType<typeof getDefaultUiMessages>;
+    parserContext: ResolvedDocumentArtifact;
+  }>,
+): ExplorerRecordDetailField[] {
   if (input.parserContext === null) {
     return [
       {
@@ -502,11 +705,15 @@ function buildDetailParserFields(input: Readonly<{
     },
     {
       label: "Primary heading",
-      value: primarySheet?.name ?? input.messages.dataLabels.generic.unavailable,
+      value:
+        primarySheet?.name ?? input.messages.dataLabels.generic.unavailable,
     },
     {
       label: "Sheet count",
-      value: formatInteger(input.parserContext.artifact.sheetCount, input.locale),
+      value: formatInteger(
+        input.parserContext.artifact.sheetCount,
+        input.locale,
+      ),
     },
     {
       label: "Total rows",
@@ -540,7 +747,7 @@ function buildDetailParserFields(input: Readonly<{
   return detailFields;
 }
 
-function buildExplorerSummary(records: readonly ExplorerRecord[]) {
+function buildExplorerSummary(records: readonly ExplorerSummaryRecord[]) {
   const confidenceScores = records
     .map((record) => record.confidenceScore)
     .filter((score): score is number => score !== null);
@@ -716,11 +923,13 @@ function buildDetailKeyFindings(
     }));
 }
 
-function buildReviewHealth(input: Readonly<{
-  detailFacts: readonly ExplorerRecordFact[];
-  detailKeyFindings: readonly ExplorerRecordKeyFinding[];
-  parserContext: ResolvedDocumentArtifact;
-}>): ExplorerRecordReviewHealth {
+function buildReviewHealth(
+  input: Readonly<{
+    detailFacts: readonly ExplorerRecordFact[];
+    detailKeyFindings: readonly ExplorerRecordKeyFinding[];
+    parserContext: ResolvedDocumentArtifact;
+  }>,
+): ExplorerRecordReviewHealth {
   const citedFactCount = input.detailFacts.filter(
     (fact) => fact.excerpt !== undefined,
   ).length;
@@ -776,11 +985,19 @@ function summarizeFactGroup(
       detail: `${group.length} values / avg confidence ${averageConfidence}`,
       label: resolvedLabel,
       priority,
-      value: summarizeNumericFinding(sampleFact, resolvedLabel, numericValues, locale),
+      value: summarizeNumericFinding(
+        sampleFact,
+        resolvedLabel,
+        numericValues,
+        locale,
+      ),
     };
   }
 
-  if (stringValues.length === group.length && looksLikeDateGroup(stringValues)) {
+  if (
+    stringValues.length === group.length &&
+    looksLikeDateGroup(stringValues)
+  ) {
     return {
       detail:
         stringValues.length === 1
@@ -840,7 +1057,10 @@ function formatDateTimeLabel(isoTimestamp: string, locale: string) {
   }).format(new Date(isoTimestamp));
 }
 
-function formatFileSize(sizeBytes: number | undefined, unavailableLabel: string) {
+function formatFileSize(
+  sizeBytes: number | undefined,
+  unavailableLabel: string,
+) {
   if (sizeBytes === undefined) {
     return unavailableLabel;
   }
@@ -904,10 +1124,7 @@ function compareFactsForDisplay(
   return left.id.localeCompare(right.id);
 }
 
-function scoreFactGroup(
-  fact: ExplorerFactRecord,
-  resolvedLabel: string,
-) {
+function scoreFactGroup(fact: ExplorerFactRecord, resolvedLabel: string) {
   switch (fact.canonicalFactTypeId) {
     case "invoice.amount.outstanding":
     case "invoice.payment_days_late":
@@ -1007,7 +1224,9 @@ function summarizeDateFinding(values: readonly string[], locale: string) {
 }
 
 function summarizeTextFinding(values: readonly string[]) {
-  const uniqueValues = Array.from(new Set(values.filter((value) => value.length > 0)));
+  const uniqueValues = Array.from(
+    new Set(values.filter((value) => value.length > 0)),
+  );
 
   if (uniqueValues.length === 0) {
     return "No value captured";
@@ -1024,10 +1243,7 @@ function looksLikeDateGroup(values: readonly string[]) {
   return values.every((value) => !Number.isNaN(new Date(value).getTime()));
 }
 
-function isCurrencyLikeFact(
-  fact: ExplorerFactRecord,
-  resolvedLabel: string,
-) {
+function isCurrencyLikeFact(fact: ExplorerFactRecord, resolvedLabel: string) {
   return (
     fact.canonicalFactTypeId === "invoice.amount.total" ||
     fact.canonicalFactTypeId === "invoice.amount.outstanding" ||

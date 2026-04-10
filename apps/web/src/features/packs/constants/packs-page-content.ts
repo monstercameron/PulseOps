@@ -1,3 +1,5 @@
+import { buildPackPreviewContent, type PackConcept, type PackOverviewStat } from "@/features/packs/lib/pack-preview";
+
 export type PackMetric = Readonly<{
   detail: string;
   label: string;
@@ -26,10 +28,15 @@ export type PackSourceRecord = Readonly<{
 
 export type PackItem = Readonly<{
   accent: "accent" | "info" | "warning";
+  concepts: readonly PackConcept[];
   generatedAtLabel: string;
   id: string;
+  listSummary: string;
   meta: readonly string[];
   metrics: readonly PackMetric[];
+  nextStepLabel: string;
+  overviewStats: readonly PackOverviewStat[];
+  previewSummary: string;
   recommendations: readonly PackRecommendation[];
   sourceData: readonly PackSourceRecord[];
   statusLabel: string;
@@ -48,7 +55,7 @@ export type PacksPageData = Readonly<{
 
 export const packsPageLabels = {
   breadcrumbs: ["Dashboard", "Decision Packs"],
-  description: "Weekly briefs and recommendations grounded in ingested data.",
+  description: "Preview grouped business analysis before it becomes an operator decision.",
   title: "Decision Packs",
 } as const;
 
@@ -155,6 +162,71 @@ export const fallbackPacksPageData: PacksPageData = {
       statusLabel: "Ready",
       statusTone: "success",
       title: "Cash and Margin Brief",
+      ...buildPackPreviewContent({
+        metrics: [
+          {
+            detail: "+12% versus last week",
+            label: "Revenue this week",
+            tone: "success",
+            value: "$48,320",
+          },
+          {
+            detail: "-2.1 points versus last week",
+            label: "Gross margin",
+            tone: "danger",
+            value: "38.4%",
+          },
+          {
+            detail: "Three invoices past due",
+            label: "Outstanding A/R",
+            tone: "danger",
+            value: "$14,800",
+          },
+          {
+            detail: "+4 versus last week",
+            label: "Jobs completed",
+            tone: "success",
+            value: "23",
+          },
+        ],
+        recommendations: [
+          {
+            citations: [
+              "AP_Invoice_Cooltek_0419.pdf",
+              "AP_Invoice_ThermoFlux_0412.pdf",
+              "AP_Invoice_SkyAir_0408.pdf",
+            ],
+            confidence: 0.91,
+            priority: "danger",
+            summary:
+              "Three overdue invoices now represent the largest concentration of open receivables. Escalate ThermoFlux to a phone call and push payment reminders today.",
+            title: "Chase three overdue invoices worth $14,800.",
+          },
+          {
+            citations: ["Job_Report_Week17_Batch.csv", "AP_Invoice_Cooltek_0419.pdf"],
+            confidence: 0.86,
+            priority: "warning",
+            summary:
+              "Four jobs came in below the stated margin target, primarily because parts cost variance ran above estimate.",
+            title: "Review four jobs priced below target margin.",
+          },
+          {
+            citations: ["AP_Invoice_Cooltek_0419.pdf", "QBO_Expenses_Apr2026.xlsx"],
+            confidence: 0.78,
+            priority: "info",
+            summary:
+              "Cooltek Supply has been the largest parts vendor for six consecutive weeks and likely qualifies for improved pricing tiers.",
+            title: "Renegotiate Cooltek supplier pricing.",
+          },
+        ],
+        sourceData: [
+          { confidenceLabel: "0.97" },
+          { confidenceLabel: "0.89" },
+          { confidenceLabel: "0.94" },
+        ],
+        statusTone: "success",
+        title: "Cash and Margin Brief",
+      }),
     },
     {
       accent: "info",
@@ -192,6 +264,35 @@ export const fallbackPacksPageData: PacksPageData = {
       statusLabel: "Ready",
       statusTone: "success",
       title: "Capacity and Utilization",
+      ...buildPackPreviewContent({
+        metrics: [
+          {
+            detail: "Crew load is above the target threshold",
+            label: "Utilization",
+            tone: "warning",
+            value: "94%",
+          },
+          {
+            detail: "Two weeks at the current pace",
+            label: "Capacity risk",
+            tone: "warning",
+            value: "High",
+          },
+        ],
+        recommendations: [
+          {
+            citations: ["Job_Report_Week17_Batch.csv", "Job_Report_Week16_Batch.csv"],
+            confidence: 0.93,
+            priority: "success",
+            summary:
+              "Technician utilization is high enough that scheduling delays are likely if demand stays flat for two more weeks.",
+            title: "Consider adding temporary capacity.",
+          },
+        ],
+        sourceData: [],
+        statusTone: "success",
+        title: "Capacity and Utilization",
+      }),
     },
     {
       accent: "warning",
@@ -204,6 +305,13 @@ export const fallbackPacksPageData: PacksPageData = {
       statusLabel: "Draft",
       statusTone: "warning",
       title: "Parts and Supplier",
+      ...buildPackPreviewContent({
+        metrics: [],
+        recommendations: [],
+        sourceData: [],
+        statusTone: "warning",
+        title: "Parts and Supplier",
+      }),
     },
   ],
 } as const;

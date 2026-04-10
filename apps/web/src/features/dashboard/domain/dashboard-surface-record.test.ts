@@ -10,9 +10,10 @@ describe("dashboard-surface-record", () => {
     const record = createDefaultDashboardSurfaceRecord("org_123");
 
     expect(record.pageData.filterSummary).toEqual({
-      globalScopeLabel: "KPI strip covers Broward HVAC Co. over the last 7 days.",
+      globalScopeLabel:
+        "Top metrics cover Broward HVAC Co. over the last 7 days.",
       scopedResultsLabel:
-        "Activity, queue, and signals show all document activity in that window.",
+        "The sections below include all document work in that window.",
     });
     expect(record.pageData.filters).toMatchObject({
       controls: expect.arrayContaining([
@@ -75,9 +76,10 @@ describe("dashboard-surface-record", () => {
     });
 
     expect(parsedRecord.pageData.filterSummary).toEqual({
-      globalScopeLabel: "KPI strip covers Broward HVAC Co. over the last 7 days.",
+      globalScopeLabel:
+        "Top metrics cover Broward HVAC Co. over the last 7 days.",
       scopedResultsLabel:
-        "Activity, queue, and signals show all document activity in that window.",
+        "The sections below include all document work in that window.",
     });
     expect(parsedRecord.pageData.filters).toMatchObject({
       controls: expect.arrayContaining([

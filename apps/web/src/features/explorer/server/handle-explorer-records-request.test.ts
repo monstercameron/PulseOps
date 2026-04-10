@@ -73,9 +73,10 @@ describe("handleExplorerRecordsRequest", () => {
     const parserArtifactRepository = createLocalParserArtifactRepository({
       rootDirectory,
     });
-    const textParserArtifactRepository = createLocalTextParserArtifactRepository({
-      rootDirectory,
-    });
+    const textParserArtifactRepository =
+      createLocalTextParserArtifactRepository({
+        rootDirectory,
+      });
 
     const uploadedDocument = createUploadedDocument(
       {
@@ -178,7 +179,8 @@ describe("handleExplorerRecordsRequest", () => {
           detailFacts: [
             {
               canonicalFactTypeId: "invoice.amount.outstanding",
-              description: "The unpaid amount still open on a customer invoice.",
+              description:
+                "The unpaid amount still open on a customer invoice.",
               evidenceLabel: "Row 2",
               key: "Outstanding balance",
               sourceFieldKey: "amount_outstanding",
@@ -230,9 +232,10 @@ describe("handleExplorerRecordsRequest", () => {
     const parserArtifactRepository = createLocalParserArtifactRepository({
       rootDirectory,
     });
-    const textParserArtifactRepository = createLocalTextParserArtifactRepository({
-      rootDirectory,
-    });
+    const textParserArtifactRepository =
+      createLocalTextParserArtifactRepository({
+        rootDirectory,
+      });
     const uploadedDocument = createUploadedDocument(
       {
         fileName: "invoice-001.csv",
@@ -325,6 +328,91 @@ describe("handleExplorerRecordsRequest", () => {
     });
   });
 
+  it("paginates explorer records in 10-file slices", async () => {
+    const rootDirectory = await mkdtemp(
+      path.join(os.tmpdir(), "bizopsaccelerator-explorer-paging-"),
+    );
+    temporaryDirectories.push(rootDirectory);
+
+    const documentRepository = createLocalDocumentRepository({ rootDirectory });
+    const factRepository = createLocalFactRepository({ rootDirectory });
+    const parserArtifactRepository = createLocalParserArtifactRepository({
+      rootDirectory,
+    });
+    const textParserArtifactRepository =
+      createLocalTextParserArtifactRepository({
+        rootDirectory,
+      });
+
+    for (let index = 1; index <= 12; index += 1) {
+      const paddedIndex = String(index).padStart(3, "0");
+      const baseDocument = createUploadedDocument(
+        {
+          fileName: `invoice-${paddedIndex}.csv`,
+          id: `doc_${paddedIndex}`,
+          orgId: "org_123",
+        },
+        `2026-04-10T${String(index).padStart(2, "0")}:00:00.000Z`,
+      );
+
+      await documentRepository.put(
+        documentSchema.parse({
+          ...attachDocumentClassification(
+            baseDocument,
+            "customer-invoice",
+            0.8,
+            `2026-04-10T${String(index).padStart(2, "0")}:05:00.000Z`,
+          ),
+          sizeBytes: 1024,
+          status: "extracted",
+        }),
+      );
+    }
+
+    const response = await handleExplorerRecordsRequest(
+      new Request(
+        "http://localhost/api/explorer/records?orgId=org_123&page=2&pageSize=10&query=invoice&type=Customer%20invoice",
+      ),
+      {
+        documentRepository,
+        factRepository,
+        parserArtifactRepository,
+        textParserArtifactRepository,
+      },
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      activeType: "Customer invoice",
+      filters: ["All records", "Customer invoice"],
+      orgId: "org_123",
+      pagination: {
+        endRecord: 12,
+        page: 2,
+        pageSize: 10,
+        startRecord: 11,
+        totalPages: 2,
+        totalRecords: 12,
+      },
+      query: "invoice",
+      records: [
+        expect.objectContaining({
+          documentName: "invoice-002.csv",
+          id: "doc_002",
+        }),
+        expect.objectContaining({
+          documentName: "invoice-001.csv",
+          id: "doc_001",
+        }),
+      ],
+      summary: {
+        averageConfidence: "0.80",
+        needsReviewCount: "0",
+        totalRecords: "12",
+      },
+    });
+  });
+
   it("returns validation errors for missing or invalid query parameters", async () => {
     const rootDirectory = await mkdtemp(
       path.join(os.tmpdir(), "bizopsaccelerator-explorer-errors-"),
@@ -336,9 +424,10 @@ describe("handleExplorerRecordsRequest", () => {
     const parserArtifactRepository = createLocalParserArtifactRepository({
       rootDirectory,
     });
-    const textParserArtifactRepository = createLocalTextParserArtifactRepository({
-      rootDirectory,
-    });
+    const textParserArtifactRepository =
+      createLocalTextParserArtifactRepository({
+        rootDirectory,
+      });
 
     const missingOrgResponse = await handleExplorerRecordsRequest(
       new Request("http://localhost/api/explorer/records"),
@@ -382,9 +471,10 @@ describe("handleExplorerRecordsRequest", () => {
     const parserArtifactRepository = createLocalParserArtifactRepository({
       rootDirectory,
     });
-    const textParserArtifactRepository = createLocalTextParserArtifactRepository({
-      rootDirectory,
-    });
+    const textParserArtifactRepository =
+      createLocalTextParserArtifactRepository({
+        rootDirectory,
+      });
 
     await documentRepository.put(
       documentSchema.parse({

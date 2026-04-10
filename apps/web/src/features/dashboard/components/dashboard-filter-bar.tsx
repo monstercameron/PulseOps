@@ -66,26 +66,50 @@ export function DashboardFilterBar({ filters }: DashboardFilterBarProps) {
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <button
-        aria-label={t("common.resetDashboardFilters", "Reset dashboard filters")}
-        className={getChipClasses(!hasActiveFilters, isPending)}
-        onClick={() => commitFilterChange(dashboardDefaultFilterValues)}
-        type="button"
-      >
-        {filters.workspaceLabel}
-      </button>
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          aria-label={t("common.resetDashboardFilters", "Reset dashboard filters")}
+          className={getChipClasses(!hasActiveFilters, isPending)}
+          onClick={() => commitFilterChange(dashboardDefaultFilterValues)}
+          type="button"
+        >
+          {filters.workspaceLabel}
+        </button>
 
-      {filters.controls.map((control) => (
-        <DashboardFilterSelectChip
-          key={control.id}
-          active={selectedValues[control.id] !== dashboardDefaultFilterValues[control.id]}
-          control={control}
-          currentValue={selectedValues[control.id]}
-          disabled={isPending}
-          onChange={(value) => handleControlChange(control.id, value)}
+        {filters.controls.map((control) => (
+          <DashboardFilterSelectChip
+            key={control.id}
+            active={selectedValues[control.id] !== dashboardDefaultFilterValues[control.id]}
+            control={control}
+            currentValue={selectedValues[control.id]}
+            disabled={isPending}
+            onChange={(value) => handleControlChange(control.id, value)}
+          />
+        ))}
+      </div>
+
+      <div
+        aria-live="polite"
+        className={cx(
+          "inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-medium",
+          isPending
+            ? "border-accent/25 bg-accent/10 text-accent"
+            : "border-border bg-card text-muted",
+        )}
+      >
+        <span
+          className={cx(
+            "h-1.5 w-1.5 rounded-full",
+            isPending ? "animate-pulse bg-accent" : "bg-green-500",
+          )}
         />
-      ))}
+        <span>
+          {isPending
+            ? t("dashboardPage.filters.refreshing", "Refreshing this dashboard view...")
+            : t("dashboardPage.filters.live", "Live view ready")}
+        </span>
+      </div>
     </div>
   );
 }
@@ -130,7 +154,7 @@ function DashboardFilterSelectChip({
         aria-hidden="true"
         className="pointer-events-none absolute end-3 top-1/2 -translate-y-1/2 text-[10px] text-current/70"
       >
-        ▼
+        v
       </span>
     </div>
   );

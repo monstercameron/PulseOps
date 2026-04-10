@@ -47,12 +47,16 @@ describe("handleDashboardPageRequest", () => {
         dashboardSurfaceRepository,
         documentRepository: createLocalDocumentRepository({ rootDirectory }),
         factRepository: createLocalFactRepository({ rootDirectory }),
-        savedQuestionRepository: createLocalSavedQuestionRepository({ rootDirectory }),
+        savedQuestionRepository: createLocalSavedQuestionRepository({
+          rootDirectory,
+        }),
       },
     );
 
     expect(response.status).toBe(200);
-    await expect(dashboardSurfaceRepository.getByOrgId("org_123")).resolves.toMatchObject({
+    await expect(
+      dashboardSurfaceRepository.getByOrgId("org_123"),
+    ).resolves.toMatchObject({
       pageData: expect.objectContaining({
         metrics: expect.arrayContaining([
           expect.objectContaining({ label: "Files received", value: "52" }),
@@ -61,7 +65,8 @@ describe("handleDashboardPageRequest", () => {
     });
     await expect(response.json()).resolves.toMatchObject({
       filterSummary: expect.objectContaining({
-        globalScopeLabel: "KPI strip covers Broward HVAC Co. over the last 7 days.",
+        globalScopeLabel:
+          "Top metrics cover Broward HVAC Co. over the last 7 days.",
       }),
       filters: {
         controls: expect.arrayContaining([
@@ -105,7 +110,9 @@ describe("handleDashboardPageRequest", () => {
     });
     const documentRepository = createLocalDocumentRepository({ rootDirectory });
     const factRepository = createLocalFactRepository({ rootDirectory });
-    const savedQuestionRepository = createLocalSavedQuestionRepository({ rootDirectory });
+    const savedQuestionRepository = createLocalSavedQuestionRepository({
+      rootDirectory,
+    });
 
     const uploadedDocument = createUploadedDocument(
       {
@@ -198,8 +205,10 @@ describe("handleDashboardPageRequest", () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
       filterSummary: expect.objectContaining({
-        globalScopeLabel: "KPI strip covers Broward HVAC Co. over the last 7 days.",
-        scopedResultsLabel: "Activity, queue, and signals show all document activity in that window.",
+        globalScopeLabel:
+          "Top metrics cover Broward HVAC Co. over the last 7 days.",
+        scopedResultsLabel:
+          "The sections below include all document work in that window.",
       }),
       labels: expect.objectContaining({
         actions: expect.objectContaining({
@@ -213,7 +222,7 @@ describe("handleDashboardPageRequest", () => {
         expect.objectContaining({ label: "In-scope facts", value: "1" }),
       ]),
       queueItems: expect.arrayContaining([
-        expect.objectContaining({ typeLabel: "Parse failure" }),
+        expect.objectContaining({ typeLabel: "Blocked import" }),
       ]),
       scopedContent: null,
       signals: expect.arrayContaining([
@@ -234,7 +243,9 @@ describe("handleDashboardPageRequest", () => {
     });
     const documentRepository = createLocalDocumentRepository({ rootDirectory });
     const factRepository = createLocalFactRepository({ rootDirectory });
-    const savedQuestionRepository = createLocalSavedQuestionRepository({ rootDirectory });
+    const savedQuestionRepository = createLocalSavedQuestionRepository({
+      rootDirectory,
+    });
 
     await documentRepository.put(
       documentSchema.parse({
@@ -316,9 +327,9 @@ describe("handleDashboardPageRequest", () => {
         title: "Broward HVAC Co. filtered dashboard snapshot",
       }),
       filterSummary: expect.objectContaining({
-        globalScopeLabel: "KPI strip covers Broward HVAC Co. over all time.",
+        globalScopeLabel: "Top metrics cover Broward HVAC Co. over all time.",
         scopedResultsLabel:
-          "Activity, queue, and signals are narrowed to Gmail / AP inbox, customer invoice, and failed. 1 matching document in scope.",
+          "The sections below are narrowed to Gmail / AP inbox, customer invoice, and failed. 1 matching document in scope.",
       }),
       filters: {
         controls: expect.arrayContaining([
@@ -337,7 +348,7 @@ describe("handleDashboardPageRequest", () => {
         expect.objectContaining({ label: "Extracted docs", value: "1" }),
       ]),
       queueItems: expect.arrayContaining([
-        expect.objectContaining({ typeLabel: "Parse failure" }),
+        expect.objectContaining({ typeLabel: "Blocked import" }),
       ]),
       recentActivity: expect.arrayContaining([
         expect.objectContaining({
@@ -373,7 +384,9 @@ describe("handleDashboardPageRequest", () => {
     });
     const documentRepository = createLocalDocumentRepository({ rootDirectory });
     const factRepository = createLocalFactRepository({ rootDirectory });
-    const savedQuestionRepository = createLocalSavedQuestionRepository({ rootDirectory });
+    const savedQuestionRepository = createLocalSavedQuestionRepository({
+      rootDirectory,
+    });
 
     await documentRepository.put(
       documentSchema.parse({
@@ -429,9 +442,10 @@ describe("handleDashboardPageRequest", () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
       filterSummary: expect.objectContaining({
-        globalScopeLabel: "KPI strip covers Broward HVAC Co. over the last 30 days.",
+        globalScopeLabel:
+          "Top metrics cover Broward HVAC Co. over the last 30 days.",
         scopedResultsLabel:
-          "Activity, queue, and signals are narrowed to extracted. 1 matching document in scope.",
+          "The sections below are narrowed to extracted. 1 matching document in scope.",
       }),
       metrics: expect.arrayContaining([
         expect.objectContaining({ label: "Files received", value: "2" }),
@@ -472,8 +486,12 @@ describe("handleDashboardPageRequest", () => {
     });
     const documentRepository = createLocalDocumentRepository({ rootDirectory });
     const factRepository = createLocalFactRepository({ rootDirectory });
-    const queueEventRepository = createLocalQueueEventRepository({ rootDirectory });
-    const savedQuestionRepository = createLocalSavedQuestionRepository({ rootDirectory });
+    const queueEventRepository = createLocalQueueEventRepository({
+      rootDirectory,
+    });
+    const savedQuestionRepository = createLocalSavedQuestionRepository({
+      rootDirectory,
+    });
 
     await documentRepository.put(
       documentSchema.parse({
@@ -520,7 +538,10 @@ describe("handleDashboardPageRequest", () => {
 
   it("filters resolved seeded queue items out of the empty dashboard state", async () => {
     const rootDirectory = await mkdtemp(
-      path.join(os.tmpdir(), "bizopsaccelerator-dashboard-seeded-queue-filter-"),
+      path.join(
+        os.tmpdir(),
+        "bizopsaccelerator-dashboard-seeded-queue-filter-",
+      ),
     );
     temporaryDirectories.push(rootDirectory);
 
@@ -529,8 +550,12 @@ describe("handleDashboardPageRequest", () => {
     });
     const documentRepository = createLocalDocumentRepository({ rootDirectory });
     const factRepository = createLocalFactRepository({ rootDirectory });
-    const queueEventRepository = createLocalQueueEventRepository({ rootDirectory });
-    const savedQuestionRepository = createLocalSavedQuestionRepository({ rootDirectory });
+    const queueEventRepository = createLocalQueueEventRepository({
+      rootDirectory,
+    });
+    const savedQuestionRepository = createLocalSavedQuestionRepository({
+      rootDirectory,
+    });
 
     await queueEventRepository.put(
       createQueueEvent({
@@ -578,7 +603,9 @@ describe("handleDashboardPageRequest", () => {
         dashboardSurfaceRepository,
         documentRepository: createLocalDocumentRepository({ rootDirectory }),
         factRepository: createLocalFactRepository({ rootDirectory }),
-        savedQuestionRepository: createLocalSavedQuestionRepository({ rootDirectory }),
+        savedQuestionRepository: createLocalSavedQuestionRepository({
+          rootDirectory,
+        }),
       },
     );
 
@@ -589,7 +616,7 @@ describe("handleDashboardPageRequest", () => {
       }),
       filterSummary: expect.objectContaining({
         scopedResultsLabel:
-          "Activity, queue, and signals are narrowed to Gmail / AP inbox. 0 matching documents in scope.",
+          "The sections below are narrowed to Gmail / AP inbox. 0 matching documents in scope.",
       }),
       metrics: expect.arrayContaining([
         expect.objectContaining({ label: "Files received", value: "0" }),

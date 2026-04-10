@@ -1,7 +1,15 @@
 "use client";
 
-import { useDeferredValue, useState } from "react";
-import { useRouter } from "next/navigation";
+import {
+  type UIEvent,
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { PlaceholderActionDialog } from "@/features/catalog/components/catalog-dialogs";
 import {
@@ -30,6 +38,11 @@ type ExplorerPageProps = Readonly<{
 type ExplorerExportError = Readonly<{
   error: string;
 }>;
+
+type ExplorerRecordsResponse = ExplorerPageData &
+  Readonly<{
+    orgId: string;
+  }>;
 
 type ReviewSummary = Readonly<{
   badge: string;
@@ -61,45 +74,39 @@ type SectionJump = Readonly<{
 }>;
 
 export function ExplorerPage({ initialData, orgId }: ExplorerPageProps) {
-  const { messages, t } = useUiI18n();
+  const { locale, messages, t } = useUiI18n();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const [isNavigating, startTransition] = useTransition();
   const allRecordsLabel = initialData.filters[0] ?? messages.explorerPage.allRecords;
-  const [activeFilter, setActiveFilter] = useState(allRecordsLabel);
+  const activeFilter = initialData.activeType ?? allRecordsLabel;
   const [placeholderAction, setPlaceholderAction] = useState<{
     description?: string;
     title: string;
   } | null>(null);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(initialData.query);
   const [selectedRecordId, setSelectedRecordId] = useState<string | null>(
     initialData.records[0]?.id ?? null,
   );
   const [isDownloadingSelectedRecord, setIsDownloadingSelectedRecord] =
     useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [isLoadingMoreRecords, setIsLoadingMoreRecords] = useState(false);
+  const [loadedPage, setLoadedPage] = useState(initialData.pagination.page);
+  const [loadedRecords, setLoadedRecords] = useState(initialData.records);
+  const detailScrollRegionRef = useRef<HTMLDivElement | null>(null);
+  const recordsScrollRegionRef = useRef<HTMLDivElement | null>(null);
   const deferredSearch = useDeferredValue(search);
-  const visibleRecords = initialData.records.filter((record) => {
-    const matchesFilter =
-      activeFilter === allRecordsLabel || record.typeLabel === activeFilter;
-    const normalizedQuery = deferredSearch.trim().toLowerCase();
-
-    if (normalizedQuery.length === 0) {
-      return matchesFilter;
-    }
-
-    return (
-      matchesFilter &&
-      `${record.documentName} ${record.documentMeta} ${record.typeLabel} ${record.sourceLabel}`
-        .toLowerCase()
-        .includes(normalizedQuery)
-    );
-  });
+  const visibleRecords = loadedRecords;
   const selectedRecord = resolveSelectedExplorerRecord(
     visibleRecords,
     selectedRecordId,
   );
+  const selectedRecordScrollKey = selectedRecord?.id ?? null;
+  const hasMoreRecords = loadedPage < initialData.pagination.totalPages;
   const hasVisibleRecords = visibleRecords.length > 0;
   const isDetailPaneOpen = selectedRecord !== null;
-  const summary = buildVisibleSummary(visibleRecords);
+  const summary = initialData.summary;
   const reviewSummary =
     selectedRecord === null ? null : buildReviewSummary(selectedRecord, t);
   const reviewSummaryCta = reviewSummary?.cta;
@@ -110,9 +117,189 @@ export function ExplorerPage({ initialData, orgId }: ExplorerPageProps) {
   const sectionJumps =
     selectedRecord === null ? [] : buildSectionJumps(selectedRecord, t);
 
+  useEffect(() => {
+    setSearch(initialData.query);
+  }, [initialData.query]);
+
+  useEffect(() => {
+    setLoadedPage(initialData.pagination.page);
+    setLoadedRecords(initialData.records);
+  }, [
+    initialData.activeType,
+    initialData.pagination.page,
+    initialData.query,
+    initialData.records,
+  ]);
+
+  useEffect(() => {
+    if (selectedRecordId === null) {
+      return;
+    }
+
+    if (loadedRecords.some((record) => record.id === selectedRecordId)) {
+      return;
+    }
+
+    setSelectedRecordId(loadedRecords[0]?.id ?? null);
+  }, [loadedRecords, selectedRecordId]);
+
+  useEffect(() => {
+    const normalizedQuery = deferredSearch.trim();
+
+    if (normalizedQuery === initialData.query) {
+      return;
+    }
+
+    const nextSearchParams = new URLSearchParams(searchParams.toString());
+
+    if (normalizedQuery.length === 0) {
+      nextSearchParams.delete("query");
+    } else {
+      nextSearchParams.set("query", normalizedQuery);
+    }
+
+    nextSearchParams.delete("page");
+
+    const nextUrl = nextSearchParams.toString();
+
+    startTransition(() => {
+      router.replace(nextUrl.length > 0 ? `/explorer?${nextUrl}` : "/explorer");
+    });
+  }, [deferredSearch, initialData.query, router, searchParams, startTransition]);
+
+  useEffect(() => {
+    if (selectedRecordScrollKey === null) {
+      return;
+    }
+
+    detailScrollRegionRef.current?.scrollTo({
+      top: 0,
+    });
+  }, [selectedRecordScrollKey]);
+
   function openActionDialog(title: string, description?: string) {
     setPlaceholderAction({ description, title });
   }
+
+  function replaceExplorerSearchParams(
+    updates: Readonly<{
+      query?: string;
+      type?: string;
+    }>,
+  ) {
+    const nextSearchParams = new URLSearchParams(searchParams.toString());
+
+    nextSearchParams.delete("page");
+
+    if (updates.query === undefined || updates.query.trim().length === 0) {
+      nextSearchParams.delete("query");
+    } else {
+      nextSearchParams.set("query", updates.query.trim());
+    }
+
+    if (updates.type === undefined || updates.type === allRecordsLabel) {
+      nextSearchParams.delete("type");
+    } else {
+      nextSearchParams.set("type", updates.type);
+    }
+
+    const nextUrl = nextSearchParams.toString();
+
+    startTransition(() => {
+      router.replace(nextUrl.length > 0 ? `/explorer?${nextUrl}` : "/explorer");
+    });
+  }
+
+  const loadMoreRecords = useCallback(async () => {
+    if (isLoadingMoreRecords || isNavigating || !hasMoreRecords) {
+      return;
+    }
+
+    setIsLoadingMoreRecords(true);
+
+    try {
+      const nextSearchParams = new URLSearchParams(searchParams.toString());
+      nextSearchParams.set("locale", locale);
+      nextSearchParams.set("orgId", orgId);
+      nextSearchParams.set("page", String(loadedPage + 1));
+      nextSearchParams.set("pageSize", String(initialData.pagination.pageSize));
+
+      const response = await fetch(
+        `/api/explorer/records?${nextSearchParams.toString()}`,
+      );
+
+      if (!response.ok) {
+        const payload = (await response.json()) as ExplorerExportError;
+        throw new Error(payload.error || "Explorer records request failed.");
+      }
+
+      const payload = (await response.json()) as ExplorerRecordsResponse;
+
+      setLoadedPage(payload.pagination.page);
+      setLoadedRecords((currentRecords) => {
+        const existingRecordIds = new Set(currentRecords.map((record) => record.id));
+        const nextRecords = payload.records.filter(
+          (record) => !existingRecordIds.has(record.id),
+        );
+
+        return [...currentRecords, ...nextRecords];
+      });
+    } catch (error) {
+      setPlaceholderAction({
+        description:
+          error instanceof Error
+            ? error.message
+            : "The request could not be completed.",
+        title: t("explorerPage.loadMoreErrorTitle", "Could not load more files"),
+      });
+    } finally {
+      setIsLoadingMoreRecords(false);
+    }
+  }, [
+    hasMoreRecords,
+    initialData.pagination.pageSize,
+    isLoadingMoreRecords,
+    isNavigating,
+    loadedPage,
+    locale,
+    orgId,
+    searchParams,
+    t,
+  ]);
+
+  function handleRecordsScroll(event: UIEvent<HTMLDivElement>) {
+    const scrollRegion = event.currentTarget;
+    const remainingDistance =
+      scrollRegion.scrollHeight - scrollRegion.scrollTop - scrollRegion.clientHeight;
+
+    if (remainingDistance <= 160) {
+      void loadMoreRecords();
+    }
+  }
+
+  useEffect(() => {
+    const scrollRegion = recordsScrollRegionRef.current;
+
+    if (
+      scrollRegion === null ||
+      isNavigating ||
+      isLoadingMoreRecords ||
+      !hasMoreRecords
+    ) {
+      return;
+    }
+
+    if (scrollRegion.scrollHeight <= scrollRegion.clientHeight + 24) {
+      void loadMoreRecords();
+    }
+  }, [
+    hasMoreRecords,
+    isLoadingMoreRecords,
+    isNavigating,
+    loadMoreRecords,
+    loadedRecords,
+    loadedPage,
+  ]);
 
   async function handleExportCsv() {
     if (isExporting) {
@@ -123,15 +310,16 @@ export function ExplorerPage({ initialData, orgId }: ExplorerPageProps) {
 
     try {
       const searchParams = new URLSearchParams({
+        locale,
         orgId,
       });
 
-      if (activeFilter !== allRecordsLabel) {
-        searchParams.set("type", activeFilter);
+      if (initialData.activeType !== undefined) {
+        searchParams.set("type", initialData.activeType);
       }
 
-      if (deferredSearch.trim().length > 0) {
-        searchParams.set("query", deferredSearch.trim());
+      if (initialData.query.length > 0) {
+        searchParams.set("query", initialData.query);
       }
 
       const response = await fetch(
@@ -288,7 +476,17 @@ export function ExplorerPage({ initialData, orgId }: ExplorerPageProps) {
             key={filterLabel}
             active={activeFilter === filterLabel}
             label={filterLabel}
-            onClick={() => setActiveFilter(filterLabel)}
+            onClick={() => {
+              if (filterLabel === activeFilter) {
+                return;
+              }
+
+              replaceExplorerSearchParams({
+                query: search,
+                type:
+                  filterLabel === allRecordsLabel ? undefined : filterLabel,
+              });
+            }}
           />
         ))}
 
@@ -319,6 +517,12 @@ export function ExplorerPage({ initialData, orgId }: ExplorerPageProps) {
           ) : null}
         </div>
 
+        {isNavigating ? (
+          <span className="hidden text-[11.5px] font-medium text-muted md:inline">
+            {t("explorerPage.loadingRecords", "Loading records...")}
+          </span>
+        ) : null}
+
         <div className="ml-auto flex items-center gap-[6px] rounded-[7px] border border-border bg-card px-3 py-[5px]">
           <svg
             fill="none"
@@ -343,87 +547,117 @@ export function ExplorerPage({ initialData, orgId }: ExplorerPageProps) {
 
       <div className="flex min-h-0 flex-1 overflow-hidden">
         <div
+          aria-busy={isNavigating}
           className={cx(
             isDetailPaneOpen
-              ? "hidden w-[272px] shrink-0 flex-col overflow-y-auto border-r border-border bg-card lg:flex"
-              : "min-w-0 flex-1 overflow-auto",
+              ? "hidden w-[272px] shrink-0 flex-col border-r border-border bg-card lg:flex"
+              : "min-w-0 flex-1 flex-col",
           )}
         >
           {isDetailPaneOpen ? (
-            visibleRecords.map((record) => {
-              const isSelected = selectedRecord?.id === record.id;
-              return (
-                <button
-                  key={record.id}
-                  className={cx(
-                    "relative flex w-full flex-col items-start gap-2 border-b border-border/60 px-4 py-3.5 text-left transition-colors",
-                    isSelected
-                      ? "bg-accent/10 dark:bg-accent/[0.08]"
-                      : "hover:bg-surface-subtle",
-                  )}
-                  onClick={() => setSelectedRecordId(record.id)}
-                  type="button"
-                >
-                  {isSelected ? (
-                    <span
-                      aria-hidden
-                      className="absolute inset-y-0 left-0 w-[3px] rounded-r-full bg-accent"
-                    />
-                  ) : null}
-                  <span
-                    className={cx(
-                      "w-full truncate pr-2 text-[13px] font-semibold leading-snug",
-                      isSelected ? "text-foreground" : "text-foreground/80",
-                    )}
-                  >
-                    {record.documentName}
-                  </span>
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <StatusBadge label={record.typeLabel} tone={record.typeTone} />
-                    <StatusBadge label={record.statusLabel} tone={record.statusTone} />
+            <>
+              <div
+                className="min-h-0 flex-1 overflow-y-auto"
+                data-testid="explorer-records-scroll-region"
+                onScroll={handleRecordsScroll}
+                ref={recordsScrollRegionRef}
+              >
+                {visibleRecords.map((record) => {
+                  const isSelected = selectedRecord?.id === record.id;
+                  return (
+                    <button
+                      data-testid="explorer-record-list-entry"
+                      key={record.id}
+                      className={cx(
+                        "relative flex w-full flex-col items-start gap-2 border-b border-border/60 px-4 py-3.5 text-left transition-colors",
+                        isSelected
+                          ? "bg-accent/10 dark:bg-accent/[0.08]"
+                          : "hover:bg-surface-subtle",
+                      )}
+                      onClick={() => setSelectedRecordId(record.id)}
+                      type="button"
+                    >
+                      {isSelected ? (
+                        <span
+                          aria-hidden
+                          className="absolute inset-y-0 left-0 w-[3px] rounded-r-full bg-accent"
+                        />
+                      ) : null}
+                      <span
+                        className={cx(
+                          "w-full truncate pr-2 text-[13px] font-semibold leading-snug",
+                          isSelected ? "text-foreground" : "text-foreground/80",
+                        )}
+                      >
+                        {record.documentName}
+                      </span>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <StatusBadge label={record.typeLabel} tone={record.typeTone} />
+                        <StatusBadge label={record.statusLabel} tone={record.statusTone} />
+                      </div>
+                      <p className="text-[12px] leading-[1.5] text-muted">
+                        {buildReviewFocusLabel(record, t)}
+                      </p>
+                      <div className="flex flex-wrap gap-1.5">
+                        <ExplorerMetaChip
+                          label={buildReviewEvidenceLabel(record, t)}
+                          tone={
+                            record.reviewHealth.uncitedFactCount === 0 &&
+                            record.detailFacts.length > 0
+                              ? "success"
+                              : "neutral"
+                          }
+                        />
+                        <ExplorerMetaChip
+                          label={buildReviewConfidenceLabel(record, t)}
+                          tone={
+                            record.reviewHealth.highConfidenceFactCount > 0
+                              ? "info"
+                              : "neutral"
+                          }
+                        />
+                      </div>
+                      {record.confidenceScore !== null ? (
+                        <ConfidenceMeter value={record.confidenceScore} />
+                      ) : null}
+                    </button>
+                  );
+                })}
+                {isLoadingMoreRecords ? (
+                  <div className="border-t border-border/60 px-4 py-3 text-[12px] text-muted">
+                    {t("explorerPage.loadingMoreRecords", "Loading more files...")}
                   </div>
-                  <p className="text-[12px] leading-[1.5] text-muted">
-                    {buildReviewFocusLabel(record, t)}
-                  </p>
-                  <div className="flex flex-wrap gap-1.5">
-                    <ExplorerMetaChip
-                      label={buildReviewEvidenceLabel(record, t)}
-                      tone={
-                        record.reviewHealth.uncitedFactCount === 0 &&
-                        record.detailFacts.length > 0
-                          ? "success"
-                          : "neutral"
-                      }
-                    />
-                    <ExplorerMetaChip
-                      label={buildReviewConfidenceLabel(record, t)}
-                      tone={
-                        record.reviewHealth.highConfidenceFactCount > 0
-                          ? "info"
-                          : "neutral"
-                      }
-                    />
-                  </div>
-                  {record.confidenceScore !== null ? (
-                    <ConfidenceMeter value={record.confidenceScore} />
-                  ) : null}
-                </button>
-              );
-            })
+                ) : null}
+              </div>
+            </>
           ) : (
             hasVisibleRecords ? (
-              <CatalogTable
-                ariaLabel={messages.explorerPage.title}
-                columns={columns}
-                rowClassName={(row) =>
-                  selectedRecordId !== null && row.id === selectedRecordId
-                    ? "bg-accent/10"
-                    : undefined
-                }
-                rows={visibleRecords}
-              />
+              <>
+                <div
+                  className="min-h-0 flex-1 overflow-auto"
+                  data-testid="explorer-records-scroll-region"
+                  onScroll={handleRecordsScroll}
+                  ref={recordsScrollRegionRef}
+                >
+                  <CatalogTable
+                    ariaLabel={messages.explorerPage.title}
+                    columns={columns}
+                    rowClassName={(row) =>
+                      selectedRecordId !== null && selectedRecordId === row.id
+                        ? "bg-accent/10"
+                        : undefined
+                    }
+                    rows={visibleRecords}
+                  />
+                  {isLoadingMoreRecords ? (
+                    <div className="border-t border-border/60 px-4 py-3 text-[12px] text-muted">
+                      {t("explorerPage.loadingMoreRecords", "Loading more files...")}
+                    </div>
+                  ) : null}
+                </div>
+              </>
             ) : (
-              <div className="flex min-h-[280px] items-center justify-center p-6">
+              <div className="flex min-h-0 flex-1 items-center justify-center p-6">
                 <div className="max-w-md rounded-[14px] border border-border bg-card px-6 py-6 text-center">
                   <p className="text-[11px] font-bold uppercase tracking-[0.09em] text-muted">
                     {t("explorerPage.emptyStateEyebrow", "Nothing in this view")}
@@ -449,7 +683,12 @@ export function ExplorerPage({ initialData, orgId }: ExplorerPageProps) {
                     </CatalogButton>
                     {activeFilter !== allRecordsLabel ? (
                       <CatalogButton
-                        onClick={() => setActiveFilter(allRecordsLabel)}
+                        onClick={() =>
+                          replaceExplorerSearchParams({
+                            query: search,
+                            type: undefined,
+                          })
+                        }
                         variant="ghost"
                       >
                         {t("explorerPage.emptyStateShowAll", "Show all records")}
@@ -544,7 +783,11 @@ export function ExplorerPage({ initialData, orgId }: ExplorerPageProps) {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto">
+            <div
+              className="flex-1 overflow-y-auto"
+              data-testid="explorer-detail-scroll-region"
+              ref={detailScrollRegionRef}
+            >
               <div className="mx-auto w-full max-w-[96rem] divide-y divide-border px-6 pb-12 2xl:px-8">
                 {reviewSummary ? (
                   <section className="py-6">
@@ -932,27 +1175,6 @@ function ReviewHealthRow({
       </p>
     </div>
   );
-}
-
-function buildVisibleSummary(records: readonly ExplorerRecord[]) {
-  const confidenceScores = records
-    .map((record) => record.confidenceScore)
-    .filter((score): score is number => score !== null);
-  const averageConfidence =
-    confidenceScores.length === 0
-      ? "--"
-      : (
-          confidenceScores.reduce((total, score) => total + score, 0) /
-          confidenceScores.length
-        ).toFixed(2);
-
-  return {
-    averageConfidence,
-    needsReviewCount: String(
-      records.filter((record) => record.statusTone === "warning").length,
-    ),
-    totalRecords: String(records.length),
-  };
 }
 
 async function downloadResponseAsFile(response: Response) {

@@ -37,11 +37,22 @@ describe("handlePipelinePageRequest", () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
+      focus: expect.objectContaining({
+        title: "The pipeline needs a quick operator pass right now.",
+      }),
+      playbook: expect.objectContaining({
+        title: "Pipeline owns intake and readiness.",
+      }),
+      filters: expect.arrayContaining([
+        expect.objectContaining({ id: "all", count: 60, active: true }),
+        expect.objectContaining({ id: "attention", count: 3 }),
+      ]),
       sources: expect.arrayContaining([
-        expect.objectContaining({ title: "ServiceTitan" }),
+        expect.objectContaining({ title: "Manual uploads" }),
       ]),
       stats: expect.arrayContaining([
-        expect.objectContaining({ label: "Sources", value: "4" }),
+        expect.objectContaining({ label: "Blocked now", value: "3" }),
+        expect.objectContaining({ label: "Facts ready", value: "52" }),
       ]),
     });
   });
@@ -99,16 +110,24 @@ describe("handlePipelinePageRequest", () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
       alert: expect.objectContaining({
-        title: "Broward HVAC Co. has failed document intake.",
+        title: "1 file needs attention before it can move forward.",
       }),
       runs: expect.arrayContaining([
-        expect.objectContaining({ outcomeLabel: "Failed" }),
+        expect.objectContaining({
+          fileName: "invoice-001.csv",
+          detail:
+            "The file stopped before facts were prepared. The file structure did not match the import format we expect.",
+          outcomeLabel: "Needs attention",
+          nextStepLabel:
+            "Next: inspect the file in Pipeline, fix the source file, and upload it again if needed.",
+        }),
       ]),
       sources: expect.arrayContaining([
         expect.objectContaining({ title: "Gmail / AP inbox" }),
       ]),
       stats: expect.arrayContaining([
-        expect.objectContaining({ label: "Records today", value: "1" }),
+        expect.objectContaining({ label: "Files in scope", value: "1" }),
+        expect.objectContaining({ label: "Average confidence", value: "0.91" }),
       ]),
     });
   });
@@ -198,13 +217,16 @@ describe("handlePipelinePageRequest", () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
       alert: expect.objectContaining({
-        description: "failed-invoice.csv require review before they can move downstream.",
+        description: "failed-invoice.csv stopped before facts could be prepared.",
       }),
-      runs: [expect.objectContaining({ id: "job_failed" })],
+      filters: expect.arrayContaining([
+        expect.objectContaining({ id: "attention", active: true, count: 1 }),
+      ]),
+      runs: [expect.objectContaining({ id: "doc_failed" })],
       sources: [expect.objectContaining({ title: "Gmail / AP inbox" })],
       stats: expect.arrayContaining([
-        expect.objectContaining({ label: "Records today", value: "1" }),
-        expect.objectContaining({ label: "Pipeline runs", value: "1" }),
+        expect.objectContaining({ label: "Files in scope", value: "1" }),
+        expect.objectContaining({ label: "Blocked now", value: "1" }),
       ]),
     });
   });

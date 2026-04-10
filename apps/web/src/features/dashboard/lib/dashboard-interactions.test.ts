@@ -21,13 +21,15 @@ describe("resolveDashboardQueueAction", () => {
     expect(result?.nextQueueItems).toHaveLength(
       fallbackDashboardPageData.queueItems.length - 1,
     );
-    expect(result?.nextQueueItems.find((queueItem) => queueItem.id === item.id)).toBeUndefined();
+    expect(
+      result?.nextQueueItems.find((queueItem) => queueItem.id === item.id),
+    ).toBeUndefined();
     expect(result?.nextRecentActivity[0]?.id).toBe("today");
     expect(result?.nextRecentActivity[0]?.items[0]).toMatchObject({
-      detail: "Dismissed from parse failure in the operator queue.",
+      detail: "Dismissed from blocked import in the operator queue.",
       label: "Queue",
       time: "Just now",
-      title: "Parse failure dismissed.",
+      title: "Blocked import dismissed.",
       tone: "info",
     });
   });

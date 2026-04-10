@@ -1,9 +1,17 @@
 import { type PackRecord } from "@/features/packs/domain/pack-record";
 import { type PackItem } from "@/features/packs/constants/packs-page-content";
+import { buildPackPreviewContent } from "@/features/packs/lib/pack-preview";
 
 export function packRecordToPackItem(packRecord: PackRecord): PackItem {
   return {
     accent: packRecord.accent,
+    ...buildPackPreviewContent({
+      metrics: packRecord.metrics,
+      recommendations: packRecord.recommendations,
+      sourceData: packRecord.sourceData,
+      statusTone: packRecord.statusTone,
+      title: packRecord.title,
+    }),
     generatedAtLabel: packRecord.generatedAtLabel,
     id: packRecord.id,
     meta: packRecord.meta,

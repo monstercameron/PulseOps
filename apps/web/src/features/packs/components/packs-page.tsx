@@ -3,18 +3,28 @@
 import { useDeferredValue, useState } from "react";
 
 import { PlaceholderActionDialog } from "@/features/catalog/components/catalog-dialogs";
-import { CatalogCard } from "@/features/catalog/components/catalog-primitives";
+import {
+  CatalogButton,
+  CatalogCard,
+  StatusBadge,
+  cx,
+} from "@/features/catalog/components/catalog-primitives";
 import {
   FilterChip,
-  MetricTile,
   PackSidebarItem,
   RecommendationCard,
-  SourceDataRow,
+  SignalCard,
   WorkspaceHeader,
 } from "@/features/catalog/components/workspace-catalog-blocks";
 import { useUiI18n } from "@/features/i18n/components/ui-i18n-provider";
-import { type PackItem, type PacksPageData } from "@/features/packs/constants/packs-page-content";
+import {
+  type PackItem,
+  type PackMetric,
+  type PackSourceRecord,
+  type PacksPageData,
+} from "@/features/packs/constants/packs-page-content";
 import { type PackRecord } from "@/features/packs/domain/pack-record";
+import { type PackConcept } from "@/features/packs/lib/pack-preview";
 import {
   mergeUpdatedPackItem,
   packRecordToPackItem,
@@ -50,11 +60,45 @@ type FeedbackState = Readonly<{
   tone: "info" | "success" | "warning";
 }>;
 
+type ActionNotice = Readonly<{
+  description: string;
+  title: string;
+  tone: "info" | "success";
+}>;
+
+const noticeToneClasses = {
+  info: "border-blue-200 bg-blue-50/80 text-blue-800 dark:border-sky-500/20 dark:bg-sky-500/10 dark:text-sky-200",
+  success:
+    "border-green-200 bg-green-50/80 text-green-800 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200",
+} as const;
+
+const conceptToneClasses = {
+  danger:
+    "border-red-200 bg-red-50/70 dark:border-rose-500/20 dark:bg-rose-500/10",
+  info: "border-blue-200 bg-blue-50/70 dark:border-sky-500/20 dark:bg-sky-500/10",
+  success:
+    "border-green-200 bg-green-50/70 dark:border-emerald-500/20 dark:bg-emerald-500/10",
+  warning:
+    "border-amber-200 bg-amber-50/70 dark:border-amber-500/20 dark:bg-amber-500/10",
+} as const;
+
+const metricToneClasses = {
+  danger:
+    "border-red-200 bg-red-50/70 text-red-800 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-200",
+  info: "border-blue-200 bg-blue-50/70 text-blue-800 dark:border-sky-500/20 dark:bg-sky-500/10 dark:text-sky-200",
+  success:
+    "border-green-200 bg-green-50/70 text-green-800 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-200",
+  warning:
+    "border-amber-200 bg-amber-50/70 text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200",
+} as const;
+
 export function PacksPage({ initialData, orgId }: PacksPageProps) {
   const { messages } = useUiI18n();
   const [packs, setPacks] = useState(initialData.packs);
   const [search, setSearch] = useState("");
-  const [activeFilter, setActiveFilter] = useState<(typeof initialData.filters)[number]["id"]>("all");
+  const [activeFilter, setActiveFilter] = useState<
+    (typeof initialData.filters)[number]["id"]
+  >("all");
   const [selectedPackId, setSelectedPackId] = useState(
     initialData.latestPackId ?? initialData.packs[0]?.id ?? "",
   );
@@ -62,10 +106,12 @@ export function PacksPage({ initialData, orgId }: PacksPageProps) {
     description?: string;
     title: string;
   } | null>(null);
+  const [actionNotice, setActionNotice] = useState<ActionNotice | null>(null);
   const [isGeneratingPack, setIsGeneratingPack] = useState(false);
   const [reviewingPackId, setReviewingPackId] = useState<string | null>(null);
   const [exportingPackId, setExportingPackId] = useState<string | null>(null);
-  const [submittingRecommendationId, setSubmittingRecommendationId] = useState<string | null>(null);
+  const [submittingRecommendationId, setSubmittingRecommendationId] =
+    useState<string | null>(null);
   const [feedbackByRecommendationId, setFeedbackByRecommendationId] = useState<
     Readonly<Record<string, FeedbackState>>
   >({});
@@ -85,7 +131,9 @@ export function PacksPage({ initialData, orgId }: PacksPageProps) {
     return matchesStatus && matchesSearch(pack, normalizedSearch);
   });
   const selectedPack =
-    visiblePacks.find((pack) => pack.id === selectedPackId) ?? visiblePacks[0] ?? null;
+    visiblePacks.find((pack) => pack.id === selectedPackId) ??
+    visiblePacks[0] ??
+    null;
 
   function openActionDialog(title: string, description?: string) {
     setPlaceholderAction({ description, title });
@@ -97,6 +145,11 @@ export function PacksPage({ initialData, orgId }: PacksPageProps) {
     }
 
     setIsGeneratingPack(true);
+    setActionNotice({
+      description: messages.packsPage.success.generatingDescription,
+      title: messages.packsPage.success.generatingTitle,
+      tone: "info",
+    });
 
     try {
       const response = await fetch("/api/packs", {
@@ -106,11 +159,15 @@ export function PacksPage({ initialData, orgId }: PacksPageProps) {
         },
         method: "POST",
       });
-      const payload = (await response.json()) as PackMutationError | PackMutationResponse;
+      const payload = (await response.json()) as
+        | PackMutationError
+        | PackMutationResponse;
 
       if (!response.ok || "error" in payload) {
         throw new Error(
-          "error" in payload ? payload.error : messages.packsPage.errors.generationFailed,
+          "error" in payload
+            ? payload.error
+            : messages.packsPage.errors.generationFailed,
         );
       }
 
@@ -119,10 +176,19 @@ export function PacksPage({ initialData, orgId }: PacksPageProps) {
       setPacks((currentPacks) => mergeUpdatedPackItem(currentPacks, nextPack));
       setSelectedPackId(nextPack.id);
       setActiveFilter("all");
+      setSearch("");
+      setActionNotice({
+        description: messages.packsPage.success.generateDescription,
+        title: messages.packsPage.success.generateTitle,
+        tone: "success",
+      });
     } catch (error) {
+      setActionNotice(null);
       openActionDialog(
         messages.packsPage.errors.generateTitle,
-        error instanceof Error ? error.message : messages.packsPage.errors.requestFailed,
+        error instanceof Error
+          ? error.message
+          : messages.packsPage.errors.requestFailed,
       );
     } finally {
       setIsGeneratingPack(false);
@@ -135,30 +201,50 @@ export function PacksPage({ initialData, orgId }: PacksPageProps) {
     }
 
     setReviewingPackId(packId);
+    setActionNotice({
+      description: messages.packsPage.success.reviewingDescription,
+      title: messages.packsPage.success.reviewingTitle,
+      tone: "info",
+    });
 
     try {
-      const response = await fetch(`/api/packs/${encodeURIComponent(packId)}/review`, {
-        body: JSON.stringify({ orgId }),
-        headers: {
-          "content-type": "application/json",
+      const response = await fetch(
+        `/api/packs/${encodeURIComponent(packId)}/review`,
+        {
+          body: JSON.stringify({ orgId }),
+          headers: {
+            "content-type": "application/json",
+          },
+          method: "POST",
         },
-        method: "POST",
-      });
-      const payload = (await response.json()) as PackMutationError | PackMutationResponse;
+      );
+      const payload = (await response.json()) as
+        | PackMutationError
+        | PackMutationResponse;
 
       if (!response.ok || "error" in payload) {
         throw new Error(
-          "error" in payload ? payload.error : messages.packsPage.errors.reviewFailed,
+          "error" in payload
+            ? payload.error
+            : messages.packsPage.errors.reviewFailed,
         );
       }
 
       setPacks((currentPacks) =>
         mergeUpdatedPackItem(currentPacks, packRecordToPackItem(payload.pack)),
       );
+      setActionNotice({
+        description: messages.packsPage.success.reviewDescription,
+        title: messages.packsPage.success.reviewTitle,
+        tone: "success",
+      });
     } catch (error) {
+      setActionNotice(null);
       openActionDialog(
         messages.packsPage.errors.reviewTitle,
-        error instanceof Error ? error.message : messages.packsPage.errors.requestFailed,
+        error instanceof Error
+          ? error.message
+          : messages.packsPage.errors.requestFailed,
       );
     } finally {
       setReviewingPackId(null);
@@ -171,6 +257,11 @@ export function PacksPage({ initialData, orgId }: PacksPageProps) {
     }
 
     setExportingPackId(packId);
+    setActionNotice({
+      description: messages.packsPage.success.exportingDescription,
+      title: messages.packsPage.success.exportingTitle,
+      tone: "info",
+    });
 
     try {
       const response = await fetch(
@@ -179,14 +270,24 @@ export function PacksPage({ initialData, orgId }: PacksPageProps) {
 
       if (!response.ok) {
         const payload = (await response.json()) as PackMutationError;
-        throw new Error(payload.error || messages.packsPage.errors.exportFailed);
+        throw new Error(
+          payload.error || messages.packsPage.errors.exportFailed,
+        );
       }
 
       await downloadResponseAsFile(response);
+      setActionNotice({
+        description: messages.packsPage.success.exportDescription,
+        title: messages.packsPage.success.exportTitle,
+        tone: "success",
+      });
     } catch (error) {
+      setActionNotice(null);
       openActionDialog(
         messages.packsPage.errors.exportTitle,
-        error instanceof Error ? error.message : messages.packsPage.errors.requestFailed,
+        error instanceof Error
+          ? error.message
+          : messages.packsPage.errors.requestFailed,
       );
     } finally {
       setExportingPackId(null);
@@ -232,7 +333,9 @@ export function PacksPage({ initialData, orgId }: PacksPageProps) {
 
       if (!response.ok || "error" in payload) {
         throw new Error(
-          "error" in payload ? payload.error : messages.packsPage.errors.feedbackFailed,
+          "error" in payload
+            ? payload.error
+            : messages.packsPage.errors.feedbackFailed,
         );
       }
 
@@ -240,13 +343,21 @@ export function PacksPage({ initialData, orgId }: PacksPageProps) {
         ...currentState,
         [recommendationId]:
           payload.feedbackEvent.action === "accept"
-            ? { label: messages.packsPage.feedbackAccepted, tone: "success" }
-            : { label: messages.packsPage.feedbackDismissed, tone: "warning" },
+            ? {
+                label: messages.packsPage.feedbackAccepted,
+                tone: "success",
+              }
+            : {
+                label: messages.packsPage.feedbackDismissed,
+                tone: "warning",
+              },
       }));
     } catch (error) {
       openActionDialog(
         messages.packsPage.errors.feedbackTitle,
-        error instanceof Error ? error.message : messages.packsPage.errors.requestFailed,
+        error instanceof Error
+          ? error.message
+          : messages.packsPage.errors.requestFailed,
       );
     } finally {
       setSubmittingRecommendationId(null);
@@ -272,11 +383,20 @@ export function PacksPage({ initialData, orgId }: PacksPageProps) {
         title={messages.packsPage.labels.title}
       />
 
-      <div className="flex min-h-0 flex-1 overflow-hidden">
-        <aside className="flex w-[300px] shrink-0 flex-col border-r border-border bg-card">
+      <div className="flex flex-1 flex-col xl:min-h-0 xl:flex-row xl:overflow-hidden">
+        <aside className="shrink-0 border-b border-border bg-card xl:flex xl:w-[360px] xl:flex-col xl:border-b-0 xl:border-r">
           <div className="border-b border-border px-4 py-4">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted">
+              {messages.packsPage.selectorEyebrow}
+            </p>
+            <h2 className="mt-1 text-[15px] font-semibold text-foreground">
+              {messages.packsPage.selectorTitle}
+            </h2>
+            <p className="mt-1 text-[12px] leading-[1.6] text-muted">
+              {messages.packsPage.selectorDescription}
+            </p>
             <input
-              className="w-full rounded-[8px] border border-border bg-surface-subtle px-3 py-2 text-[12.5px] text-foreground outline-none placeholder:text-muted"
+              className="mt-4 w-full rounded-[8px] border border-border bg-surface-subtle px-3 py-2 text-[12.5px] text-foreground outline-none placeholder:text-muted"
               onChange={(event) => setSearch(event.target.value)}
               placeholder={messages.packsPage.searchPlaceholder}
               type="text"
@@ -294,7 +414,7 @@ export function PacksPage({ initialData, orgId }: PacksPageProps) {
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto">
+          <div className="max-h-[360px] overflow-y-auto xl:max-h-none xl:flex-1">
             {visiblePacks.map((pack) => (
               <PackSidebarItem
                 key={pack.id}
@@ -304,21 +424,37 @@ export function PacksPage({ initialData, orgId }: PacksPageProps) {
                 onClick={() => setSelectedPackId(pack.id)}
                 statusLabel={pack.statusLabel}
                 statusTone={pack.statusTone}
+                summary={pack.listSummary}
                 title={pack.title}
               />
             ))}
           </div>
         </aside>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+        <div className="flex-1 px-4 py-5 sm:px-6 xl:min-h-0 xl:overflow-y-auto">
           {selectedPack === null ? (
             <CatalogCard className="p-6">
               <p className="text-lg font-semibold text-foreground">
                 {messages.packsPage.emptyPackList}
               </p>
+              <p className="mt-2 text-sm leading-6 text-muted">
+                {messages.packsPage.emptyPackDescription}
+              </p>
+              <div className="mt-4">
+                <CatalogButton
+                  onClick={() => {
+                    setActiveFilter("all");
+                    setSearch("");
+                  }}
+                  variant="secondary"
+                >
+                  {messages.packsPage.emptyPackAction}
+                </CatalogButton>
+              </div>
             </CatalogCard>
           ) : (
             <PackDetail
+              actionNotice={actionNotice}
               exportingPackId={exportingPackId}
               feedbackByRecommendationId={feedbackByRecommendationId}
               onExportPack={handleExportPack}
@@ -344,6 +480,7 @@ export function PacksPage({ initialData, orgId }: PacksPageProps) {
 }
 
 function PackDetail({
+  actionNotice,
   exportingPackId,
   feedbackByRecommendationId,
   onExportPack,
@@ -353,6 +490,7 @@ function PackDetail({
   reviewingPackId,
   submittingRecommendationId,
 }: Readonly<{
+  actionNotice: ActionNotice | null;
   exportingPackId: string | null;
   feedbackByRecommendationId: Readonly<Record<string, FeedbackState>>;
   onExportPack: (packId: string) => Promise<void>;
@@ -371,74 +509,144 @@ function PackDetail({
 
   return (
     <div className="space-y-6">
-      <CatalogCard className="p-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">
-              {messages.packsPage.detailEyebrow}
-            </p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
-              {pack.title}
-            </h2>
-            <p className="mt-2 text-sm text-muted">{pack.generatedAtLabel}</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {pack.meta.map((item) => (
-                <span
-                  key={item}
-                  className="rounded-[4px] border border-[rgba(20,34,53,.07)] bg-surface-subtle px-[7px] py-[2px] text-[11px] font-semibold text-muted dark:border-border"
-                >
-                  {item}
-                </span>
-              ))}
+      {actionNotice ? <PackActionNotice notice={actionNotice} /> : null}
+
+      <div className="grid gap-5 2xl:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.85fr)]">
+        <CatalogCard className="p-6 shadow-[0_10px_28px_rgba(20,34,53,0.06)]">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+            <div className="max-w-3xl">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted">
+                  {messages.packsPage.detailEyebrow}
+                </p>
+                <StatusBadge
+                  label={pack.statusLabel}
+                  tone={pack.statusTone === "success" ? "success" : "warning"}
+                  withDot
+                />
+              </div>
+              <h2 className="mt-2 text-[30px] font-semibold leading-[1.05] tracking-[-0.03em] text-foreground">
+                {pack.title}
+              </h2>
+              <p className="mt-2 text-[13px] text-muted">
+                {pack.generatedAtLabel}
+              </p>
+              <p className="mt-4 max-w-3xl text-[15px] leading-7 text-muted">
+                {pack.previewSummary}
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {pack.meta.map((item) => (
+                  <span
+                    key={item}
+                    className="rounded-full border border-border bg-surface-subtle px-3 py-1 text-[11px] font-semibold text-muted"
+                  >
+                    {item}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2 lg:justify-end">
+              <CatalogButton
+                disabled={exportingPackId !== null}
+                onClick={() => {
+                  void onExportPack(pack.id);
+                }}
+                variant="secondary"
+              >
+                {exportingPackId === pack.id
+                  ? messages.packsPage.actions.exporting
+                  : messages.packsPage.actions.export}
+              </CatalogButton>
+              <CatalogButton
+                disabled={reviewingPackId !== null}
+                onClick={() => {
+                  void onReviewPack(pack.id);
+                }}
+                variant="primary"
+              >
+                {reviewingPackId === pack.id
+                  ? messages.packsPage.actions.markingReviewed
+                  : messages.packsPage.actions.markReviewed}
+              </CatalogButton>
             </div>
           </div>
-          <div className="flex gap-2">
-            <button
-              className="rounded-[8px] border border-[rgba(20,34,53,.12)] px-[18px] py-[9px] text-[13px] font-semibold text-foreground dark:border-border"
-              onClick={() => {
-                void onExportPack(pack.id);
-              }}
-              type="button"
-            >
-              {exportingPackId === pack.id
-                ? messages.packsPage.actions.exporting
-                : messages.packsPage.actions.export}
-            </button>
-            <button
-              className="rounded-[9px] bg-accent px-[18px] py-[9px] text-[13px] font-bold text-[#0d1b2a]"
-              onClick={() => {
-                void onReviewPack(pack.id);
-              }}
-              type="button"
-            >
-              {reviewingPackId === pack.id
-                ? messages.packsPage.actions.markingReviewed
-                : messages.packsPage.actions.markReviewed}
-            </button>
-          </div>
-        </div>
-      </CatalogCard>
 
-      {pack.metrics.length > 0 ? (
-        <div className="grid gap-[14px] md:grid-cols-2 xl:grid-cols-4">
-          {pack.metrics.map((metric) => (
-            <MetricTile
-              key={metric.label}
-              detail={metric.detail}
-              label={metric.label}
-              tone={metric.tone}
-              trend={metric.detail}
-              value={metric.value}
+          <div className="mt-5 rounded-[14px] border border-border bg-surface-subtle px-4 py-4">
+            <p className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted">
+              {messages.packsPage.bestNextMoveHeading}
+            </p>
+            <p className="mt-2 text-[13px] leading-[1.7] text-foreground">
+              {pack.nextStepLabel}
+            </p>
+          </div>
+        </CatalogCard>
+
+        <CatalogCard className="p-5 shadow-[0_10px_28px_rgba(20,34,53,0.06)]">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted">
+            {messages.packsPage.conceptsHeading}
+          </p>
+          <p className="mt-2 text-[12px] leading-[1.6] text-muted">
+            {messages.packsPage.conceptsDescription}
+          </p>
+          <div className="mt-4 space-y-3">
+            {pack.concepts.map((concept) => (
+              <PackConceptCard key={concept.id} concept={concept} />
+            ))}
+          </div>
+        </CatalogCard>
+      </div>
+
+      <section>
+        <div className="mb-3">
+          <h3 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-muted">
+            {messages.packsPage.previewHealthHeading}
+          </h3>
+          <p className="mt-1 text-[12px] leading-[1.6] text-muted">
+            {messages.packsPage.previewHealthDescription}
+          </p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {pack.overviewStats.map((stat) => (
+            <SignalCard
+              key={stat.label}
+              detail={stat.detail}
+              label={stat.label}
+              tone={stat.tone}
+              value={stat.value}
             />
           ))}
         </div>
+      </section>
+
+      {pack.metrics.length > 0 ? (
+        <section>
+          <div className="mb-3">
+            <h3 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-muted">
+              {messages.packsPage.businessSignalsHeading}
+            </h3>
+            <p className="mt-1 text-[12px] leading-[1.6] text-muted">
+              {messages.packsPage.businessSignalsDescription}
+            </p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {pack.metrics.map((metric) => (
+              <PackMetricCard key={metric.label} metric={metric} />
+            ))}
+          </div>
+        </section>
       ) : null}
 
       <section>
-        <h3 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-muted">
-          {messages.packsPage.recommendationsHeading}
-        </h3>
-        <div className="mt-4 space-y-4">
+        <div className="mb-3">
+          <h3 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-muted">
+            {messages.packsPage.recommendationsHeading}
+          </h3>
+          <p className="mt-1 text-[12px] leading-[1.6] text-muted">
+            {messages.packsPage.recommendationsDescription}
+          </p>
+        </div>
+        <div className="space-y-4">
           {pack.recommendations.length === 0 ? (
             <CatalogCard className="p-6">
               <p className="text-sm text-muted">
@@ -448,7 +656,8 @@ function PackDetail({
           ) : (
             pack.recommendations.map((recommendation) => {
               const feedbackState = feedbackByRecommendationId[recommendation.id];
-              const isSubmitting = submittingRecommendationId === recommendation.id;
+              const isSubmitting =
+                submittingRecommendationId === recommendation.id;
 
               return (
                 <div key={recommendation.id} className="space-y-2">
@@ -477,14 +686,14 @@ function PackDetail({
                   />
                   {feedbackState !== undefined ? (
                     <p
-                      className={[
+                      className={cx(
                         "text-sm font-medium",
                         feedbackState.tone === "success"
                           ? "text-green-700 dark:text-emerald-300"
                           : feedbackState.tone === "warning"
                             ? "text-amber-700 dark:text-amber-300"
                             : "text-blue-700 dark:text-sky-300",
-                      ].join(" ")}
+                      )}
                     >
                       {feedbackState.label}
                     </p>
@@ -501,33 +710,153 @@ function PackDetail({
       </section>
 
       <section>
-        <h3 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-muted">
-          {messages.packsPage.sourceDataHeading}
-        </h3>
-        <CatalogCard className="mt-4 overflow-hidden">
-          <div className="grid gap-3 border-b border-border bg-surface-subtle px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted md:grid-cols-[2fr_1fr_1fr_1fr]">
-            <span>{messages.packsPage.dataHeaders.sourceFile}</span>
-            <span>{messages.packsPage.dataHeaders.class}</span>
-            <span>{messages.packsPage.dataHeaders.confidence}</span>
-            <span>{messages.packsPage.dataHeaders.contribution}</span>
-          </div>
-          {pack.sourceData.length === 0 ? (
-            <div className="px-4 py-5 text-sm text-muted">
+        <div className="mb-3">
+          <h3 className="text-[13px] font-semibold uppercase tracking-[0.08em] text-muted">
+            {messages.packsPage.sourceDataHeading}
+          </h3>
+          <p className="mt-1 text-[12px] leading-[1.6] text-muted">
+            {messages.packsPage.sourceDataDescription}
+          </p>
+        </div>
+        {pack.sourceData.length === 0 ? (
+          <CatalogCard className="p-6">
+            <p className="text-sm text-muted">
               {messages.packsPage.sourceDataEmpty}
-            </div>
-          ) : (
-            pack.sourceData.map((record) => (
-              <SourceDataRow
+            </p>
+          </CatalogCard>
+        ) : (
+          <div className="grid gap-4 lg:grid-cols-2">
+            {pack.sourceData.map((record) => (
+              <PackSourceRecordCard
                 key={record.id}
-                classLabel={record.classLabel}
-                confidenceLabel={record.confidenceLabel}
-                contributionLabel={record.contributionLabel}
-                name={record.name}
+                confidenceLabel={messages.packsPage.dataHeaders.confidence}
+                contributionLabel={messages.packsPage.dataHeaders.contribution}
+                record={record}
               />
-            ))
-          )}
-        </CatalogCard>
+            ))}
+          </div>
+        )}
       </section>
+    </div>
+  );
+}
+
+function PackActionNotice({ notice }: Readonly<{ notice: ActionNotice }>) {
+  return (
+    <div
+      aria-live="polite"
+      className={cx(
+        "rounded-[14px] border px-4 py-4",
+        noticeToneClasses[notice.tone],
+      )}
+    >
+      <p className="text-sm font-semibold">{notice.title}</p>
+      <p className="mt-1 text-sm leading-6 text-current/80">
+        {notice.description}
+      </p>
+    </div>
+  );
+}
+
+function PackConceptCard({
+  concept,
+}: Readonly<{ concept: PackConcept }>) {
+  return (
+    <div
+      className={cx(
+        "rounded-[12px] border px-4 py-3",
+        conceptToneClasses[concept.tone],
+      )}
+    >
+      <p className="text-[12px] font-semibold text-foreground">{concept.label}</p>
+      <p className="mt-1 text-[12px] leading-[1.6] text-foreground">
+        {concept.description}
+      </p>
+    </div>
+  );
+}
+
+function PackMetricCard({
+  metric,
+}: Readonly<{ metric: PackMetric }>) {
+  return (
+    <CatalogCard
+      className={cx(
+        "border p-4 shadow-[0_10px_24px_rgba(20,34,53,0.04)]",
+        metricToneClasses[metric.tone],
+      )}
+    >
+      <p className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-current/70">
+        {metric.label}
+      </p>
+      <p className="mt-2 text-[28px] font-bold leading-none tracking-[-0.03em] text-foreground">
+        {metric.value}
+      </p>
+      <p className="mt-2 text-[12px] leading-[1.6] text-current/80">
+        {metric.detail}
+      </p>
+    </CatalogCard>
+  );
+}
+
+function PackSourceRecordCard({
+  confidenceLabel,
+  contributionLabel,
+  record,
+}: Readonly<{
+  confidenceLabel: string;
+  contributionLabel: string;
+  record: PackSourceRecord;
+}>) {
+  const confidenceValue = Number.parseFloat(record.confidenceLabel);
+  const confidenceTone =
+    Number.isFinite(confidenceValue) && confidenceValue >= 0.9
+      ? "success"
+      : Number.isFinite(confidenceValue) && confidenceValue >= 0.8
+        ? "info"
+        : "warning";
+
+  return (
+    <CatalogCard className="p-5 shadow-[0_10px_24px_rgba(20,34,53,0.04)]">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="text-[14px] font-semibold text-foreground">
+            {record.name}
+          </p>
+          <p className="mt-1 text-[12px] text-muted">{record.classLabel}</p>
+        </div>
+        <StatusBadge
+          label={record.confidenceLabel}
+          tone={confidenceTone}
+          withDot
+        />
+      </div>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <PackSourceMeta
+          label={contributionLabel}
+          value={record.contributionLabel}
+        />
+        <PackSourceMeta label={confidenceLabel} value={record.confidenceLabel} />
+      </div>
+    </CatalogCard>
+  );
+}
+
+function PackSourceMeta({
+  label,
+  value,
+}: Readonly<{
+  label: string;
+  value: string;
+}>) {
+  return (
+    <div className="rounded-[10px] border border-border bg-surface-subtle px-3 py-3">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-muted">
+        {label}
+      </p>
+      <p className="mt-1 text-[12px] leading-[1.6] text-foreground">
+        {value}
+      </p>
     </div>
   );
 }
@@ -537,7 +866,15 @@ function matchesSearch(pack: PackItem, normalizedSearch: string) {
     return true;
   }
 
-  return `${pack.title} ${pack.generatedAtLabel} ${pack.meta.join(" ")}`
+  return [
+    pack.title,
+    pack.generatedAtLabel,
+    pack.listSummary,
+    pack.previewSummary,
+    ...pack.meta,
+    ...pack.concepts.map((concept) => concept.label),
+  ]
+    .join(" ")
     .toLowerCase()
     .includes(normalizedSearch);
 }

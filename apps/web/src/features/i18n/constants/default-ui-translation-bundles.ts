@@ -1053,22 +1053,32 @@ const defaultUiMessagesEnUs = {
   },
   packsPage: {
     actions: {
-      export: "Export PDF",
+      export: "Export preview",
       exporting: "Exporting...",
-      generate: "Generate brief",
+      generate: "Generate latest preview",
       generating: "Generating...",
-      markReviewed: "Mark reviewed",
-      markingReviewed: "Marking...",
+      markReviewed: "Mark ready to share",
+      markingReviewed: "Marking ready...",
     },
+    bestNextMoveHeading: "Best next move",
+    businessSignalsDescription:
+      "These are the main operating signals that shape the selected preview.",
+    businessSignalsHeading: "Business signals",
+    conceptsDescription:
+      "Each concept is a business theme this preview is combining into one analysis surface.",
+    conceptsHeading: "What this pack groups together",
     dataHeaders: {
       class: "Class",
       confidence: "Confidence",
       contribution: "Contribution",
       sourceFile: "Source file",
     },
-    detailEyebrow: "Decision pack",
+    detailEyebrow: "Analysis preview",
     emptyDraftRecommendations:
       "This pack is still in draft and has no recommendations yet.",
+    emptyPackAction: "Show all previews",
+    emptyPackDescription:
+      "Clear the search or switch back to all previews to bring a grouped analysis back into view.",
     emptyPackList: "No packs match the current filter.",
     errors: {
       exportFailed: "Pack export failed.",
@@ -1090,14 +1100,45 @@ const defaultUiMessagesEnUs = {
       ready: "Ready",
     },
     labels: packsPageLabels,
+    previewHealthDescription:
+      "These signals show how complete and ready the selected analysis preview is.",
+    previewHealthHeading: "Preview health",
     recommendationsHeading: "Recommendations",
+    recommendationsDescription:
+      "Start with the highest-priority action, then use the rest of the preview as supporting context.",
     recommendationActions: {
       accept: "Accept",
       dismiss: "Dismiss",
     },
     searchPlaceholder: "Search packs",
+    selectorDescription:
+      "Each preview groups one business concept into a short operator decision surface.",
+    selectorEyebrow: "Choose a preview",
+    selectorTitle: "Pick the business concept to review",
+    sourceDataDescription:
+      "These source files are the evidence currently feeding the selected preview.",
     sourceDataEmpty: "No source records are attached yet.",
-    sourceDataHeading: "Source data",
+    sourceDataHeading: "Evidence behind this preview",
+    success: {
+      exportDescription:
+        "Your export should download shortly with the current preview contents.",
+      exportTitle: "Preview export started",
+      exportingDescription:
+        "Preparing a shareable export of the current grouped analysis.",
+      exportingTitle: "Preparing export",
+      generateDescription:
+        "The newest grouped analysis is ready and selected for review.",
+      generateTitle: "Preview refreshed",
+      generatingDescription:
+        "Building the latest grouped analysis from the current workspace data.",
+      generatingTitle: "Refreshing analysis preview",
+      reviewDescription:
+        "This preview is now marked ready to share with the team.",
+      reviewTitle: "Preview marked ready",
+      reviewingDescription:
+        "Saving the current preview as ready to share.",
+      reviewingTitle: "Updating preview status",
+    },
   },
   pipelinePage: {
     dismissAction: "Dismiss alert",
@@ -1131,37 +1172,129 @@ const defaultUiMessagesEnUs = {
   },
   settingsPage: {
     actions: {
+      cancel: "Cancel",
+      connect: "Connect",
+      connecting: "Connecting...",
+      configure: "Configure",
+      continue: "Continue",
+      disconnect: "Disconnect",
+      inviteMember: "Invite member",
+      manage: "Manage",
+      remove: "Remove",
+      reconnect: "Reconnect",
       reset: "Reset",
+      reviewFailures: "Review failures",
+      revoke: "Revoke",
+      revokeKey: "Revoke key",
+      revoking: "Revoking...",
+      saveCap: "Save cap",
+      saveCard: "Save card",
+      saveChanges: "Save changes",
+      savePreferences: "Save preferences",
       saveProfile: "Save profile",
+      saveWebsiteDetails: "Save website details",
       saving: "Saving...",
+      sendingInvite: "Sending...",
+      syncNow: "Sync now",
     },
     actionDescriptions: {
+      activeSessions: "Review active sessions and revoke stale device access.",
       authentication:
         "Authentication and access-control settings for the workspace.",
+      apiKeys: "Programmatic access keys for server-side integrations only.",
+      billingModel: "Totals update automatically from tracked AI usage.",
       businessProfile:
         "This information shapes how PulseOps interprets your data and builds your Cash & Margin Brief.",
+      appearance:
+        "Mirror the settings design controls and persist the workspace color mode in local storage.",
       colorModePersisted: "Persisted across sessions.",
       connectedSources:
         "Connect your business systems to feed the ingestion pipeline.",
+      currentCap: "Applies to the current workspace billing cycle.",
       currentCycle: "Current cycle across the workspace.",
+      fallbackSessionNotice:
+        "This local workspace is currently using the fallback development session.",
+      manageAccounts:
+        "You can manage team accounts and access policy.",
+      manageOwnProfile:
+        "You can only adjust your own account profile and password.",
       notificationPreferences:
         "Choose how and when PulseOps contacts you. Operator role or above required.",
+      paymentMethods:
+        "Add a business card for the service and an optional backup card. Only masked card details are stored.",
       preferences: "Workspace-level display and workflow defaults.",
       rolePermissions:
         "Defines what each role can see and do in your workspace.",
+      usageCap: "Optional monthly cap on AI usage. Leave blank for no cap.",
+      websiteDetails:
+        "Structured public contact details for the marketing home and contact pages. Update these fields without touching page copy or a WYSIWYG editor.",
     },
     actionTitles: {
+      activeSessions: "Active sessions",
+      apiKeys: "API keys",
+      appearance: "Appearance",
+      authentication: "Authentication",
+      billingModel: "Billing model",
       businessProfile: "Business profile",
       colorMode: "Color mode",
       connectedSources: "Connected sources",
       currentUsage: "Usage this billing period",
       notificationPreferences: "Notification preferences",
+      paymentMethods: "Payment methods",
+      preferences: "Preferences",
       rolePermissions: "Role permissions",
       teamMembers: "Team members",
+      usageCap: "Usage cap",
+      websiteDetails: "Website details",
     },
     appearance: {
+      colorMode: "Color mode",
       dark: "Dark",
       light: "Light",
+    },
+    billing: {
+      activePlanBadge: "Active plan",
+      backupCard: "Backup card",
+      billingModelValue: "Platform access + usage",
+      billingZip: "Billing ZIP",
+      billingZipValue: "Billing ZIP {{postalCode}}",
+      businessCard: "Business card",
+      capReached: "Cap reached.",
+      cardHelp:
+        "Card number and security code are used only to update the card and are not stored in this local prototype.",
+      cardNumber: "Card number",
+      cardholderName: "Cardholder name",
+      currentCapLabel: "Current cap",
+      expMonth: "Exp. month",
+      expYear: "Exp. year",
+      monthlyCapLabel: "Monthly cap",
+      noCap: "No cap",
+      noCapSet: "No cap set.",
+      noCardOnFile: "No card on file.",
+      noUsageAllowed: "No usage allowed at the current cap.",
+      ofMonthlyCapUsed: "{{percent}} of monthly cap used",
+      paymentMethodDescription:
+        "{{brand}} ending in {{last4}} • Expires {{expiration}}",
+      previewingUnsavedCap: "Previewing unsaved cap",
+      securityCode: "Security code",
+      setMonthlyCapCaption:
+        "Set a monthly cap to pause new AI runs automatically.",
+      usageCapFieldLabel: "Monthly cap (USD)",
+      usageCapHint:
+        "New AI runs pause once the current billing cycle reaches this amount.",
+      usageDetails: {
+        monthlyRecurring: "Monthly recurring",
+        renews: "Renews {{date}}",
+        trackedRuns: "{{count}} tracked runs",
+        trackedRunsSettling:
+          "{{count}} tracked runs, {{settlingCount}} settling",
+      },
+      usageLabels: {
+        currentTotal: "Current total",
+        platformAccess: "Platform access",
+        usageThisPeriod: "Usage this period",
+      },
+      usedOfCap: "{{used}} used of {{cap}} cap",
     },
     dialogs: {
       connect: {
@@ -1170,6 +1303,7 @@ const defaultUiMessagesEnUs = {
         connecting: "Connecting...",
         description:
           "The key is sent over HTTPS and stored in your workspace settings. You can disconnect at any time.",
+        title: "Connect {{integration}}",
       },
       invite: {
         email: "Email",
@@ -1183,6 +1317,67 @@ const defaultUiMessagesEnUs = {
       twoFactorQrPlaceholder: "Authenticator QR placeholder",
     },
     labels: settingsPageLabels,
+    accountDialog: {
+      accessPolicy: "Access policy",
+      currentAccountNotice: "This is the currently signed-in account.",
+      currentDescription:
+        "Update your account email and password. Role and access controls remain admin-governed.",
+      email: "Email",
+      lockedNotice:
+        "Only another active admin can change role, status, or the setup, data-ops, and report access buckets for this account.",
+      manageDescription:
+        "Update account identity, password, and access settings for this team member.",
+      name: "Name",
+      newPassword: "New password",
+      passwordHint: "Leave blank to keep the current password.",
+      resetPassword: "Reset password",
+      statusActive: "Active",
+      statusInvited: "Invited",
+      status: "Status",
+    },
+    errors: {
+      accountUpdateFailed: "Could not update account",
+      apiKeyRevokeFailed: "Could not revoke API key",
+      backupCardRemoveFailed: "Could not remove backup card",
+      integrationConnectFailed: "Could not connect integration",
+      integrationDisconnectFailed: "Could not disconnect",
+      inviteFailed: "Could not send invite",
+      notificationsSaveFailed: "Could not save notifications",
+      paymentMethodBackupFailed: "Could not save backup card",
+      paymentMethodPrimaryFailed: "Could not save business card",
+      preferencesSaveFailed: "Could not save preferences",
+      profileSaveFailed: "Could not save profile",
+      requestFailed: "The request could not be completed.",
+      sessionRevokeFailed: "Could not revoke session",
+      usageCapSaveFailed: "Could not save usage cap",
+      validCardNumber: "Enter the card number.",
+      validCardholderName: "Enter the cardholder name.",
+      validDollarAmount: "Enter a valid dollar amount.",
+      validDollarAmountNonNegative:
+        "Enter a valid non-negative dollar amount.",
+      validDollarAmountPrecision:
+        "Enter a valid dollar amount with up to two decimal places.",
+      validExpirationMonth: "Enter a valid expiration month.",
+      validExpirationYear: "Enter a valid expiration year.",
+      validSecurityCode: "Enter the security code.",
+      websiteDetailsSaveFailed: "Could not save website details",
+    },
+    integrations: {
+      descriptions: {
+        gmailApInbox:
+          "Invoice PDF attachments through the AP inbox forwarder.",
+        quickBooksOnline:
+          "P&L, expenses, and chart-of-accounts sync via OAuth.",
+        serviceTitan: "Job reports, invoices, and technician logs via API.",
+        xero: "Accounting connector not enabled yet.",
+      },
+      status: {
+        available: "Available",
+        connected: "Connected",
+        failures: "{{count}} failures",
+        notConnected: "Not connected",
+      },
+    },
     options: {
       goals: [
         "Improve cash flow visibility",
@@ -1212,8 +1407,113 @@ const defaultUiMessagesEnUs = {
     },
     placeholders: {
       apiKey: "Paste your API key here",
+      cardholderName: "Broward HVAC Co.",
       email: "jamie@browardhvac.com",
       name: "Jamie Reynolds",
+    },
+    permissions: {
+      connectSources: "Connect approved sources and uploads",
+      expandScope: "Expand source scope or AI processing",
+      manageUsers: "Manage users and report visibility",
+      reviewParseIssues: "Review parse issues and ingestion queues",
+      runAnalyses: "Run approved analyses and data exploration",
+      viewDashboards: "View dashboards and weekly briefs",
+    },
+    preferenceItems: {
+      compactDashboardDensity: {
+        description:
+          "Fit more queue and signal cards on a single desktop screen.",
+        title: "Compact dashboard density",
+      },
+      evidenceFirstRecommendationView: {
+        description:
+          "Open recommendation cards with citations expanded by default.",
+        title: "Evidence-first recommendation view",
+      },
+      experimentalPackDrafts: {
+        description:
+          "Show draft decision-pack types before they are fully productionized.",
+        title: "Experimental pack drafts",
+      },
+      retainUploadedSourceFiles: {
+        description:
+          "Keep raw uploads in storage so operators can download the original document later.",
+        title: "Retain uploaded source files",
+      },
+    },
+    roles: {
+      admin: "Admin",
+      analyst: "Analyst",
+      operator: "Operator",
+      viewer: "Viewer",
+    },
+    securityRows: {
+      changePassword: {
+        actionLabel: "Change password",
+        title: "Email and password",
+      },
+      singleSignOn: {
+        actionLabel: "Configure SSO",
+        description: "Available on higher plans for larger teams.",
+        title: "Single sign-on",
+      },
+      twoFactor: {
+        actionLabel: "Enable 2FA",
+        description: "Protect the account with a second verification step.",
+        setupUnavailable: "Two-factor setup handoff is not implemented yet.",
+        title: "Two-factor authentication",
+      },
+    },
+    tabs: {
+      billing: "Billing",
+      integrations: "Integrations",
+      notifications: "Notifications",
+      organization: "Organization",
+      preferences: "Preferences",
+      security: "Security",
+      team: "Team",
+    },
+    team: {
+      accessBucketsLabel: "Access buckets",
+      accessSummaries: {
+        pending: "Access pending",
+        reports: "Reports",
+        setupOps: "Setup, Ops",
+        setupOpsReports: "Setup, Ops, Reports",
+      },
+      manage: "Manage",
+      manageAccount: "Manage account",
+      membersCount: "{{count}} members",
+      myAccount: "My account",
+      permissionHeaders: {
+        admin: "Admin",
+        analyst: "Analyst",
+        operator: "Operator",
+        permission: "Permission",
+        viewer: "Viewer",
+      },
+      signedInSummary: "Signed in as {{name}} ({{role}}).",
+    },
+    accessPolicy: {
+      operationsDescription:
+        "Can review ingestion queues, parse issues, and file operations.",
+      operationsTitle: "Operations access",
+      reportDescription:
+        "Can view dashboards, briefs, and approved insight outputs.",
+      reportTitle: "Report access",
+      setupDescription:
+        "Can connect approved sources and ingestion scope.",
+      setupTitle: "Setup access",
+    },
+    websiteDetails: {
+      fields: {
+        mainPhone: "Main phone",
+        partnershipsEmail: "Partnerships email",
+        pressEmail: "Press email",
+        salesEmail: "Sales email",
+        supportEmail: "Support email",
+        supportPhone: "Support phone",
+      },
     },
     formLabels: {
       businessName: "Business name",
@@ -2701,22 +3001,32 @@ const defaultUiMessagesEs: UiMessages = {
   packsPage: {
     ...normalizedDefaultUiMessagesEnUs.packsPage,
     actions: {
-      export: "Exportar PDF",
+      export: "Exportar vista",
       exporting: "Exportando...",
-      generate: "Generar brief",
+      generate: "Generar vista mas reciente",
       generating: "Generando...",
-      markReviewed: "Marcar como revisado",
-      markingReviewed: "Marcando...",
+      markReviewed: "Marcar lista para compartir",
+      markingReviewed: "Marcando lista...",
     },
+    bestNextMoveHeading: "Mejor siguiente paso",
+    businessSignalsDescription:
+      "Estas son las senales operativas principales que moldean la vista seleccionada.",
+    businessSignalsHeading: "Senales del negocio",
+    conceptsDescription:
+      "Cada concepto es un tema del negocio que esta vista combina en una sola superficie de analisis.",
+    conceptsHeading: "Que agrupa este paquete",
     dataHeaders: {
       class: "Clase",
       confidence: "Confianza",
       contribution: "Contribucion",
       sourceFile: "Archivo fuente",
     },
-    detailEyebrow: "Paquete de decision",
+    detailEyebrow: "Vista de analisis",
     emptyDraftRecommendations:
       "Este paquete sigue en borrador y todavia no tiene recomendaciones.",
+    emptyPackAction: "Mostrar todas las vistas",
+    emptyPackDescription:
+      "Limpia la busqueda o vuelve a todas las vistas para recuperar un analisis agrupado.",
     emptyPackList: "Ningun paquete coincide con el filtro actual.",
     errors: {
       exportFailed: "La exportacion del paquete fallo.",
@@ -2743,37 +3053,71 @@ const defaultUiMessagesEs: UiMessages = {
         "Briefs semanales y recomendaciones sustentadas en datos ingeridos.",
       title: "Paquetes de decision",
     },
+    previewHealthDescription:
+      "Estas senales muestran que tan completa y lista esta la vista de analisis seleccionada.",
+    previewHealthHeading: "Salud de la vista",
     recommendationsHeading: "Recomendaciones",
+    recommendationsDescription:
+      "Empieza por la accion de mayor prioridad y usa el resto de la vista como contexto de apoyo.",
     recommendationActions: {
       accept: "Aceptar",
       dismiss: "Descartar",
     },
     searchPlaceholder: "Buscar paquetes",
+    selectorDescription:
+      "Cada vista agrupa un concepto del negocio en una superficie corta para decisiones operativas.",
+    selectorEyebrow: "Elegir vista",
+    selectorTitle: "Elige el concepto del negocio a revisar",
+    sourceDataDescription:
+      "Estos archivos fuente son la evidencia que actualmente alimenta la vista seleccionada.",
     sourceDataEmpty: "Todavia no hay registros fuente adjuntos.",
-    sourceDataHeading: "Datos fuente",
+    sourceDataHeading: "Evidencia detras de esta vista",
+    success: {
+      exportDescription:
+        "La exportacion deberia descargarse en breve con el contenido actual de la vista.",
+      exportTitle: "La exportacion de la vista comenzo",
+      exportingDescription:
+        "Preparando una exportacion compartible del analisis agrupado actual.",
+      exportingTitle: "Preparando exportacion",
+      generateDescription:
+        "El analisis agrupado mas reciente ya esta listo y seleccionado para revisarlo.",
+      generateTitle: "Vista actualizada",
+      generatingDescription:
+        "Construyendo el analisis agrupado mas reciente desde los datos actuales del espacio.",
+      generatingTitle: "Actualizando vista de analisis",
+      reviewDescription:
+        "Esta vista ahora esta marcada como lista para compartir con el equipo.",
+      reviewTitle: "Vista marcada como lista",
+      reviewingDescription:
+        "Guardando la vista actual como lista para compartir.",
+      reviewingTitle: "Actualizando estado de la vista",
+    },
   },
   pipelinePage: {
     ...normalizedDefaultUiMessagesEnUs.pipelinePage,
     dismissAction: "Descartar alerta",
     labels: {
       actions: {
-        primary: "Probar pipeline",
-        secondary: "Subir archivo",
+        primary: "Subir archivo",
+        secondary: "Mostrar bloqueados",
       },
       breadcrumbs: ["Aplicacion", "Pipeline"],
       description:
-        "Monitorea fuentes de datos, controla como se procesa cada tipo de documento y sigue que alimenta el brief semanal.",
+        "Mira que esta entrando, que se trabo y que ya esta listo para alimentar hechos y el brief semanal.",
       sectionDescriptions: {
         rules:
-          "Cada regla controla hasta donde viaja un documento: extraccion, almacenamiento SQL, recuperacion vectorial y elegibilidad para el brief.",
-        runs: "Cada documento procesado hoy. Las advertencias indican ejecuciones parciales o fallas que necesitan revision.",
+          "Cada tipo de documento sigue una ruta clara para que el operador sepa que puede revisarse, citarse y usarse despues.",
+        runs: "Los archivos recientes se muestran en lenguaje claro para que sea obvio que paso y que deberia pasar despues.",
         sources:
-          "Por donde entra la informacion al sistema. Cada fuente se sincroniza de forma independiente y produce uno o mas tipos de documentos.",
+          "Este espacio de trabajo empieza con cargas manuales. Agrega mas rutas de entrada solo cuando esten activas y sean confiables.",
+        stages:
+          "El pipeline pasa de intake a revision y luego a registros listos para hechos. Estos conteos muestran donde se esta acumulando el trabajo.",
       },
       sectionTitles: {
-        rules: "Reglas del pipeline",
-        runs: "Actividad reciente del pipeline",
-        sources: "Fuentes conectadas",
+        rules: "Reglas de procesamiento",
+        runs: "Progreso reciente de archivos",
+        sources: "Rutas de entrada",
+        stages: "Como se mueven los archivos",
       },
       title: "Pipeline de datos",
     },
@@ -2807,38 +3151,133 @@ const defaultUiMessagesEs: UiMessages = {
   settingsPage: {
     ...normalizedDefaultUiMessagesEnUs.settingsPage,
     actions: {
+      cancel: "Cancelar",
+      connect: "Conectar",
+      connecting: "Conectando...",
+      configure: "Configurar",
+      continue: "Continuar",
+      disconnect: "Desconectar",
+      inviteMember: "Invitar miembro",
+      manage: "Administrar",
+      remove: "Eliminar",
+      reconnect: "Reconectar",
       reset: "Restablecer",
+      reviewFailures: "Revisar fallas",
+      revoke: "Revocar",
+      revokeKey: "Revocar clave",
+      revoking: "Revocando...",
+      saveCap: "Guardar tope",
+      saveCard: "Guardar tarjeta",
+      saveChanges: "Guardar cambios",
+      savePreferences: "Guardar preferencias",
       saveProfile: "Guardar perfil",
+      saveWebsiteDetails: "Guardar datos web",
       saving: "Guardando...",
+      sendingInvite: "Enviando...",
+      syncNow: "Sincronizar ahora",
     },
     actionDescriptions: {
+      activeSessions:
+        "Revisa las sesiones activas y revoca el acceso de dispositivos viejos.",
       authentication:
         "Configuracion de autenticacion y control de acceso para el espacio de trabajo.",
+      apiKeys: "Claves de acceso programatico solo para integraciones de servidor.",
+      billingModel:
+        "Los totales se actualizan automaticamente con el uso de IA registrado.",
       businessProfile:
         "Esta informacion moldea como PulseOps interpreta tus datos y construye tu brief de efectivo y margen.",
+      appearance:
+        "Refleja los controles de diseno de configuracion y conserva el modo de color del espacio de trabajo en el almacenamiento local.",
       colorModePersisted: "Se mantiene entre sesiones.",
       connectedSources:
         "Conecta tus sistemas de negocio para alimentar el pipeline de ingestion.",
+      currentCap: "Aplica al ciclo de facturacion actual del espacio de trabajo.",
       currentCycle: "Ciclo actual en todo el espacio de trabajo.",
+      fallbackSessionNotice:
+        "Este espacio de trabajo local esta usando la sesion de desarrollo de respaldo.",
+      manageAccounts:
+        "Puedes administrar las cuentas del equipo y la politica de acceso.",
+      manageOwnProfile:
+        "Solo puedes ajustar tu propio perfil y contrasena.",
       notificationPreferences:
         "Elige como y cuando PulseOps te contacta. Se requiere rol de operador o superior.",
+      paymentMethods:
+        "Agrega una tarjeta del negocio para el servicio y una tarjeta de respaldo opcional. Solo se guardan los datos enmascarados.",
       preferences:
         "Valores por defecto de visualizacion y flujo a nivel espacio de trabajo.",
       rolePermissions:
         "Define que puede ver y hacer cada rol dentro de tu espacio de trabajo.",
+      usageCap:
+        "Tope mensual opcional para el uso de IA. Dejalo vacio para no tener tope.",
+      websiteDetails:
+        "Datos publicos estructurados para la home y la pagina de contacto. Actualiza estos campos sin tocar el texto de la pagina ni un editor visual.",
     },
     actionTitles: {
+      activeSessions: "Sesiones activas",
+      apiKeys: "Claves API",
+      appearance: "Apariencia",
+      authentication: "Autenticacion",
+      billingModel: "Modelo de facturacion",
       businessProfile: "Perfil del negocio",
       colorMode: "Modo de color",
       connectedSources: "Fuentes conectadas",
       currentUsage: "Uso en este periodo",
       notificationPreferences: "Preferencias de notificacion",
+      paymentMethods: "Metodos de pago",
+      preferences: "Preferencias",
       rolePermissions: "Permisos por rol",
       teamMembers: "Miembros del equipo",
+      usageCap: "Tope de uso",
+      websiteDetails: "Datos del sitio",
     },
     appearance: {
+      colorMode: "Modo de color",
       dark: "Oscuro",
       light: "Claro",
+    },
+    billing: {
+      activePlanBadge: "Plan activo",
+      backupCard: "Tarjeta de respaldo",
+      billingModelValue: "Acceso a plataforma + uso",
+      billingZip: "Codigo postal",
+      billingZipValue: "Codigo postal {{postalCode}}",
+      businessCard: "Tarjeta del negocio",
+      capReached: "Se alcanzo el tope.",
+      cardHelp:
+        "El numero de tarjeta y el codigo de seguridad solo se usan para actualizar la tarjeta y no se guardan en este prototipo local.",
+      cardNumber: "Numero de tarjeta",
+      cardholderName: "Nombre del titular",
+      currentCapLabel: "Tope actual",
+      expMonth: "Mes venc.",
+      expYear: "Ano venc.",
+      monthlyCapLabel: "Tope mensual",
+      noCap: "Sin tope",
+      noCapSet: "No hay tope configurado.",
+      noCardOnFile: "No hay tarjeta guardada.",
+      noUsageAllowed: "No se permite uso con el tope actual.",
+      ofMonthlyCapUsed: "{{percent}} del tope mensual usado",
+      paymentMethodDescription:
+        "{{brand}} terminada en {{last4}} • Vence {{expiration}}",
+      previewingUnsavedCap: "Vista previa del tope sin guardar",
+      securityCode: "Codigo de seguridad",
+      setMonthlyCapCaption:
+        "Configura un tope mensual para pausar automaticamente nuevas corridas de IA.",
+      usageCapFieldLabel: "Tope mensual (USD)",
+      usageCapHint:
+        "Las nuevas corridas de IA se pausan cuando el ciclo actual llega a este monto.",
+      usageDetails: {
+        monthlyRecurring: "Recurrente mensual",
+        renews: "Renueva {{date}}",
+        trackedRuns: "{{count}} corridas registradas",
+        trackedRunsSettling:
+          "{{count}} corridas registradas, {{settlingCount}} en conciliacion",
+      },
+      usageLabels: {
+        currentTotal: "Total actual",
+        platformAccess: "Acceso a la plataforma",
+        usageThisPeriod: "Uso en este periodo",
+      },
+      usedOfCap: "{{used}} usados de un tope de {{cap}}",
     },
     dialogs: {
       connect: {
@@ -2847,6 +3286,7 @@ const defaultUiMessagesEs: UiMessages = {
         connecting: "Conectando...",
         description:
           "La clave se envia por HTTPS y se guarda en la configuracion de tu espacio de trabajo. Puedes desconectarla en cualquier momento.",
+        title: "Conectar {{integration}}",
       },
       invite: {
         email: "Email",
@@ -2858,6 +3298,70 @@ const defaultUiMessagesEs: UiMessages = {
       twoFactorDescription:
         "Escanea el codigo QR en tu app autenticadora, confirma el codigo de seis digitos y guarda los codigos de respaldo en un lugar seguro.",
       twoFactorQrPlaceholder: "Marcador QR del autenticador",
+    },
+    accountDialog: {
+      accessPolicy: "Politica de acceso",
+      currentAccountNotice: "Esta es la cuenta actualmente iniciada.",
+      currentDescription:
+        "Actualiza el email y la contrasena de tu cuenta. El rol y los controles de acceso siguen gobernados por admin.",
+      email: "Email",
+      lockedNotice:
+        "Solo otro admin activo puede cambiar el rol, el estado o los permisos de setup, data-ops y reportes de esta cuenta.",
+      manageDescription:
+        "Actualiza la identidad, la contrasena y la configuracion de acceso de este miembro del equipo.",
+      name: "Nombre",
+      newPassword: "Nueva contrasena",
+      passwordHint: "Deja esto vacio para mantener la contrasena actual.",
+      resetPassword: "Restablecer contrasena",
+      statusActive: "Activo",
+      statusInvited: "Invitado",
+      status: "Estado",
+    },
+    errors: {
+      accountUpdateFailed: "No se pudo actualizar la cuenta",
+      apiKeyRevokeFailed: "No se pudo revocar la clave API",
+      backupCardRemoveFailed: "No se pudo eliminar la tarjeta de respaldo",
+      integrationConnectFailed: "No se pudo conectar la integracion",
+      integrationDisconnectFailed: "No se pudo desconectar",
+      inviteFailed: "No se pudo enviar la invitacion",
+      notificationsSaveFailed: "No se pudieron guardar las notificaciones",
+      paymentMethodBackupFailed:
+        "No se pudo guardar la tarjeta de respaldo",
+      paymentMethodPrimaryFailed:
+        "No se pudo guardar la tarjeta del negocio",
+      preferencesSaveFailed: "No se pudieron guardar las preferencias",
+      profileSaveFailed: "No se pudo guardar el perfil",
+      requestFailed: "No se pudo completar la solicitud.",
+      sessionRevokeFailed: "No se pudo revocar la sesion",
+      usageCapSaveFailed: "No se pudo guardar el tope de uso",
+      validCardNumber: "Ingresa el numero de tarjeta.",
+      validCardholderName: "Ingresa el nombre del titular.",
+      validDollarAmount: "Ingresa un monto valido.",
+      validDollarAmountNonNegative:
+        "Ingresa un monto valido que no sea negativo.",
+      validDollarAmountPrecision:
+        "Ingresa un monto valido con hasta dos decimales.",
+      validExpirationMonth: "Ingresa un mes de vencimiento valido.",
+      validExpirationYear: "Ingresa un ano de vencimiento valido.",
+      validSecurityCode: "Ingresa el codigo de seguridad.",
+      websiteDetailsSaveFailed: "No se pudieron guardar los datos del sitio",
+    },
+    integrations: {
+      descriptions: {
+        gmailApInbox:
+          "Adjuntos PDF de facturas a traves del reenviador del buzon de AP.",
+        quickBooksOnline:
+          "Sync de P&L, gastos y plan de cuentas via OAuth.",
+        serviceTitan:
+          "Reportes de trabajo, facturas y bitacoras de tecnicos via API.",
+        xero: "El conector contable todavia no esta habilitado.",
+      },
+      status: {
+        available: "Disponible",
+        connected: "Conectado",
+        failures: "{{count}} fallas",
+        notConnected: "Sin conectar",
+      },
     },
     labels: {
       breadcrumbs: ["Panel", "Configuracion"],
@@ -2905,8 +3409,115 @@ const defaultUiMessagesEs: UiMessages = {
     },
     placeholders: {
       apiKey: "Pega aqui tu clave API",
+      cardholderName: "Broward HVAC Co.",
       email: "jamie@browardhvac.com",
       name: "Jamie Reynolds",
+    },
+    permissions: {
+      connectSources: "Conectar fuentes y cargas aprobadas",
+      expandScope: "Ampliar el alcance de fuentes o procesamiento de IA",
+      manageUsers: "Administrar usuarios y visibilidad de reportes",
+      reviewParseIssues: "Revisar problemas de parseo y colas de ingestion",
+      runAnalyses: "Ejecutar analisis aprobados y exploracion de datos",
+      viewDashboards: "Ver paneles y briefs semanales",
+    },
+    preferenceItems: {
+      compactDashboardDensity: {
+        description:
+          "Muestra mas tarjetas de cola y senales en una sola pantalla de escritorio.",
+        title: "Densidad compacta del panel",
+      },
+      evidenceFirstRecommendationView: {
+        description:
+          "Abre las tarjetas de recomendacion con las citas expandidas por defecto.",
+        title: "Vista de recomendaciones primero con evidencia",
+      },
+      experimentalPackDrafts: {
+        description:
+          "Muestra tipos de decision packs en borrador antes de que esten totalmente listos para produccion.",
+        title: "Borradores experimentales de packs",
+      },
+      retainUploadedSourceFiles: {
+        description:
+          "Conserva las cargas crudas en almacenamiento para que los operadores puedan descargar el documento original despues.",
+        title: "Conservar archivos fuente cargados",
+      },
+    },
+    roles: {
+      admin: "Admin",
+      analyst: "Analista",
+      operator: "Operador",
+      viewer: "Viewer",
+    },
+    securityRows: {
+      changePassword: {
+        actionLabel: "Cambiar contrasena",
+        title: "Email y contrasena",
+      },
+      singleSignOn: {
+        actionLabel: "Configurar SSO",
+        description: "Disponible en planes superiores para equipos mas grandes.",
+        title: "Inicio de sesion unico",
+      },
+      twoFactor: {
+        actionLabel: "Activar 2FA",
+        description:
+          "Protege la cuenta con un segundo paso de verificacion.",
+        setupUnavailable:
+          "El traspaso para configurar dos factores todavia no esta implementado.",
+        title: "Autenticacion de dos factores",
+      },
+    },
+    tabs: {
+      billing: "Facturacion",
+      integrations: "Integraciones",
+      notifications: "Notificaciones",
+      organization: "Organizacion",
+      preferences: "Preferencias",
+      security: "Seguridad",
+      team: "Equipo",
+    },
+    team: {
+      accessBucketsLabel: "Bloques de acceso",
+      accessSummaries: {
+        pending: "Acceso pendiente",
+        reports: "Reportes",
+        setupOps: "Setup, Ops",
+        setupOpsReports: "Setup, Ops, Reportes",
+      },
+      manage: "Administrar",
+      manageAccount: "Administrar cuenta",
+      membersCount: "{{count}} miembros",
+      myAccount: "Mi cuenta",
+      permissionHeaders: {
+        admin: "Admin",
+        analyst: "Analista",
+        operator: "Operador",
+        permission: "Permiso",
+        viewer: "Viewer",
+      },
+      signedInSummary: "Sesion iniciada como {{name}} ({{role}}).",
+    },
+    accessPolicy: {
+      operationsDescription:
+        "Puede revisar colas de ingestion, problemas de parseo y operaciones de archivos.",
+      operationsTitle: "Acceso de operaciones",
+      reportDescription:
+        "Puede ver dashboards, briefs y salidas aprobadas de insights.",
+      reportTitle: "Acceso a reportes",
+      setupDescription:
+        "Puede conectar fuentes aprobadas y alcance de ingestion.",
+      setupTitle: "Acceso de setup",
+    },
+    websiteDetails: {
+      fields: {
+        mainPhone: "Telefono principal",
+        partnershipsEmail: "Email de alianzas",
+        pressEmail: "Email de prensa",
+        salesEmail: "Email de ventas",
+        supportEmail: "Email de soporte",
+        supportPhone: "Telefono de soporte",
+      },
     },
     formLabels: {
       businessName: "Nombre del negocio",

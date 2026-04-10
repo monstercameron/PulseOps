@@ -4,7 +4,12 @@ import { useRouter } from "next/navigation";
 import { startTransition, useEffect, useState } from "react";
 
 import { PlaceholderActionDialog } from "@/features/catalog/components/catalog-dialogs";
-import { CatalogCard } from "@/features/catalog/components/catalog-primitives";
+import {
+  CatalogButton,
+  CatalogCard,
+  StatusBadge,
+  cx,
+} from "@/features/catalog/components/catalog-primitives";
 import {
   ActivityFeedItem,
   DecisionQueueCard,
@@ -26,6 +31,8 @@ type DashboardPageProps = Readonly<{
   initialData: DashboardPageData;
   orgId: string;
 }>;
+
+type DashboardSummaryTone = "danger" | "info" | "neutral" | "success" | "warning";
 
 type DashboardView = "business" | "operations";
 type PlaceholderAction = Readonly<{
@@ -183,6 +190,90 @@ export function DashboardPage({ initialData, orgId }: DashboardPageProps) {
     openPlaceholderAction(actionLabel, title);
   }
 
+  const [
+    ,
+    parseSuccessMetric,
+    ,
+    awaitingReviewMetric,
+    extractedDocsMetric,
+    criticalFailuresMetric,
+    inScopeFactsMetric,
+  ] = initialData.metrics;
+  const primaryQueueItem = queueItems[0];
+  const focusTitle =
+    activeView === "operations"
+      ? primaryQueueItem?.title ??
+        t("dashboardPage.focus.clearTitle", "The current scope is clear")
+      : initialData.businessSummary.title;
+  const focusDescription =
+    activeView === "operations"
+      ? primaryQueueItem?.context ??
+        t(
+          "dashboardPage.focus.clearDescription",
+          "Nothing is blocking document review right now. You can upload another file or move into Explorer and the weekly brief.",
+        )
+      : initialData.businessSummary.description;
+  const focusStats: readonly {
+    detail: string;
+    label: string;
+    tone: DashboardSummaryTone;
+    value: string;
+  }[] =
+    activeView === "operations"
+      ? [
+          {
+            detail:
+              queueItems.length === 0
+                ? t(
+                    "dashboardPage.focus.queueClear",
+                    "No queue blockers are open in this scope.",
+                  )
+                : t(
+                    "dashboardPage.focus.queueOpen",
+                    "{{count}} item still needs attention first.",
+                    { count: queueItems.length },
+                  ),
+            label: t("dashboardPage.focus.queueLabel", "Open queue"),
+            tone:
+              queueItems.length > 0 && primaryQueueItem !== undefined
+                ? mapPriorityToSummaryTone(primaryQueueItem.priority)
+                : "success",
+            value: String(queueItems.length),
+          },
+          {
+            detail: awaitingReviewMetric.detail,
+            label: awaitingReviewMetric.label,
+            tone: awaitingReviewMetric.tone,
+            value: awaitingReviewMetric.value,
+          },
+          {
+            detail: criticalFailuresMetric.detail,
+            label: criticalFailuresMetric.label,
+            tone: criticalFailuresMetric.tone,
+            value: criticalFailuresMetric.value,
+          },
+        ]
+      : [
+          {
+            detail: extractedDocsMetric.detail,
+            label: extractedDocsMetric.label,
+            tone: extractedDocsMetric.tone,
+            value: extractedDocsMetric.value,
+          },
+          {
+            detail: inScopeFactsMetric.detail,
+            label: inScopeFactsMetric.label,
+            tone: inScopeFactsMetric.tone,
+            value: inScopeFactsMetric.value,
+          },
+          {
+            detail: parseSuccessMetric.detail,
+            label: parseSuccessMetric.label,
+            tone: parseSuccessMetric.tone,
+            value: parseSuccessMetric.value,
+          },
+        ];
+
   return (
     <div className="flex min-h-full flex-col">
       <WorkspaceHeader
@@ -211,46 +302,160 @@ export function DashboardPage({ initialData, orgId }: DashboardPageProps) {
         title={labels.title}
       />
 
-      <div className="sticky top-0 z-10 border-b border-border bg-background/[0.94] px-6 py-2 backdrop-blur-sm">
+      <div className="sticky top-0 z-10 border-b border-border bg-background/[0.96] px-6 py-3 backdrop-blur-sm">
         <DashboardFilterBar filters={initialData.filters} />
-        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11.5px] text-muted">
-          <span>{initialData.filterSummary.globalScopeLabel}</span>
-          <span className="hidden h-1 w-1 rounded-full bg-border md:inline-block" />
-          <span>{initialData.filterSummary.scopedResultsLabel}</span>
+        <div className="mt-3 grid gap-2 lg:grid-cols-2">
+          <DashboardScopeSummaryCard
+            description={initialData.filterSummary.globalScopeLabel}
+            label={t("dashboardPage.scope.kpiLabel", "Top metrics")}
+          />
+          <DashboardScopeSummaryCard
+            description={initialData.filterSummary.scopedResultsLabel}
+            label={t("dashboardPage.scope.resultsLabel", "Below on this page")}
+          />
         </div>
       </div>
 
-      <div className="flex-1 px-6 py-5">
+      <div className="flex-1 px-6 py-6">
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(300px,0.9fr)]">
+          <CatalogCard className="overflow-hidden px-5 py-5">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="max-w-3xl">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-accent">
+                  {activeView === "operations"
+                    ? t("dashboardPage.focus.heading", "What needs attention now")
+                    : initialData.labels.businessSummaryEyebrow}
+                </p>
+                <h2 className="mt-2 text-[26px] font-bold leading-[1.1] tracking-[-0.03em] text-foreground">
+                  {focusTitle}
+                </h2>
+                <p className="mt-3 max-w-3xl text-[14px] leading-7 text-muted">
+                  {focusDescription}
+                </p>
+              </div>
+              {activeView === "operations" && queueItems.length > 0 ? (
+                <StatusBadge
+                  label={primaryQueueItem.priorityLabel}
+                  tone={mapPriorityToBadgeTone(primaryQueueItem.priority)}
+                  withDot
+                />
+              ) : null}
+            </div>
+
+            <div className="mt-5 grid gap-3 md:grid-cols-3">
+              {focusStats.map((stat) => (
+                <DashboardSummaryStat
+                  key={stat.label}
+                  detail={stat.detail}
+                  label={stat.label}
+                  tone={stat.tone}
+                  value={stat.value}
+                />
+              ))}
+            </div>
+
+            <div className="mt-5 flex flex-wrap gap-2">
+              {activeView === "operations" ? (
+                <>
+                  <CatalogButton onClick={() => setShowUploadModal(true)} variant="primary">
+                    {labels.actions.primary}
+                  </CatalogButton>
+                  <CatalogButton
+                    onClick={() => navigateForActionLabel(actionLabels.openExplorer)}
+                    variant="secondary"
+                  >
+                    {messages.dashboardPage.openExplorer}
+                  </CatalogButton>
+                </>
+              ) : (
+                <>
+                  <CatalogButton
+                    onClick={() =>
+                      handleActivityAction(
+                        localizeActionLabel(initialData.businessSummary.actionLabel),
+                        initialData.businessSummary.title,
+                      )
+                    }
+                    variant="primary"
+                  >
+                    {localizeActionLabel(initialData.businessSummary.actionLabel)}
+                  </CatalogButton>
+                  <CatalogButton
+                    onClick={() => navigateForActionLabel(actionLabels.openExplorer)}
+                    variant="secondary"
+                  >
+                    {messages.dashboardPage.openExplorer}
+                  </CatalogButton>
+                </>
+              )}
+            </div>
+          </CatalogCard>
+
+          <CatalogCard className="px-5 py-5">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted">
+              {t("dashboardPage.scope.heading", "Current scope")}
+            </p>
+            <div className="mt-4 space-y-3">
+              <DashboardScopeDetail
+                label={t("dashboardPage.scope.metricsLabel", "What the KPI strip covers")}
+                value={initialData.filterSummary.globalScopeLabel}
+              />
+              <DashboardScopeDetail
+                label={t("dashboardPage.scope.sectionsLabel", "What the lower sections show")}
+                value={initialData.filterSummary.scopedResultsLabel}
+              />
+              <DashboardScopeDetail
+                label={t("dashboardPage.scope.nextLabel", "Recommended next stop")}
+                value={
+                  queueItems.length > 0
+                    ? t(
+                        "dashboardPage.scope.nextQueue",
+                        "Start with the operator queue so blocked files do not hide downstream insight.",
+                      )
+                    : activeView === "operations"
+                      ? t(
+                          "dashboardPage.scope.nextExplorer",
+                          "Open Explorer to confirm extracted details and supporting evidence.",
+                        )
+                      : t(
+                          "dashboardPage.scope.nextBrief",
+                          "Open the weekly brief to move from signal review into action.",
+                        )
+                }
+              />
+            </div>
+          </CatalogCard>
+        </div>
+
         {initialData.scopedContent ? (
-          <CatalogCard className="mb-5 px-4 py-[14px]">
+          <CatalogCard className="mb-5 mt-5 px-4 py-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-muted">
+              <div className="max-w-3xl">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">
                   {initialData.scopedContent.title}
                 </p>
-                <p className="mt-1 text-[12.5px] leading-[1.5] text-muted">
+                <p className="mt-1 text-[12.5px] leading-[1.6] text-muted">
                   {initialData.scopedContent.description}
                 </p>
               </div>
-              <button
-                className="cursor-pointer rounded-[7px] border border-border-strong bg-surface-subtle px-3 py-[6px] text-[12px] font-semibold text-foreground transition hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+              <CatalogButton
                 onClick={() => router.push("/explorer")}
-                type="button"
+                variant="secondary"
               >
                 {messages.dashboardPage.openExplorer}
-              </button>
+              </CatalogButton>
             </div>
             {initialData.scopedContent.items.length > 0 ? (
               <div className="mt-4 grid gap-2 md:grid-cols-3">
                 {initialData.scopedContent.items.map((item) => (
                   <div
                     key={item.id}
-                    className="rounded-[8px] border border-border bg-surface-subtle px-3 py-3"
+                    className="rounded-[10px] border border-border bg-surface-subtle px-3 py-3"
                   >
                     <p className="text-[12.5px] font-semibold text-foreground">
                       {item.title}
                     </p>
-                    <p className="mt-1 text-[11.5px] leading-[1.5] text-muted">
+                    <p className="mt-1 text-[11.5px] leading-[1.6] text-muted">
                       {item.meta}
                     </p>
                   </div>
@@ -260,7 +465,7 @@ export function DashboardPage({ initialData, orgId }: DashboardPageProps) {
           </CatalogCard>
         ) : null}
 
-        <div className="mb-5 grid grid-cols-2 gap-[10px] md:grid-cols-3 xl:grid-cols-5">
+        <div className="mb-5 mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {initialData.metrics.map((metric) => (
             <MetricTile
               key={metric.label}
@@ -273,12 +478,25 @@ export function DashboardPage({ initialData, orgId }: DashboardPageProps) {
           ))}
         </div>
 
-        <div className="flex items-center justify-between gap-4">
-          <h2 className="text-[12.5px] font-semibold uppercase tracking-[0.1em] text-muted">
-            {activeView === "operations"
-              ? labels.views.operations
-              : labels.views.business}
-          </h2>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 className="text-[12.5px] font-semibold uppercase tracking-[0.1em] text-muted">
+              {activeView === "operations"
+                ? labels.views.operations
+                : labels.views.business}
+            </h2>
+            <p className="mt-1 text-[12.5px] text-muted">
+              {activeView === "operations"
+                ? t(
+                    "dashboardPage.operations.description",
+                    "Use this view to clear blocked files, confirm review work, and keep the brief fed with reliable inputs.",
+                  )
+                : t(
+                    "dashboardPage.business.description",
+                    "Use this view to scan the business signals that should shape this week's cash and margin decisions.",
+                  )}
+            </p>
+          </div>
           <div className="inline-flex gap-[2px] rounded-[8px] bg-[rgba(20,34,53,.07)] p-[2px] dark:bg-white/[0.06]">
             {(["operations", "business"] as const).map((view) => (
               <button
@@ -301,11 +519,69 @@ export function DashboardPage({ initialData, orgId }: DashboardPageProps) {
         </div>
 
         {activeView === "operations" ? (
-          <div className="mt-[14px] grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_320px]">
+          <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(320px,0.95fr)_minmax(0,1.45fr)]">
             <CatalogCard className="overflow-hidden p-0">
-              <div className="flex items-center justify-between border-b border-border px-5 py-[14px]">
-                <span className="text-[13px] font-semibold text-foreground">{messages.dashboardPage.activityTitle}</span>
-                <span className="text-[11px] font-medium text-muted">{messages.dashboardPage.activityLiveLabel}</span>
+              <div className="border-b border-border px-5 py-[14px]">
+                <div className="flex items-center justify-between gap-3">
+                  <h2 className="text-[13px] font-semibold text-foreground">
+                    {labels.queueTitle}
+                  </h2>
+                  <span className="rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-bold text-red-600 dark:bg-rose-500/15 dark:text-rose-300">
+                    {t("dashboardPage.queueItemsLabel", "{{count}} items", {
+                      count: queueItems.length,
+                    })}
+                  </span>
+                </div>
+                <p className="mt-1 text-[11.5px] leading-[1.6] text-muted">
+                  {t(
+                    "dashboardPage.queue.description",
+                    "Work through the highest-friction items first so downstream facts and recommendations stay trustworthy.",
+                  )}
+                </p>
+              </div>
+              <div className="space-y-2 p-[10px]">
+                {queueItems.length === 0 ? (
+                  <div className="px-2 py-6 text-center">
+                    <p className="text-[12.5px] font-semibold text-foreground">
+                      {messages.dashboardPage.emptyQueueTitle}
+                    </p>
+                    <p className="mt-1 text-[11.5px] leading-[1.5] text-muted">
+                      {messages.dashboardPage.emptyQueueDescription}
+                    </p>
+                  </div>
+                ) : (
+                  queueItems.map((item) => (
+                    <DecisionQueueCard
+                      key={item.id}
+                      actions={item.actions.map(localizeActionLabel)}
+                      context={item.context}
+                      onAction={(action) => handleQueueAction(action, item)}
+                      priority={item.priority}
+                      priorityLabel={item.priorityLabel}
+                      title={item.title}
+                      typeLabel={item.typeLabel}
+                    />
+                  ))
+                )}
+              </div>
+            </CatalogCard>
+
+            <CatalogCard className="overflow-hidden p-0">
+              <div className="border-b border-border px-5 py-[14px]">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-[13px] font-semibold text-foreground">
+                    {messages.dashboardPage.activityTitle}
+                  </span>
+                  <span className="text-[11px] font-medium text-muted">
+                    {messages.dashboardPage.activityLiveLabel}
+                  </span>
+                </div>
+                <p className="mt-1 text-[11.5px] leading-[1.6] text-muted">
+                  {t(
+                    "dashboardPage.activity.description",
+                    "Document movement and operator actions appear here as the workspace changes.",
+                  )}
+                </p>
               </div>
               <div className="px-5 pb-0 pt-1">
                 {recentActivity.map((section) => (
@@ -341,99 +617,90 @@ export function DashboardPage({ initialData, orgId }: DashboardPageProps) {
                   </div>
                 ))}
               </div>
-              <div className="border-t border-border px-5 py-3">
-                <button
-                  className="cursor-pointer text-[12px] font-bold text-accent transition hover:text-accent/70"
-                  onClick={() =>
-                    openPlaceholderAction(
-                      messages.dashboardPage.viewFullActivityLog,
-                      "A dedicated full activity log surface is not implemented yet.",
-                    )
-                  }
-                  type="button"
+              <div className="flex flex-wrap gap-2 border-t border-border px-5 py-3">
+                <CatalogButton
+                  onClick={() => navigateForActionLabel(actionLabels.openExplorer)}
+                  variant="secondary"
                 >
-                  {messages.dashboardPage.viewFullActivityLog}
-                </button>
-              </div>
-            </CatalogCard>
-
-            <CatalogCard className="overflow-hidden p-0">
-              <div className="flex items-center justify-between border-b border-border px-4 py-[14px]">
-                <h2 className="text-[13px] font-semibold text-foreground">
-                  {labels.queueTitle}
-                </h2>
-                <span className="rounded-full bg-red-50 px-2 py-0.5 text-[11px] font-bold text-red-600 dark:bg-rose-500/15 dark:text-rose-300">
-                  {t("dashboardPage.queueItemsLabel", "{{count}} items", {
-                    count: queueItems.length,
-                  })}
-                </span>
-              </div>
-              <div className="space-y-2 p-[10px]">
-                {queueItems.length === 0 ? (
-                  <div className="px-2 py-6 text-center">
-                    <p className="text-[12.5px] font-semibold text-foreground">
-                      {messages.dashboardPage.emptyQueueTitle}
-                    </p>
-                    <p className="mt-1 text-[11.5px] leading-[1.5] text-muted">
-                      {messages.dashboardPage.emptyQueueDescription}
-                    </p>
-                  </div>
-                ) : (
-                  queueItems.map((item) => (
-                    <DecisionQueueCard
-                      key={item.id}
-                      actions={item.actions.map(localizeActionLabel)}
-                      context={item.context}
-                      onAction={(action) => handleQueueAction(action, item)}
-                      priority={item.priority}
-                      priorityLabel={item.priorityLabel}
-                      title={item.title}
-                      typeLabel={item.typeLabel}
-                    />
-                  ))
-                )}
+                  {messages.dashboardPage.openExplorer}
+                </CatalogButton>
+                <CatalogButton
+                  onClick={() => setShowUploadModal(true)}
+                  variant="primary"
+                >
+                  {labels.actions.primary}
+                </CatalogButton>
               </div>
             </CatalogCard>
           </div>
         ) : (
-          <div>
-            <CatalogCard className="mt-4 flex flex-wrap items-center justify-between gap-4 px-[22px] py-4">
-              <div>
-                <p className="text-[14px] font-bold tracking-[-0.01em] text-foreground">
-                  {initialData.businessSummary.title}
-                </p>
-                <p className="mt-[3px] text-[12.5px] leading-[1.6] text-muted">
-                  {initialData.businessSummary.description}
-                </p>
+          <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.8fr)]">
+            <div>
+              <h2 className="mb-3 text-[12px] font-bold uppercase tracking-[0.1em] text-muted">
+                {labels.signalsTitle}
+              </h2>
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                {initialData.signals.map((signal) => (
+                  <SignalCard
+                    key={signal.label}
+                    detail={signal.detail}
+                    label={signal.label}
+                    tone={signal.tone}
+                    value={signal.value}
+                  />
+                ))}
               </div>
-              <button
-                className="cursor-pointer shrink-0 rounded-[9px] bg-accent px-[18px] py-[9px] text-[13px] font-bold text-[#0d1b2a] transition hover:opacity-90 active:scale-[.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                onClick={() =>
-                  handleActivityAction(
-                    localizeActionLabel(initialData.businessSummary.actionLabel),
-                    initialData.businessSummary.title,
-                  )
-                }
-                type="button"
-              >
-                {localizeActionLabel(initialData.businessSummary.actionLabel)}
-              </button>
-            </CatalogCard>
-
-            <h2 className="mb-3 mt-5 text-[12px] font-bold uppercase tracking-[0.1em] text-muted">
-              {labels.signalsTitle}
-            </h2>
-            <div className="grid gap-[10px] md:grid-cols-2 xl:grid-cols-5">
-              {initialData.signals.map((signal) => (
-                <SignalCard
-                  key={signal.label}
-                  detail={signal.detail}
-                  label={signal.label}
-                  tone={signal.tone}
-                  value={signal.value}
-                />
-              ))}
             </div>
+
+            <CatalogCard className="px-5 py-5">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-muted">
+                {t("dashboardPage.watchlist.heading", "Operational watchlist")}
+              </p>
+              <p className="mt-2 text-[12.5px] leading-[1.6] text-muted">
+                {t(
+                  "dashboardPage.watchlist.description",
+                  "Business signals are only as useful as the document work behind them. Keep an eye on these open items.",
+                )}
+              </p>
+              <div className="mt-4 space-y-3">
+                {queueItems.length === 0 ? (
+                  <div className="rounded-[10px] border border-border bg-surface-subtle px-4 py-4">
+                    <p className="text-[12.5px] font-semibold text-foreground">
+                      {t("dashboardPage.watchlist.clearTitle", "No open watchlist items")}
+                    </p>
+                    <p className="mt-1 text-[11.5px] leading-[1.6] text-muted">
+                      {t(
+                        "dashboardPage.watchlist.clearDescription",
+                        "The current dashboard scope is clear enough to move straight into the weekly brief or Explorer.",
+                      )}
+                    </p>
+                  </div>
+                ) : (
+                  queueItems.map((item) => (
+                    <DashboardWatchListItem key={item.id} item={item} />
+                  ))
+                )}
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <CatalogButton
+                  onClick={() =>
+                    handleActivityAction(
+                      localizeActionLabel(initialData.businessSummary.actionLabel),
+                      initialData.businessSummary.title,
+                    )
+                  }
+                  variant="primary"
+                >
+                  {localizeActionLabel(initialData.businessSummary.actionLabel)}
+                </CatalogButton>
+                <CatalogButton
+                  onClick={() => navigateForActionLabel(actionLabels.openExplorer)}
+                  variant="secondary"
+                >
+                  {messages.dashboardPage.openExplorer}
+                </CatalogButton>
+              </div>
+            </CatalogCard>
           </div>
         )}
       </div>
@@ -454,4 +721,120 @@ export function DashboardPage({ initialData, orgId }: DashboardPageProps) {
       ) : null}
     </div>
   );
+}
+
+type DashboardSummaryStatProps = Readonly<{
+  detail: string;
+  label: string;
+  tone: "danger" | "info" | "neutral" | "success" | "warning";
+  value: string;
+}>;
+
+const summaryStatToneClasses = {
+  danger: "border-red-200 bg-red-50 dark:border-rose-500/20 dark:bg-rose-500/10",
+  info: "border-blue-200 bg-blue-50 dark:border-sky-500/20 dark:bg-sky-500/10",
+  neutral: "border-border bg-surface-subtle dark:bg-surface-muted",
+  success: "border-green-200 bg-green-50 dark:border-emerald-500/20 dark:bg-emerald-500/10",
+  warning: "border-amber-200 bg-amber-50 dark:border-amber-500/20 dark:bg-amber-500/10",
+} as const;
+
+function DashboardSummaryStat({
+  detail,
+  label,
+  tone,
+  value,
+}: DashboardSummaryStatProps) {
+  return (
+    <div className={cx("rounded-[10px] border px-4 py-3", summaryStatToneClasses[tone])}>
+      <p className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted">
+        {label}
+      </p>
+      <p className="mt-2 text-[22px] font-bold leading-none tracking-[-0.03em] text-foreground">
+        {value}
+      </p>
+      <p className="mt-2 text-[11.5px] leading-[1.5] text-muted">{detail}</p>
+    </div>
+  );
+}
+
+type DashboardScopeSummaryCardProps = Readonly<{
+  description: string;
+  label: string;
+}>;
+
+function DashboardScopeSummaryCard({
+  description,
+  label,
+}: DashboardScopeSummaryCardProps) {
+  return (
+    <div className="rounded-[10px] border border-border bg-card px-3 py-2.5">
+      <p className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted">
+        {label}
+      </p>
+      <p className="mt-1 text-[11.5px] leading-[1.6] text-foreground">{description}</p>
+    </div>
+  );
+}
+
+type DashboardScopeDetailProps = Readonly<{
+  label: string;
+  value: string;
+}>;
+
+function DashboardScopeDetail({ label, value }: DashboardScopeDetailProps) {
+  return (
+    <div className="rounded-[10px] border border-border bg-surface-subtle px-4 py-3">
+      <p className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-muted">
+        {label}
+      </p>
+      <p className="mt-1 text-[12px] leading-[1.6] text-foreground">{value}</p>
+    </div>
+  );
+}
+
+type DashboardWatchListItemProps = Readonly<{
+  item: DashboardQueueItem;
+}>;
+
+function DashboardWatchListItem({ item }: DashboardWatchListItemProps) {
+  return (
+    <div className="rounded-[10px] border border-border bg-surface-subtle px-4 py-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <StatusBadge
+          label={item.priorityLabel}
+          tone={mapPriorityToBadgeTone(item.priority)}
+          withDot
+        />
+        <span className="text-[11px] font-medium text-muted">{item.typeLabel}</span>
+      </div>
+      <p className="mt-2 text-[13px] font-semibold leading-[1.45] text-foreground">
+        {item.title}
+      </p>
+      <p className="mt-1 text-[11.5px] leading-[1.6] text-muted">{item.context}</p>
+    </div>
+  );
+}
+
+function mapPriorityToBadgeTone(priority: DashboardQueueItem["priority"]) {
+  if (priority === "danger") {
+    return "danger";
+  }
+
+  if (priority === "warning") {
+    return "warning";
+  }
+
+  return "info";
+}
+
+function mapPriorityToSummaryTone(priority: DashboardQueueItem["priority"]): DashboardSummaryTone {
+  if (priority === "danger") {
+    return "danger";
+  }
+
+  if (priority === "warning") {
+    return "warning";
+  }
+
+  return "info";
 }

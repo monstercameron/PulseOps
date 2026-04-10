@@ -43,7 +43,10 @@ describe("handlePacksPageRequest", () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
       packs: expect.arrayContaining([
-        expect.objectContaining({ title: "Cash and Margin Brief" }),
+        expect.objectContaining({
+          title: "Cash and Margin Brief",
+          previewSummary: expect.stringContaining("cash"),
+        }),
       ]),
     });
   });
@@ -115,6 +118,9 @@ describe("handlePacksPageRequest", () => {
       packs: expect.arrayContaining([
         expect.objectContaining({
           meta: expect.arrayContaining(["Based on 1 records"]),
+          overviewStats: expect.arrayContaining([
+            expect.objectContaining({ label: "Source files", value: "1" }),
+          ]),
           sourceData: expect.arrayContaining([
             expect.objectContaining({ name: "invoice-001.csv" }),
           ]),

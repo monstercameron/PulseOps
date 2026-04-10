@@ -18,6 +18,8 @@ describe("pack-page-state", () => {
 
     expect(packRecordToPackItem(record)).toMatchObject({
       id: record.id,
+      listSummary: expect.any(String),
+      previewSummary: expect.any(String),
       statusLabel: record.statusLabel,
       title: record.title,
     });

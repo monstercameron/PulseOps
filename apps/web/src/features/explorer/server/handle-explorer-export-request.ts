@@ -10,6 +10,7 @@ import { getExplorerPageData } from "@/features/explorer/server/handle-explorer-
 
 const explorerExportSearchParamsSchema = z.object({
   documentId: z.string().min(1).optional(),
+  locale: z.string().trim().min(1).optional(),
   orgId: z.string().min(1),
   query: z.string().trim().optional(),
   status: z.string().min(1).optional(),
@@ -30,6 +31,7 @@ export async function handleExplorerExportRequest(
   const url = new URL(request.url);
   const parsedSearchParams = explorerExportSearchParamsSchema.safeParse({
     documentId: url.searchParams.get("documentId") ?? undefined,
+    locale: url.searchParams.get("locale") ?? undefined,
     orgId: url.searchParams.get("orgId"),
     query: url.searchParams.get("query") ?? undefined,
     status: url.searchParams.get("status") ?? undefined,
@@ -45,13 +47,14 @@ export async function handleExplorerExportRequest(
     );
   }
 
-  const statuses = readDocumentStatusListSearchParam(parsedSearchParams.data.status) as
-    | readonly DocumentStatus[]
-    | undefined;
+  const statuses = readDocumentStatusListSearchParam(
+    parsedSearchParams.data.status,
+  ) as readonly DocumentStatus[] | undefined;
   const data = await getExplorerPageData({
     documentId: parsedSearchParams.data.documentId,
     documentRepository: dependencies.documentRepository,
     factRepository: dependencies.factRepository,
+    locale: parsedSearchParams.data.locale,
     orgId: parsedSearchParams.data.orgId,
     parserArtifactRepository: dependencies.parserArtifactRepository,
     statuses,
@@ -130,9 +133,7 @@ function buildExplorerCsv(
     ]),
   ];
 
-  return lines
-    .map((line) => line.map(escapeCsvValue).join(","))
-    .join("\n");
+  return lines.map((line) => line.map(escapeCsvValue).join(",")).join("\n");
 }
 
 function escapeCsvValue(value: string) {

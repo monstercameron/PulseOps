@@ -1,5 +1,8 @@
 import { ExplorerPage } from "@/features/explorer/components/explorer-page";
-import { getExplorerPageData } from "@/features/explorer/server/handle-explorer-records-request";
+import {
+  EXPLORER_RECORDS_PAGE_SIZE,
+  getExplorerPageData,
+} from "@/features/explorer/server/handle-explorer-records-request";
 import { readDocumentStatusListSearchParam } from "@/features/documents/server/document-query-filters";
 import { ensureCuratedDocumentsSeeded } from "@/features/documents/server/seed-curated-documents";
 import { DEFAULT_WORKSPACE } from "@/features/foundation/domain/default-workspace";
@@ -9,7 +12,9 @@ import { localIngestionRuntime } from "@/features/runtime/local-ingestion-runtim
 type ExplorerPageProps = Readonly<{
   searchParams?: Promise<{
     documentId?: string;
+    query?: string;
     status?: string;
+    type?: string;
   }>;
 }>;
 
@@ -32,8 +37,11 @@ export default async function Explorer({ searchParams }: ExplorerPageProps) {
     factRepository: localIngestionRuntime.factRepository,
     locale,
     orgId: DEFAULT_WORKSPACE.orgId,
+    pageSize: EXPLORER_RECORDS_PAGE_SIZE,
     parserArtifactRepository: localIngestionRuntime.parserArtifactRepository,
+    query: params?.query,
     statuses: readDocumentStatusListSearchParam(params?.status),
+    type: params?.type,
     textParserArtifactRepository:
       localIngestionRuntime.textParserArtifactRepository,
   });

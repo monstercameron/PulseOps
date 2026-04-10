@@ -23,9 +23,7 @@ import {
   type DashboardFilterValues,
 } from "@/features/dashboard/lib/dashboard-filters";
 import { getDashboardSeedPageData } from "@/features/dashboard/server/dashboard-surface-record-service";
-import {
-  type DocumentRepository,
-} from "@/features/documents/repositories/document-repository";
+import { type DocumentRepository } from "@/features/documents/repositories/document-repository";
 import { type DocumentRecord } from "@/features/documents/domain/document";
 import { type FactRepository } from "@/features/facts/repositories/fact-repository";
 import { DEFAULT_WORKSPACE } from "@/features/foundation/domain/default-workspace";
@@ -132,8 +130,11 @@ export async function getDashboardPageData({
     getDashboardSeedPageData(dashboardSurfaceRepository, orgId),
   ]);
 
-  const organizationName = settingsRecord.organization.name || DEFAULT_WORKSPACE.name;
-  const resolvedQueueItemIds = new Set(queueEvents.map((queueEvent) => queueEvent.itemId));
+  const organizationName =
+    settingsRecord.organization.name || DEFAULT_WORKSPACE.name;
+  const resolvedQueueItemIds = new Set(
+    queueEvents.map((queueEvent) => queueEvent.itemId),
+  );
   const dashboardFilters = buildDashboardFilters({
     documents,
     locale,
@@ -146,7 +147,10 @@ export async function getDashboardPageData({
       ...seedPageData,
       filterSummary: seedPageData.filterSummary,
       filters: dashboardFilters,
-      queueItems: filterResolvedQueueItems(seedPageData.queueItems, resolvedQueueItemIds),
+      queueItems: filterResolvedQueueItems(
+        seedPageData.queueItems,
+        resolvedQueueItemIds,
+      ),
     };
   }
 
@@ -172,6 +176,7 @@ export async function getDashboardPageData({
   const recentActivity = buildRecentActivity({
     documents: filteredDocuments,
     hasActiveFilters: hasActiveDashboardFilters(filters),
+    locale,
     savedQuestions,
   });
   const extractedCount = filteredDocuments.filter(
@@ -181,7 +186,9 @@ export async function getDashboardPageData({
     (document) =>
       document.status === "parsed" || document.status === "classified",
   ).length;
-  const latestPack = hasScopedDashboardFilters(filters) ? undefined : packRecords[0];
+  const latestPack = hasScopedDashboardFilters(filters)
+    ? undefined
+    : packRecords[0];
 
   return {
     businessSummary: buildBusinessSummary({
@@ -222,15 +229,21 @@ function filterResolvedQueueItems(
   queueItems: readonly DashboardQueueItem[],
   resolvedQueueItemIds: ReadonlySet<string>,
 ) {
-  return queueItems.filter((queueItem) => !resolvedQueueItemIds.has(queueItem.id));
+  return queueItems.filter(
+    (queueItem) => !resolvedQueueItemIds.has(queueItem.id),
+  );
 }
 
-function buildDashboardMetrics(input: Readonly<{
-  documents: readonly DocumentRecord[];
-  facts: Awaited<ReturnType<FactRepository["listByOrgId"]>>;
-}>): readonly DashboardMetric[] {
+function buildDashboardMetrics(
+  input: Readonly<{
+    documents: readonly DocumentRecord[];
+    facts: Awaited<ReturnType<FactRepository["listByOrgId"]>>;
+  }>,
+): readonly DashboardMetric[] {
   const { documents, facts } = input;
-  const failedCount = documents.filter((document) => document.status === "failed").length;
+  const failedCount = documents.filter(
+    (document) => document.status === "failed",
+  ).length;
   const extractedCount = documents.filter(
     (document) => document.status === "extracted",
   ).length;
@@ -241,7 +254,9 @@ function buildDashboardMetrics(input: Readonly<{
   const averageConfidenceScore = getAverageConfidenceScore(documents, facts);
   const latestDocumentTimestamp = documents
     .slice()
-    .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))[0]?.updatedAt;
+    .sort((left, right) =>
+      right.updatedAt.localeCompare(left.updatedAt),
+    )[0]?.updatedAt;
   const parseSuccessRate =
     documents.length === 0
       ? "--"
@@ -381,11 +396,11 @@ function buildQueueItems(documents: readonly DocumentRecord[]) {
     items.push({
       id: "failed-documents",
       actions: ["Inspect files", "Dismiss"],
-      context: `${failedDocuments.map((document) => document.fileName).join(", ")} are blocked before downstream use.`,
+      context: `${joinDocumentNames(failedDocuments)} stopped before facts could be extracted. Open the pipeline to inspect the file and keep the rest of the workflow moving.`,
       priority: "danger",
       priorityLabel: "High",
-      title: `${failedDocuments.length} document${failedDocuments.length === 1 ? "" : "s"} failed during the current dashboard scope.`,
-      typeLabel: "Parse failure",
+      title: `${failedDocuments.length} file${failedDocuments.length === 1 ? "" : "s"} need attention before they can be used.`,
+      typeLabel: "Blocked import",
     });
   }
 
@@ -393,22 +408,25 @@ function buildQueueItems(documents: readonly DocumentRecord[]) {
     items.push({
       id: "review-documents",
       actions: ["Open explorer", "Skip"],
-      context: `${reviewDocuments.map((document) => document.fileName).join(", ")} need approval before extraction or broader use.`,
+      context: `${joinDocumentNames(reviewDocuments)} are ready for a quick operator check. Open Explorer to confirm the details before broader use.`,
       priority: "warning",
       priorityLabel: "Review",
-      title: `${reviewDocuments.length} document${reviewDocuments.length === 1 ? "" : "s"} ${reviewDocuments.length === 1 ? "is" : "are"} waiting for human review.`,
-      typeLabel: "Operator queue",
+      title: `${reviewDocuments.length} file${reviewDocuments.length === 1 ? " is" : "s are"} ready for review.`,
+      typeLabel: "Review queue",
     });
   }
 
   return items;
 }
 
-function buildRecentActivity(input: Readonly<{
-  documents: readonly DocumentRecord[];
-  hasActiveFilters: boolean;
-  savedQuestions: Awaited<ReturnType<SavedQuestionRepository["listByOrgId"]>>;
-}>): DashboardPageData["recentActivity"] {
+function buildRecentActivity(
+  input: Readonly<{
+    documents: readonly DocumentRecord[];
+    hasActiveFilters: boolean;
+    locale: string;
+    savedQuestions: Awaited<ReturnType<SavedQuestionRepository["listByOrgId"]>>;
+  }>,
+): DashboardPageData["recentActivity"] {
   const recentDocuments = input.documents
     .slice()
     .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
@@ -416,7 +434,9 @@ function buildRecentActivity(input: Readonly<{
 
   const recentItems =
     recentDocuments.length > 0
-      ? recentDocuments.map((document) => buildActivityItem(document))
+      ? recentDocuments.map((document) =>
+          buildActivityItem(document, input.locale),
+        )
       : [buildEmptyActivityItem(input.hasActiveFilters)];
 
   return [
@@ -431,8 +451,7 @@ function buildRecentActivity(input: Readonly<{
       items: [
         {
           id: "saved-questions",
-          actionLabel:
-            input.savedQuestions.length > 0 ? "Open Ask" : undefined,
+          actionLabel: input.savedQuestions.length > 0 ? "Open Ask" : undefined,
           detail: `${input.savedQuestions.length} saved question${input.savedQuestions.length === 1 ? "" : "s"} in this workspace.`,
           label: "Ask",
           time: "Live",
@@ -452,7 +471,7 @@ function buildEmptyActivityItem(
       ? "No documents matched the current date, source, document type, and status filters."
       : "Upload CSV or XLSX files to start the dashboard feed.",
     id: "dashboard-activity-empty",
-    label: "Dashboard",
+    label: hasActiveFilters ? "Filtered" : "Waiting",
     time: hasActiveFilters ? "Filtered" : "Waiting",
     title: hasActiveFilters
       ? "No activity is currently in scope."
@@ -461,19 +480,21 @@ function buildEmptyActivityItem(
   };
 }
 
-function buildBusinessSummary(input: Readonly<{
-  extractedCount: number;
-  factsCount: number;
-  hasScopedFilters: boolean;
-  latestPack:
-    | Awaited<ReturnType<typeof listPackRecordsForOrg>>[number]
-    | undefined;
-  organizationName: string;
-  reviewCount: number;
-  seedPageData: DashboardPageData;
-  totalDocumentCount: number;
-  visibleDocumentCount: number;
-}>): DashboardPageData["businessSummary"] {
+function buildBusinessSummary(
+  input: Readonly<{
+    extractedCount: number;
+    factsCount: number;
+    hasScopedFilters: boolean;
+    latestPack:
+      | Awaited<ReturnType<typeof listPackRecordsForOrg>>[number]
+      | undefined;
+    organizationName: string;
+    reviewCount: number;
+    seedPageData: DashboardPageData;
+    totalDocumentCount: number;
+    visibleDocumentCount: number;
+  }>,
+): DashboardPageData["businessSummary"] {
   if (input.latestPack !== undefined) {
     return {
       actionLabel: input.seedPageData.businessSummary.actionLabel,
@@ -514,35 +535,43 @@ function buildBusinessSummary(input: Readonly<{
   };
 }
 
-function buildFilterSummary(input: Readonly<{
-  filters: DashboardFilterValues;
-  locale: string;
-  organizationName: string;
-  visibleDocumentCount: number;
-}>): DashboardPageData["filterSummary"] {
-  const globalScopeLabel = `KPI strip covers ${input.organizationName} over ${getDashboardDateRangeScopeLabel(input.filters.dateRange, input.locale)}.`;
+function buildFilterSummary(
+  input: Readonly<{
+    filters: DashboardFilterValues;
+    locale: string;
+    organizationName: string;
+    visibleDocumentCount: number;
+  }>,
+): DashboardPageData["filterSummary"] {
+  const globalScopeLabel = `Top metrics cover ${input.organizationName} over ${getDashboardDateRangeScopeLabel(input.filters.dateRange, input.locale)}.`;
 
   if (!hasScopedDashboardFilters(input.filters)) {
     return {
       globalScopeLabel,
       scopedResultsLabel:
-        "Activity, queue, and signals show all document activity in that window.",
+        "The sections below include all document work in that window.",
     };
   }
 
   return {
     globalScopeLabel,
-    scopedResultsLabel: `Activity, queue, and signals are narrowed to ${buildScopedFilterLabel(input.filters, input.locale)}. ${input.visibleDocumentCount} matching document${input.visibleDocumentCount === 1 ? "" : "s"} in scope.`,
+    scopedResultsLabel: `The sections below are narrowed to ${buildScopedFilterLabel(input.filters, input.locale)}. ${input.visibleDocumentCount} matching document${input.visibleDocumentCount === 1 ? "" : "s"} in scope.`,
   };
 }
 
-function buildScopedFilterLabel(filters: DashboardFilterValues, locale: string) {
+function buildScopedFilterLabel(
+  filters: DashboardFilterValues,
+  locale: string,
+) {
   const scopeLabels = [
     filters.source !== dashboardDefaultFilterValues.source
       ? getDashboardSourceLabel(filters.source, locale)
       : null,
     filters.documentType !== dashboardDefaultFilterValues.documentType
-      ? getDashboardDocumentTypeLabel(filters.documentType, locale).toLowerCase()
+      ? getDashboardDocumentTypeLabel(
+          filters.documentType,
+          locale,
+        ).toLowerCase()
       : null,
     filters.status !== dashboardDefaultFilterValues.status
       ? getDashboardStatusLabel(filters.status, locale).toLowerCase()
@@ -564,11 +593,13 @@ function buildScopedFilterLabel(filters: DashboardFilterValues, locale: string) 
   return `${scopeLabels[0]}, ${scopeLabels[1]}, and ${scopeLabels[2]}`;
 }
 
-function buildScopedContentPreview(input: Readonly<{
-  documents: readonly DocumentRecord[];
-  filters: DashboardFilterValues;
-  locale: string;
-}>): DashboardPageData["scopedContent"] {
+function buildScopedContentPreview(
+  input: Readonly<{
+    documents: readonly DocumentRecord[];
+    filters: DashboardFilterValues;
+    locale: string;
+  }>,
+): DashboardPageData["scopedContent"] {
   if (!hasScopedDashboardFilters(input.filters)) {
     return null;
   }
@@ -584,7 +615,7 @@ function buildScopedContentPreview(input: Readonly<{
 
   return {
     description:
-      "These matching records are driving the filtered activity, queue, and signal sections below.",
+      "These matching records are shaping the queue, activity feed, and signals below.",
     items: input.documents
       .slice()
       .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
@@ -625,7 +656,10 @@ function getDocumentTypeDisplayLabel(document: DocumentRecord, locale: string) {
     return "Document";
   }
 
-  return getDashboardDocumentTypeLabel(document.suggestedDocumentFamily, locale);
+  return getDashboardDocumentTypeLabel(
+    document.suggestedDocumentFamily,
+    locale,
+  );
 }
 
 function getDashboardDateRangeScopeLabel(
@@ -639,8 +673,12 @@ function getDashboardDateRangeScopeLabel(
   return `the ${getDashboardDateRangeLabel(dateRange, locale).toLowerCase()}`;
 }
 
-function buildActivityItem(document: DocumentRecord): DashboardActivityItem {
-  const documentFamilyLabel = document.suggestedDocumentFamily ?? "document";
+function buildActivityItem(
+  document: DocumentRecord,
+  locale: string,
+): DashboardActivityItem {
+  const documentFamilyLabel = getDocumentTypeDisplayLabel(document, locale);
+  const sourceLabel = getDashboardSourceLabel(document.source, locale);
   const tone =
     document.status === "failed"
       ? "danger"
@@ -658,17 +696,82 @@ function buildActivityItem(document: DocumentRecord): DashboardActivityItem {
         : document.status === "extracted"
           ? "Open explorer"
           : "Review",
-    detail: `${document.fileName} from ${document.source} is currently ${document.status}.`,
+    detail: getActivityDetail({
+      document,
+      documentFamilyLabel,
+      sourceLabel,
+    }),
     label:
       document.status === "failed"
-        ? "Failure"
+        ? "Needs attention"
         : document.status === "extracted"
           ? "Ready"
-          : "In progress",
+          : document.status === "parsed" || document.status === "classified"
+            ? "Needs review"
+            : "In intake",
     time: formatTimestampLabel(document.updatedAt),
-    title: `${documentFamilyLabel} moved to ${document.status}.`,
+    title: getActivityTitle(document),
     tone,
   };
+}
+
+function getActivityTitle(document: DocumentRecord) {
+  if (document.status === "failed") {
+    return `${document.fileName} needs attention before it can move forward.`;
+  }
+
+  if (document.status === "extracted") {
+    return `${document.fileName} is ready for downstream review.`;
+  }
+
+  if (document.status === "parsed" || document.status === "classified") {
+    return `${document.fileName} is waiting for a quick review.`;
+  }
+
+  return `${document.fileName} was received and is moving through intake.`;
+}
+
+function getActivityDetail(
+  input: Readonly<{
+    document: DocumentRecord;
+    documentFamilyLabel: string;
+    sourceLabel: string;
+  }>,
+) {
+  const sourcePhrase = `${input.documentFamilyLabel} from ${input.sourceLabel}`;
+
+  if (input.document.status === "failed") {
+    return `${sourcePhrase} stopped before facts could be extracted. Open the pipeline to inspect the file and retry.`;
+  }
+
+  if (input.document.status === "extracted") {
+    return `${sourcePhrase} cleared extraction and can now support Explorer, packs, and cited follow-up.`;
+  }
+
+  if (
+    input.document.status === "parsed" ||
+    input.document.status === "classified"
+  ) {
+    return `${sourcePhrase} is ready for an operator check before broader use.`;
+  }
+
+  return `${sourcePhrase} is being prepared for parsing and review.`;
+}
+
+function joinDocumentNames(documents: readonly DocumentRecord[]) {
+  if (documents.length === 0) {
+    return "No files";
+  }
+
+  if (documents.length === 1) {
+    return documents[0].fileName;
+  }
+
+  if (documents.length === 2) {
+    return `${documents[0].fileName} and ${documents[1].fileName}`;
+  }
+
+  return `${documents[0].fileName}, ${documents[1].fileName}, and ${documents.length - 2} more`;
 }
 
 function formatTimestampLabel(isoTimestamp: string) {
