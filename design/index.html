@@ -1,0 +1,526 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PulseOps — Cash, Margin &amp; Decisions for Service Businesses</title>
+  <meta name="description" content="PulseOps answers the six questions every service business owner asks every week — without a data team, dashboards, or guesswork." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="dist/output.css" />
+  <style>
+    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+    .prose-balance { text-wrap: balance; }
+
+    /* Hero: dot-grid layered on top of the dark gradient — both as background-image */
+    .hero-section {
+      background-color: #0b1929;
+      background-image:
+        radial-gradient(circle at 1px 1px, rgba(255,255,255,.055) 1px, transparent 0),
+        linear-gradient(150deg, #0b1929 0%, #0d1e30 55%, #0c2640 100%);
+      background-size: 32px 32px, cover;
+    }
+
+    /* CTA gradient */
+    .cta-section {
+      background: linear-gradient(135deg, #00c9a7 0%, #00a0c8 100%);
+    }
+  </style>
+</head>
+<body class="bg-light text-navy antialiased">
+
+<!-- NAV -->
+<nav class="sticky top-0 z-[100] bg-navy/95 backdrop-blur-sm border-b border-white/[.06]">
+  <input type="checkbox" id="nav-toggle" class="sr-only peer" />
+  <div class="flex items-center justify-between px-6 md:px-12 h-[68px]">
+    <a href="#" class="text-white text-xl font-bold tracking-tight no-underline select-none">Pulse<span class="text-accent">Ops</span></a>
+    <ul class="hidden md:flex gap-8 list-none m-0 p-0">
+      <li><a href="#how-it-works" class="text-[#8fa8be] no-underline text-sm font-medium hover:text-white transition-colors duration-200">How It Works</a></li>
+      <li><a href="#questions"    class="text-[#8fa8be] no-underline text-sm font-medium hover:text-white transition-colors duration-200">What You Get</a></li>
+      <li><a href="#difference"   class="text-[#8fa8be] no-underline text-sm font-medium hover:text-white transition-colors duration-200">Why Different</a></li>
+      <li><a href="#pricing"      class="text-[#8fa8be] no-underline text-sm font-medium hover:text-white transition-colors duration-200">Pricing</a></li>
+      <li><a href="blog.html"     class="text-[#8fa8be] no-underline text-sm font-medium hover:text-white transition-colors duration-200">Blog</a></li>
+    </ul>
+    <div class="flex items-center gap-2">
+      <a href="#get-started" class="hidden md:inline-block bg-accent text-navy text-sm font-semibold px-5 py-2.5 rounded-lg no-underline hover:bg-accent2 transition-colors duration-200 whitespace-nowrap">Get Started Free</a>
+      <label for="nav-toggle" class="md:hidden cursor-pointer inline-flex items-center justify-center w-10 h-10 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors duration-200" aria-label="Toggle navigation menu">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </label>
+    </div>
+  </div>
+  <!-- Mobile dropdown menu -->
+  <div class="hidden peer-checked:block md:hidden bg-navy border-t border-white/[.08] px-6 pb-5 pt-2">
+    <ul class="list-none m-0 p-0 flex flex-col">
+      <li><a href="#how-it-works" class="block py-3.5 text-[#8fa8be] no-underline text-[.95rem] font-medium border-b border-white/[.07] hover:text-white transition-colors duration-200">How It Works</a></li>
+      <li><a href="#questions"    class="block py-3.5 text-[#8fa8be] no-underline text-[.95rem] font-medium border-b border-white/[.07] hover:text-white transition-colors duration-200">What You Get</a></li>
+      <li><a href="#difference"   class="block py-3.5 text-[#8fa8be] no-underline text-[.95rem] font-medium border-b border-white/[.07] hover:text-white transition-colors duration-200">Why Different</a></li>
+      <li><a href="#pricing"      class="block py-3.5 text-[#8fa8be] no-underline text-[.95rem] font-medium border-b border-white/[.07] hover:text-white transition-colors duration-200">Pricing</a></li>
+      <li><a href="blog.html"     class="block py-3.5 text-[#8fa8be] no-underline text-[.95rem] font-medium hover:text-white transition-colors duration-200">Blog</a></li>
+    </ul>
+    <a href="#get-started" class="mt-4 block w-full text-center bg-accent text-navy font-bold px-5 py-3 rounded-xl text-[.95rem] no-underline hover:bg-accent2 transition-colors duration-200">Get Started Free</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero-section relative text-white overflow-hidden px-6 md:px-12 pt-16 pb-20 md:pt-24 md:pb-28">
+  <div class="max-w-[1080px] mx-auto">
+    <div class="inline-flex items-center gap-2 border border-accent/25 bg-accent/[.08] text-accent rounded-full px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[.09em] mb-8 select-none">
+      Cash &amp; Margin Intelligence · Built for Trades &amp; Local Services
+    </div>
+    <h1 class="text-[clamp(2.2rem,5.5vw,3.75rem)] font-extrabold leading-[1.12] tracking-tight max-w-[820px] prose-balance mb-6">
+      Your service business runs on<br class="hidden sm:block" /> gut feelings.<br />
+      <span class="text-accent">Start running it on facts.</span>
+    </h1>
+    <p class="text-[clamp(.95rem,1.8vw,1.15rem)] text-[#94afc7] max-w-[560px] leading-relaxed mb-10 prose-balance">
+      PulseOps delivers a plain-language weekly brief that tells you exactly where your money is leaking, which invoices to chase, and what to fix before Friday — built for HVAC, plumbing, landscaping, cleaning, and every other project-based service business.
+    </p>
+    <div class="flex flex-col sm:flex-row gap-4">
+      <a href="#get-started" class="bg-accent text-navy font-bold px-8 py-3.5 rounded-xl text-[.95rem] text-center no-underline hover:bg-accent2 hover:-translate-y-px transition-all duration-150 shadow-[0_0_24px_rgba(0,201,167,.25)]">Start Free — No Card Needed</a>
+      <a href="#how-it-works" class="border border-white/20 text-white/80 px-8 py-3.5 rounded-xl text-[.95rem] text-center no-underline hover:border-white/40 hover:text-white transition-all duration-200">See How It Works</a>
+    </div>
+
+    <!-- Stat pills -->
+    <div class="flex flex-wrap gap-3 mt-8 pt-6 md:mt-16 md:pt-12 border-t border-white/[.08]">
+      <div class="bg-white/[.05] border border-white/[.09] rounded-lg px-4 py-2.5">
+        <div class="text-[1.35rem] font-extrabold text-white leading-none">56%</div>
+        <div class="text-[.72rem] text-[#7a9ab4] mt-0.5 leading-tight">of small businesses<br/>owed unpaid invoices</div>
+      </div>
+      <div class="bg-white/[.05] border border-white/[.09] rounded-lg px-4 py-2.5">
+        <div class="text-[1.35rem] font-extrabold text-white leading-none">$17.5K</div>
+        <div class="text-[.72rem] text-[#7a9ab4] mt-0.5 leading-tight">average outstanding<br/>per business</div>
+      </div>
+      <div class="bg-white/[.05] border border-white/[.09] rounded-lg px-4 py-2.5">
+        <div class="text-[1.35rem] font-extrabold text-white leading-none">75%</div>
+        <div class="text-[.72rem] text-[#7a9ab4] mt-0.5 leading-tight">cite rising costs<br/>as top challenge</div>
+      </div>
+      <div class="bg-white/[.05] border border-white/[.09] rounded-lg px-4 py-2.5">
+        <div class="text-[1.35rem] font-extrabold text-white leading-none">#1</div>
+        <div class="text-[.72rem] text-[#7a9ab4] mt-0.5 leading-tight">challenge: accurately<br/>predicting job margins</div>
+      </div>
+      <div class="hidden sm:flex flex-col justify-end ml-auto text-right gap-1">
+        <div class="text-[.72rem] text-[#4d6883]">Sources: Fed Small Business Credit Survey 2025,</div>
+        <div class="text-[.72rem] text-[#4d6883]">Intuit SMB Surveys 2025–2026</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PAIN STATEMENT -->
+<section class="bg-white border-b border-[#e8eff5] px-6 md:px-12 py-14 md:py-20">
+  <div class="max-w-[1080px] mx-auto">
+    <div class="text-[11px] uppercase tracking-[.09em] font-semibold text-accent mb-4">The Real Problem</div>
+    <h2 class="text-[clamp(1.5rem,3vw,2.2rem)] font-extrabold leading-[1.2] tracking-tight mb-5 max-w-[680px] prose-balance">The numbers are already there. You just can't see them clearly enough to act.</h2>
+    <p class="text-[1.02rem] text-[#4e6278] max-w-[620px] leading-relaxed mb-8 md:mb-14">Your sales are in one system. Your costs are in another. Your schedule is in a spreadsheet. Your invoices are in an email thread. None of it talks to anything else — so you're making pricing, staffing, and cash decisions on gut feel, and the problems pile up quietly until they're painful.</p>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="rounded-2xl border border-[#f0d0d2] bg-[#fff8f8] p-6">
+        <div class="text-2xl mb-3">💸</div>
+        <h3 class="text-[.95rem] font-bold mb-1.5 text-navy">Underpriced jobs</h3>
+        <p class="text-[.85rem] text-[#6a7e8f] leading-snug">Labor runs 11% over estimate. Materials crept up. But the quote hasn't changed in two years.</p>
+      </div>
+      <div class="rounded-2xl border border-[#f0d0d2] bg-[#fff8f8] p-6">
+        <div class="text-2xl mb-3">🧾</div>
+        <h3 class="text-[.95rem] font-bold mb-1.5 text-navy">Invoices no one is chasing</h3>
+        <p class="text-[.85rem] text-[#6a7e8f] leading-snug">47% of small businesses have invoices overdue more than 30 days. The cash was earned — it's just sitting with the customer.</p>
+      </div>
+      <div class="rounded-2xl border border-[#f0d0d2] bg-[#fff8f8] p-6">
+        <div class="text-2xl mb-3">📉</div>
+        <h3 class="text-[.95rem] font-bold mb-1.5 text-navy">Margin leaking by line item</h3>
+        <p class="text-[.85rem] text-[#6a7e8f] leading-snug">One job type is quietly unprofitable. One crew costs 18% more per hour once you count callbacks and drive time. The answer is already in your data — it just isn't visible yet.</p>
+      </div>
+      <div class="rounded-2xl border border-[#f0d0d2] bg-[#fff8f8] p-6">
+        <div class="text-2xl mb-3">⏳</div>
+        <h3 class="text-[.95rem] font-bold mb-1.5 text-navy">Cash flow whiplash</h3>
+        <p class="text-[.85rem] text-[#6a7e8f] leading-snug">28% of firms collect after delivery. So you're financing your customers with your own working capital and only finding out late.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="px-6 md:px-12 py-14 md:py-20" id="how-it-works">
+  <div class="max-w-[1080px] mx-auto">
+    <div class="text-[11px] uppercase tracking-[.09em] font-semibold text-accent mb-4">How It Works</div>
+    <h2 class="text-[clamp(1.5rem,3vw,2.2rem)] font-extrabold leading-[1.2] tracking-tight mb-5 prose-balance">Connected in a day. Actionable by Monday.</h2>
+    <p class="text-[1.02rem] text-[#4e6278] max-w-[560px] leading-relaxed mb-8 md:mb-14">We handle the messy part — pulling your numbers together from wherever they live — so you never have to clean a spreadsheet or build a report again.</p>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="bg-white rounded-2xl border border-[#e4edf5] p-7 flex gap-5 items-start">
+        <div class="shrink-0 w-10 h-10 bg-accent text-navy rounded-xl flex items-center justify-center text-base font-extrabold">1</div>
+        <div>
+          <h3 class="text-[1rem] font-bold mb-1.5">Connect your existing systems</h3>
+          <p class="text-[.88rem] text-[#5a6e80] leading-relaxed">Link your POS, QuickBooks, job management software, or scheduling tool — or just upload a bank export or spreadsheet. We handle inconsistent and incomplete data on our end. No cleanup required from you.</p>
+        </div>
+      </div>
+      <div class="bg-white rounded-2xl border border-[#e4edf5] p-7 flex gap-5 items-start">
+        <div class="shrink-0 w-10 h-10 bg-accent text-navy rounded-xl flex items-center justify-center text-base font-extrabold">2</div>
+        <div>
+          <h3 class="text-[1rem] font-bold mb-1.5">We build one clear picture of your business</h3>
+          <p class="text-[.88rem] text-[#5a6e80] leading-relaxed">PulseOps pulls together everything from all your sources and works out what's actually happening with your jobs, costs, payments, and margins — not just what one system is telling you.</p>
+        </div>
+      </div>
+      <div class="bg-white rounded-2xl border border-[#e4edf5] p-7 flex gap-5 items-start">
+        <div class="shrink-0 w-10 h-10 bg-accent text-navy rounded-xl flex items-center justify-center text-base font-extrabold">3</div>
+        <div>
+          <h3 class="text-[1rem] font-bold mb-1.5">You always know why we're flagging it</h3>
+          <p class="text-[.88rem] text-[#5a6e80] leading-relaxed">Every recommendation tells you what's behind it — which jobs, which costs, how confident we are — so you can make the call yourself with full context, not just take our word for it.</p>
+        </div>
+      </div>
+      <div class="bg-white rounded-2xl border border-[#e4edf5] p-7 flex gap-5 items-start">
+        <div class="shrink-0 w-10 h-10 bg-accent text-navy rounded-xl flex items-center justify-center text-base font-extrabold">4</div>
+        <div>
+          <h3 class="text-[1rem] font-bold mb-1.5">Your Weekly Brief arrives Monday</h3>
+          <p class="text-[.88rem] text-[#5a6e80] leading-relaxed">Six questions answered in plain English. Ranked by financial impact. Specific, actionable, and takes under five minutes. No dashboard to open. No report to run.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Connector logos -->
+    <div class="mt-10 pt-8 border-t border-[#e4edf5] flex flex-wrap items-center gap-3">
+      <span class="text-[.75rem] uppercase tracking-[.09em] font-semibold text-[#8fa8be] mr-2">Works with</span>
+      <span class="bg-white border border-[#dde8f0] rounded-lg px-3.5 py-1.5 text-[.8rem] font-semibold text-[#4e6278]">QuickBooks</span>
+      <span class="bg-white border border-[#dde8f0] rounded-lg px-3.5 py-1.5 text-[.8rem] font-semibold text-[#4e6278]">Jobber</span>
+      <span class="bg-white border border-[#dde8f0] rounded-lg px-3.5 py-1.5 text-[.8rem] font-semibold text-[#4e6278]">ServiceTitan</span>
+      <span class="bg-white border border-[#dde8f0] rounded-lg px-3.5 py-1.5 text-[.8rem] font-semibold text-[#4e6278]">Square / Clover</span>
+      <span class="bg-white border border-[#dde8f0] rounded-lg px-3.5 py-1.5 text-[.8rem] font-semibold text-[#4e6278]">Excel &amp; Google Sheets</span>
+      <span class="bg-white border border-[#dde8f0] rounded-lg px-3.5 py-1.5 text-[.8rem] font-semibold text-[#4e6278]">Bank Exports</span>
+      <span class="bg-white border border-[#dde8f0] rounded-lg px-3.5 py-1.5 text-[.8rem] font-semibold text-[#4e6278]">Housecall Pro</span>
+    </div>
+  </div>
+</section>
+
+<!-- 6 QUESTIONS -->
+<section class="bg-navy px-6 md:px-12 py-14 md:py-20" id="questions">
+  <div class="max-w-[1080px] mx-auto">
+    <div class="text-[11px] uppercase tracking-[.09em] font-semibold text-accent mb-4">The Weekly Brief</div>
+    <h2 class="text-[clamp(1.5rem,3vw,2.2rem)] font-extrabold leading-[1.2] tracking-tight text-white mb-5 prose-balance">Six questions. Answered every Monday.</h2>
+    <p class="text-[1.02rem] text-[#7a9ab4] max-w-[560px] leading-relaxed mb-8 md:mb-14">These are the questions every service business owner is already asking. PulseOps makes sure someone is actually answering them — with data, not instinct.</p>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div class="bg-white/[.05] border border-white/[.08] rounded-2xl p-6 hover:bg-white/[.08] transition-colors duration-200">
+        <div class="w-9 h-9 bg-accent/[.15] rounded-xl flex items-center justify-center text-accent text-lg mb-4">💰</div>
+        <h3 class="text-white text-[.95rem] font-bold mb-2">Which jobs are underpriced?</h3>
+        <p class="text-[.83rem] text-[#6a8faa] leading-snug">See where your prices no longer cover your real costs. We compare what jobs were supposed to cost against what they actually cost — and flag every service type where you're leaving money on the table.</p>
+      </div>
+      <div class="bg-white/[.05] border border-white/[.08] rounded-2xl p-6 hover:bg-white/[.08] transition-colors duration-200">
+        <div class="w-9 h-9 bg-accent/[.15] rounded-xl flex items-center justify-center text-accent text-lg mb-4">🔍</div>
+        <h3 class="text-white text-[.95rem] font-bold mb-2">Where is margin leaking?</h3>
+        <p class="text-[.83rem] text-[#6a8faa] leading-snug">Find out where money is quietly walking out the door — callbacks, overtime, materials that came in over budget — ranked by how much each one is actually costing you.</p>
+      </div>
+      <div class="bg-white/[.05] border border-white/[.08] rounded-2xl p-6 hover:bg-white/[.08] transition-colors duration-200">
+        <div class="w-9 h-9 bg-accent/[.15] rounded-xl flex items-center justify-center text-accent text-lg mb-4">🧾</div>
+        <h3 class="text-white text-[.95rem] font-bold mb-2">Which invoices to chase today?</h3>
+        <p class="text-[.83rem] text-[#6a8faa] leading-snug">A short list of who owes you money, how long they've owed it, and exactly what to do first — so the right calls get made before the week is over.</p>
+      </div>
+      <div class="bg-white/[.05] border border-white/[.08] rounded-2xl p-6 hover:bg-white/[.08] transition-colors duration-200">
+        <div class="w-9 h-9 bg-accent/[.15] rounded-xl flex items-center justify-center text-accent text-lg mb-4">🛡️</div>
+        <h3 class="text-white text-[.95rem] font-bold mb-2">Which customers need deposits?</h3>
+        <p class="text-[.83rem] text-[#6a8faa] leading-snug">Flag slow-paying customers and large upcoming jobs where requiring a deposit upfront would protect your cash flow.</p>
+      </div>
+      <div class="bg-white/[.05] border border-white/[.08] rounded-2xl p-6 hover:bg-white/[.08] transition-colors duration-200">
+        <div class="w-9 h-9 bg-accent/[.15] rounded-xl flex items-center justify-center text-accent text-lg mb-4">📆</div>
+        <h3 class="text-white text-[.95rem] font-bold mb-2">What bills are timing-sensitive?</h3>
+        <p class="text-[.83rem] text-[#6a8faa] leading-snug">Surface upcoming purchases and vendor payments that should be timed against your incoming cash — so you're never caught short.</p>
+      </div>
+      <div class="bg-white/[.05] border border-white/[.08] rounded-2xl p-6 hover:bg-white/[.08] transition-colors duration-200">
+        <div class="w-9 h-9 bg-accent/[.15] rounded-xl flex items-center justify-center text-accent text-lg mb-4">🚦</div>
+        <h3 class="text-white text-[.95rem] font-bold mb-2">What deserves your attention most?</h3>
+        <p class="text-[.83rem] text-[#6a8faa] leading-snug">One ranked list of the highest-impact actions for the week, so you know exactly where to start when you sit down Monday morning.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MOCKUP BRIEF -->
+<section class="bg-white px-6 md:px-12 py-14 md:py-20">
+  <div class="max-w-[1080px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-14 items-center">
+    <div>
+      <div class="text-[11px] uppercase tracking-[.09em] font-semibold text-accent mb-4">What It Looks Like</div>
+      <h2 class="text-[clamp(1.5rem,3vw,2.2rem)] font-extrabold leading-[1.2] tracking-tight mb-5 prose-balance">Advice, not a report.</h2>
+      <p class="text-[1.02rem] text-[#4e6278] leading-relaxed mb-6">Every item in your brief tells you what changed, what it means in dollars, and what to do. You'll know exactly why something is being flagged before you decide whether to act on it.</p>
+      <ul class="list-none flex flex-col gap-3">
+        <li class="flex gap-3 items-start text-[.9rem] text-[#334455]">
+          <span class="shrink-0 mt-0.5 w-5 h-5 bg-accent text-navy text-[.7rem] font-extrabold rounded-full flex items-center justify-center">✓</span>
+          Highlights only what changed or needs action — no noise
+        </li>
+        <li class="flex gap-3 items-start text-[.9rem] text-[#334455]">
+          <span class="shrink-0 mt-0.5 w-5 h-5 bg-accent text-navy text-[.7rem] font-extrabold rounded-full flex items-center justify-center">✓</span>
+          Every recommendation shows its source data and confidence level
+        </li>
+        <li class="flex gap-3 items-start text-[.9rem] text-[#334455]">
+          <span class="shrink-0 mt-0.5 w-5 h-5 bg-accent text-navy text-[.7rem] font-extrabold rounded-full flex items-center justify-center">✓</span>
+          Issues ranked by dollar impact — so you start with what matters most
+        </li>
+        <li class="flex gap-3 items-start text-[.9rem] text-[#334455]">
+          <span class="shrink-0 mt-0.5 w-5 h-5 bg-accent text-navy text-[.7rem] font-extrabold rounded-full flex items-center justify-center">✓</span>
+          Delivered to your email — no dashboard to log into
+        </li>
+        <li class="flex gap-3 items-start text-[.9rem] text-[#334455]">
+          <span class="shrink-0 mt-0.5 w-5 h-5 bg-accent text-navy text-[.7rem] font-extrabold rounded-full flex items-center justify-center">✓</span>
+          Under five minutes to read and act on
+        </li>
+      </ul>
+    </div>
+
+    <!-- Brief card mockup -->
+    <div class="bg-[#0e1e30] rounded-2xl p-5 md:p-7 shadow-[0_8px_40px_rgba(0,0,0,.22)] border border-white/[.06]">
+      <div class="flex justify-between items-center mb-6 pb-4 border-b border-white/[.08]">
+        <div>
+          <span class="block text-[.75rem] font-semibold text-accent uppercase tracking-[.08em]">⚡ Weekly Cash &amp; Margin Brief</span>
+          <span class="block text-[.72rem] text-[#7a9ab4] mt-0.5">Week of Apr 7, 2025 · Precision Plumbing Co.</span>
+        </div>
+        <span class="bg-white/[.06] text-[#7a9ab4] text-[.7rem] font-semibold px-2.5 py-1 rounded-lg">4 items</span>
+      </div>
+
+      <div class="rounded-xl bg-white/[.04] border-l-[3px] border-alert p-4 mb-3">
+        <div class="flex justify-between items-start mb-1.5">
+          <span class="text-[.7rem] uppercase tracking-[.07em] text-[#8fa8be] font-semibold">🚨 Pricing Gap · High Impact</span>
+          <span class="text-[.68rem] bg-alert/20 text-[#ff8084] px-2 py-0.5 rounded font-semibold">$2,400/mo</span>
+        </div>
+        <div class="text-[.87rem] text-white leading-snug"><strong class="font-semibold">Water heater installs are underpriced by ~$140 per job.</strong> Labor averaged 3.4 hrs vs. 2.5 hr estimate across 17 jobs this quarter. Materials rose 6% since last price update.</div>
+        <div class="text-[.72rem] text-[#5a7a96] mt-2">Based on 17 jobs · Confidence: High</div>
+      </div>
+
+      <div class="rounded-xl bg-white/[.04] border-l-[3px] border-warn p-4 mb-3">
+        <div class="flex justify-between items-start mb-1.5">
+          <span class="text-[.7rem] uppercase tracking-[.07em] text-[#8fa8be] font-semibold">🧾 Receivables · Chase Today</span>
+          <span class="text-[.68rem] bg-warn/20 text-warn px-2 py-0.5 rounded font-semibold">$8,750 owed</span>
+        </div>
+        <div class="text-[.87rem] text-white leading-snug"><strong class="font-semibold">3 invoices are 32–45 days overdue.</strong> Riverdale Commercial (52 days, $4,200) has the worst pattern. Recommend requiring a 30% deposit on all future commercial work.</div>
+        <div class="text-[.72rem] text-[#5a7a96] mt-2">Matched against your invoices and payment history · Confidence: High</div>
+      </div>
+
+      <div class="rounded-xl bg-white/[.04] border-l-[3px] border-accent p-4 mb-3">
+        <div class="flex justify-between items-start mb-1.5">
+          <span class="text-[.7rem] uppercase tracking-[.07em] text-[#8fa8be] font-semibold">✅ Margin Win · Keep Going</span>
+        </div>
+        <div class="text-[.87rem] text-white leading-snug"><strong class="font-semibold text-accent">Drain cleaning margin improved 9 pts this month.</strong> Technician route density is up — you're fitting 1.4 more jobs per day without overtime.</div>
+        <div class="text-[.72rem] text-[#5a7a96] mt-2">Scheduling + payroll data · Confidence: Medium</div>
+      </div>
+
+      <div class="rounded-xl bg-white/[.04] border-l-[3px] border-warn p-4">
+        <div class="flex justify-between items-start mb-1.5">
+          <span class="text-[.7rem] uppercase tracking-[.07em] text-[#8fa8be] font-semibold">📆 Cash Timing · Act This Week</span>
+        </div>
+        <div class="text-[.87rem] text-white leading-snug"><strong class="font-semibold">Supplier invoice of $6,100 due Friday.</strong> Current receivable collections projected to leave a $1,400 shortfall unless the Riverdale payment clears by Thursday.</div>
+        <div class="text-[.72rem] text-[#5a7a96] mt-2">Matched against your outstanding invoices and bank balance · Confidence: Medium</div>
+      </div>
+
+      <div class="text-center text-[.72rem] text-[#4d6478] mt-5 pt-4 border-t border-white/[.06]">Next brief Monday 7:00 AM · 4 items this week</div>
+    </div>
+  </div>
+</section>
+
+<!-- WHY DIFFERENT -->
+<section class="bg-light border-t border-[#e4edf5] px-6 md:px-12 py-14 md:py-20" id="difference">
+  <div class="max-w-[1080px] mx-auto">
+    <div class="text-[11px] uppercase tracking-[.09em] font-semibold text-accent mb-4">What Sets Us Apart</div>
+    <h2 class="text-[clamp(1.5rem,3vw,2.2rem)] font-extrabold leading-[1.2] tracking-tight mb-4 prose-balance">Other tools show you data. We tell you what to do about it.</h2>
+    <p class="text-[1.02rem] text-[#4e6278] max-w-[600px] leading-relaxed mb-8 md:mb-14">Most software reads one clean system and hands you a chart. PulseOps reconciles everything you have — messy as it is — and delivers a specific decision. That's a fundamentally different product, and an advantage that grows the longer you use it.</p>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="bg-white rounded-2xl border border-[#e4edf5] p-7">
+        <div class="w-10 h-10 bg-navy rounded-xl flex items-center justify-center text-accent text-lg mb-5">🔀</div>
+        <h3 class="font-bold text-[1rem] mb-3">One clear picture, no matter the mess</h3>
+        <p class="text-[.87rem] text-[#5a6e80] leading-relaxed">Your bank, your job system, your schedule, and your spreadsheets rarely agree with each other. PulseOps pulls them all together and tells you what's actually happening in your business — even when your numbers don't line up.</p>
+      </div>
+      <div class="bg-white rounded-2xl border border-[#e4edf5] p-7">
+        <div class="w-10 h-10 bg-navy rounded-xl flex items-center justify-center text-accent text-lg mb-5">🔎</div>
+        <h3 class="font-bold text-[1rem] mb-3">You always know why we flagged it</h3>
+        <p class="text-[.87rem] text-[#5a6e80] leading-relaxed">We don't just say “raise your price 8%.” We show you the 17 jobs behind it, how much labor ran over estimate, how much materials went up, and how confident we are. You make the call — we give you the full picture first.</p>
+      </div>
+      <div class="bg-white rounded-2xl border border-[#e4edf5] p-7">
+        <div class="w-10 h-10 bg-navy rounded-xl flex items-center justify-center text-accent text-lg mb-5">🧠</div>
+        <h3 class="font-bold text-[1rem] mb-3">The system learns your business</h3>
+        <p class="text-[.87rem] text-[#5a6e80] leading-relaxed">Every correction you make — changing how a cost is categorized, updating how a job type is named, rejecting a suggestion that doesn't fit — gets remembered. Over time, PulseOps doesn't just know your industry. It knows how your specific business works.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- VERTICALS / ICP -->
+<section class="bg-white border-t border-[#e4edf5] px-6 md:px-12 py-14 md:py-20" id="verticals">
+  <div class="max-w-[1080px] mx-auto">
+    <div class="text-[11px] uppercase tracking-[.09em] font-semibold text-accent mb-4">Built For</div>
+    <h2 class="text-[clamp(1.5rem,3vw,2.2rem)] font-extrabold leading-[1.2] tracking-tight mb-5 prose-balance">Project-based local service businesses. 5–50 employees.</h2>
+    <p class="text-[1.02rem] text-[#4e6278] max-w-[600px] leading-relaxed mb-8 md:mb-12">These businesses deal with the same frustrations: numbers split across too many tools, decisions that need to happen fast, customers who pay late, and profitable improvements sitting unnoticed in data they already have.</p>
+    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+      <div class="bg-light rounded-xl p-4 text-center border border-[#e4edf5] hover:-translate-y-0.5 transition-transform duration-200"><div class="text-2xl mb-2">🔧</div><div class="text-[.83rem] font-semibold text-navy">HVAC</div></div>
+      <div class="bg-light rounded-xl p-4 text-center border border-[#e4edf5] hover:-translate-y-0.5 transition-transform duration-200"><div class="text-2xl mb-2">🚿</div><div class="text-[.83rem] font-semibold text-navy">Plumbing</div></div>
+      <div class="bg-light rounded-xl p-4 text-center border border-[#e4edf5] hover:-translate-y-0.5 transition-transform duration-200"><div class="text-2xl mb-2">⚡</div><div class="text-[.83rem] font-semibold text-navy">Electrical</div></div>
+      <div class="bg-light rounded-xl p-4 text-center border border-[#e4edf5] hover:-translate-y-0.5 transition-transform duration-200"><div class="text-2xl mb-2">🌿</div><div class="text-[.83rem] font-semibold text-navy">Landscaping</div></div>
+      <div class="bg-light rounded-xl p-4 text-center border border-[#e4edf5] hover:-translate-y-0.5 transition-transform duration-200"><div class="text-2xl mb-2">🏊</div><div class="text-[.83rem] font-semibold text-navy">Pool Service</div></div>
+      <div class="bg-light rounded-xl p-4 text-center border border-[#e4edf5] hover:-translate-y-0.5 transition-transform duration-200"><div class="text-2xl mb-2">🏠</div><div class="text-[.83rem] font-semibold text-navy">Cleaning</div></div>
+      <div class="bg-light rounded-xl p-4 text-center border border-[#e4edf5] hover:-translate-y-0.5 transition-transform duration-200"><div class="text-2xl mb-2">🐛</div><div class="text-[.83rem] font-semibold text-navy">Pest Control</div></div>
+      <div class="bg-light rounded-xl p-4 text-center border border-[#e4edf5] hover:-translate-y-0.5 transition-transform duration-200"><div class="text-2xl mb-2">🚪</div><div class="text-[.83rem] font-semibold text-navy">Garage Door</div></div>
+      <div class="bg-light rounded-xl p-4 text-center border border-[#e4edf5] hover:-translate-y-0.5 transition-transform duration-200"><div class="text-2xl mb-2">🏗️</div><div class="text-[.83rem] font-semibold text-navy">Light Construction</div></div>
+      <div class="bg-light rounded-xl p-4 text-center border border-[#e4edf5] hover:-translate-y-0.5 transition-transform duration-200"><div class="text-2xl mb-2">🔩</div><div class="text-[.83rem] font-semibold text-navy">Appliance Repair</div></div>
+    </div>
+    <p class="text-[.83rem] text-[#7a9ab4] mt-6">Restaurants, med spas, salons, and retail coming soon as additional Decision Packs.</p>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="bg-light border-t border-[#e4edf5] px-6 md:px-12 py-14 md:py-20" id="testimonials">
+  <div class="max-w-[1080px] mx-auto">
+    <div class="text-[11px] uppercase tracking-[.09em] font-semibold text-accent mb-4">From the Field</div>
+    <h2 class="text-[clamp(1.5rem,3vw,2.2rem)] font-extrabold leading-[1.2] tracking-tight mb-8 md:mb-14 prose-balance">Trades owners who stopped flying blind.</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+      <div class="bg-white rounded-2xl border border-[#e4edf5] p-7 flex flex-col">
+        <div class="text-[#f5a623] text-sm mb-4 tracking-wider">★★★★★</div>
+        <p class="text-[.9rem] text-[#334455] leading-relaxed flex-1">"I've been doing HVAC for 16 years. I knew some calls were more profitable than others, but I couldn't prove it. PulseOps showed me that maintenance calls cost us more than they bill when you count drive time and callbacks. We restructured the plan tier pricing and margin recovered in six weeks."</p>
+        <div class="flex items-center gap-3 mt-6 pt-5 border-t border-[#e8eff5]">
+          <div class="w-10 h-10 rounded-full bg-navy text-accent flex items-center justify-center font-extrabold text-sm shrink-0">M</div>
+          <div>
+            <div class="text-[.88rem] font-bold">Marcus R.</div>
+            <div class="text-[.78rem] text-muted">HVAC · 14 technicians</div>
+          </div>
+        </div>
+      </div>
+      <div class="bg-white rounded-2xl border border-[#e4edf5] p-7 flex flex-col">
+        <div class="text-[#f5a623] text-sm mb-4 tracking-wider">★★★★★</div>
+        <p class="text-[.9rem] text-[#334455] leading-relaxed flex-1">"We had $22,000 sitting in overdue invoices and I didn't really know which ones to prioritize. The first brief gave me a list of three to call that morning. We collected $14,000 of it that week. I don't know how I ran this business without it."</p>
+        <div class="flex items-center gap-3 mt-6 pt-5 border-t border-[#e8eff5]">
+          <div class="w-10 h-10 rounded-full bg-navy text-accent flex items-center justify-center font-extrabold text-sm shrink-0">D</div>
+          <div>
+            <div class="text-[.88rem] font-bold">Diana V.</div>
+            <div class="text-[.78rem] text-muted">Plumbing &amp; Drain · 9 employees</div>
+          </div>
+        </div>
+      </div>
+      <div class="bg-white rounded-2xl border border-[#e4edf5] p-7 flex flex-col">
+        <div class="text-[#f5a623] text-sm mb-4 tracking-wider">★★★★★</div>
+        <p class="text-[.9rem] text-[#334455] leading-relaxed flex-1">"I run a landscaping company with two crews. The brief showed me that one crew's jobs consistently ran over on labor while the other's didn't — and it traced it back to which crew lead was running estimates. Fixed the estimating process, not the crew. Huge difference."</p>
+        <div class="flex items-center gap-3 mt-6 pt-5 border-t border-[#e8eff5]">
+          <div class="w-10 h-10 rounded-full bg-navy text-accent flex items-center justify-center font-extrabold text-sm shrink-0">T</div>
+          <div>
+            <div class="text-[.88rem] font-bold">Tariq B.</div>
+            <div class="text-[.78rem] text-muted">Landscaping · 2 crews, 11 employees</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mt-8 text-center">
+      <a href="blog.html" class="text-accent text-[.9rem] font-semibold no-underline hover:underline">Read case studies and practical guides on our blog →</a>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="bg-white border-t border-[#e4edf5] px-6 md:px-12 py-14 md:py-20" id="pricing">
+  <div class="max-w-[1080px] mx-auto">
+    <div class="text-[11px] uppercase tracking-[.09em] font-semibold text-accent mb-4">Pricing</div>
+    <h2 class="text-[clamp(1.5rem,3vw,2.2rem)] font-extrabold leading-[1.2] tracking-tight mb-4 prose-balance">Flat-rate. No analysts. No surprises.</h2>
+    <p class="text-[1.02rem] text-[#4e6278] max-w-[540px] leading-relaxed mb-8 md:mb-14">Everything included. No per-seat fees, no data limits, no implementation costs hidden in a services contract.</p>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-5 items-start">
+
+      <!-- Starter -->
+      <div class="bg-light rounded-2xl border border-[#dde8f0] p-7">
+        <div class="text-[.75rem] font-bold uppercase tracking-[.08em] text-muted mb-3">Cash &amp; Margin Brief</div>
+        <div class="text-[2.4rem] font-extrabold leading-none tracking-tight">$149<span class="text-base font-normal text-muted">/mo</span></div>
+        <p class="text-[.85rem] text-[#5a6e80] mt-3 mb-6 leading-relaxed">For owner-operated service businesses ready to stop guessing on cash and margin.</p>
+        <ul class="list-none flex flex-col gap-2.5 mb-8">
+          <li class="text-[.86rem] flex gap-2.5 items-start text-[#334455]"><span class="text-accent font-bold shrink-0">✓</span>1 business · up to 4 data sources</li>
+          <li class="text-[.86rem] flex gap-2.5 items-start text-[#334455]"><span class="text-accent font-bold shrink-0">✓</span>Weekly Cash &amp; Margin Brief</li>
+          <li class="text-[.86rem] flex gap-2.5 items-start text-[#334455]"><span class="text-accent font-bold shrink-0">✓</span>Job profitability analysis</li>
+          <li class="text-[.86rem] flex gap-2.5 items-start text-[#334455]"><span class="text-accent font-bold shrink-0">✓</span>Invoice &amp; receivables tracking</li>
+          <li class="text-[.86rem] flex gap-2.5 items-start text-[#334455]"><span class="text-accent font-bold shrink-0">✓</span>Industry benchmarks</li>
+          <li class="text-[.86rem] flex gap-2.5 items-start text-[#334455]"><span class="text-accent font-bold shrink-0">✓</span>Email support</li>
+        </ul>
+        <a href="#get-started" class="block w-full text-center border border-[#c8d8e6] text-navy font-semibold px-6 py-3 rounded-xl text-[.9rem] no-underline hover:border-accent hover:text-accent transition-colors duration-200">Start Free Trial</a>
+      </div>
+
+      <!-- Growth (featured) -->
+      <div class="bg-navy rounded-2xl p-7 relative shadow-[0_12px_48px_rgba(0,0,0,.22)]">
+        <span class="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-accent text-navy text-[.7rem] font-extrabold uppercase tracking-[.07em] px-4 py-1 rounded-full whitespace-nowrap">Most Popular</span>
+        <div class="text-[.75rem] font-bold uppercase tracking-[.08em] text-accent mb-3">Full Operations Pack</div>
+        <div class="text-[2.4rem] font-extrabold leading-none tracking-tight text-white">$299<span class="text-base font-normal text-muted">/mo</span></div>
+        <p class="text-[.85rem] text-[#8fa8be] mt-3 mb-6 leading-relaxed">For growing service businesses that need full visibility across jobs, cash, and team performance.</p>
+        <ul class="list-none flex flex-col gap-2.5 mb-8">
+          <li class="text-[.86rem] text-white flex gap-2.5 items-start"><span class="text-accent font-bold shrink-0">✓</span>Up to 3 locations · unlimited sources</li>
+          <li class="text-[.86rem] text-white flex gap-2.5 items-start"><span class="text-accent font-bold shrink-0">✓</span>Daily snapshots + Weekly Brief</li>
+          <li class="text-[.86rem] text-white flex gap-2.5 items-start"><span class="text-accent font-bold shrink-0">✓</span>Crew &amp; job profitability tracking</li>
+          <li class="text-[.86rem] text-white flex gap-2.5 items-start"><span class="text-accent font-bold shrink-0">✓</span>Staffing demand estimates</li>
+          <li class="text-[.86rem] text-white flex gap-2.5 items-start"><span class="text-accent font-bold shrink-0">✓</span>Customer deposit recommendations</li>
+          <li class="text-[.86rem] text-white flex gap-2.5 items-start"><span class="text-accent font-bold shrink-0">✓</span>Exception-based SMS alerts</li>
+          <li class="text-[.86rem] text-white flex gap-2.5 items-start"><span class="text-accent font-bold shrink-0">✓</span>Priority support</li>
+        </ul>
+        <a href="#get-started" class="block w-full text-center bg-accent text-navy font-bold px-6 py-3 rounded-xl text-[.9rem] no-underline hover:bg-accent2 transition-colors duration-200">Start Free Trial</a>
+      </div>
+
+      <!-- Multi-site -->
+      <div class="bg-light rounded-2xl border border-[#dde8f0] p-7">
+        <div class="text-[.75rem] font-bold uppercase tracking-[.08em] text-muted mb-3">Multi-Location / Franchise</div>
+        <div class="text-[2.4rem] font-extrabold leading-none tracking-tight">Custom</div>
+        <p class="text-[.85rem] text-[#5a6e80] mt-3 mb-6 leading-relaxed">For groups, franchises, and operators running 4+ locations who need consolidated intelligence and cross-site benchmarking.</p>
+        <ul class="list-none flex flex-col gap-2.5 mb-8">
+          <li class="text-[.86rem] flex gap-2.5 items-start text-[#334455]"><span class="text-accent font-bold shrink-0">✓</span>Unlimited locations</li>
+          <li class="text-[.86rem] flex gap-2.5 items-start text-[#334455]"><span class="text-accent font-bold shrink-0">✓</span>Cross-location benchmarking</li>
+          <li class="text-[.86rem] flex gap-2.5 items-start text-[#334455]"><span class="text-accent font-bold shrink-0">✓</span>Custom connectors for legacy systems</li>
+          <li class="text-[.86rem] flex gap-2.5 items-start text-[#334455]"><span class="text-accent font-bold shrink-0">✓</span>Dedicated onboarding specialist</li>
+          <li class="text-[.86rem] flex gap-2.5 items-start text-[#334455]"><span class="text-accent font-bold shrink-0">✓</span>White-label available</li>
+          <li class="text-[.86rem] flex gap-2.5 items-start text-[#334455]"><span class="text-accent font-bold shrink-0">✓</span>SLA-backed support</li>
+        </ul>
+        <a href="mailto:growth@pulseops.io" class="block w-full text-center border border-[#c8d8e6] text-navy font-semibold px-6 py-3 rounded-xl text-[.9rem] no-underline hover:border-accent hover:text-accent transition-colors duration-200">Contact Sales</a>
+      </div>
+    </div>
+    <p class="text-[.85rem] text-center text-[#7a9ab4] mt-10">Have questions? <a href="help.html" class="text-accent no-underline hover:underline">Check the Help Center</a> or <a href="contact.html" class="text-accent no-underline hover:underline">talk to us directly</a>.</p>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section px-6 md:px-12 py-16 md:py-24 text-center" id="get-started">
+  <div class="max-w-[640px] mx-auto">
+    <h2 class="text-[clamp(1.8rem,4vw,2.6rem)] font-extrabold leading-[1.15] tracking-tight text-navy mb-5 prose-balance">Start knowing your numbers this week.</h2>
+    <p class="text-[1.05rem] text-navy/75 mb-9 leading-relaxed">Connect your first data source in under 10 minutes. Your first Cash &amp; Margin Brief arrives Monday. No credit card required.</p>
+    <a href="#" class="inline-block bg-navy text-white font-bold px-9 py-4 rounded-xl text-[.95rem] no-underline hover:bg-navy2 transition-colors duration-200 shadow-[0_4px_20px_rgba(13,27,42,.3)]">Start Free — No Card Needed</a>
+    <p class="text-[.8rem] text-navy/55 mt-4">30-day free trial · Cancel anytime · No implementation fees</p>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="bg-navy text-[#7a95ad] pt-10 md:pt-14 pb-7 px-6 md:px-12">
+  <div class="max-w-[1080px] mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-[2fr_1fr_1fr_1fr] gap-10">
+    <div>
+      <a href="#" class="text-white text-[1.2rem] font-bold tracking-tight no-underline select-none">Pulse<span class="text-accent">Ops</span></a>
+      <p class="text-[.85rem] mt-3 max-w-[250px] leading-[1.65]">Weekly cash and margin clarity for local service businesses — no analysts, no dashboards, no guesswork.</p>
+    </div>
+    <div>
+      <h4 class="text-white text-[.82rem] font-semibold uppercase tracking-[.08em] mb-4">Product</h4>
+      <ul class="list-none flex flex-col gap-2.5">
+        <li><a href="#questions"    class="text-[#7a95ad] no-underline text-[.85rem] hover:text-accent transition-colors duration-200">What You Get</a></li>
+        <li><a href="#how-it-works" class="text-[#7a95ad] no-underline text-[.85rem] hover:text-accent transition-colors duration-200">How It Works</a></li>
+        <li><a href="#pricing"      class="text-[#7a95ad] no-underline text-[.85rem] hover:text-accent transition-colors duration-200">Pricing</a></li>
+        <li><a href="#difference"   class="text-[#7a95ad] no-underline text-[.85rem] hover:text-accent transition-colors duration-200">Why Different</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4 class="text-white text-[.82rem] font-semibold uppercase tracking-[.08em] mb-4">Company</h4>
+      <ul class="list-none flex flex-col gap-2.5">
+        <li><a href="about.html"   class="text-[#7a95ad] no-underline text-[.85rem] hover:text-accent transition-colors duration-200">About</a></li>
+        <li><a href="blog.html"    class="text-[#7a95ad] no-underline text-[.85rem] hover:text-accent transition-colors duration-200">Blog</a></li>
+        <li><a href="careers.html" class="text-[#7a95ad] no-underline text-[.85rem] hover:text-accent transition-colors duration-200">Careers</a></li>
+        <li><a href="press.html"   class="text-[#7a95ad] no-underline text-[.85rem] hover:text-accent transition-colors duration-200">Press</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4 class="text-white text-[.82rem] font-semibold uppercase tracking-[.08em] mb-4">Support</h4>
+      <ul class="list-none flex flex-col gap-2.5">
+        <li><a href="help.html"    class="text-[#7a95ad] no-underline text-[.85rem] hover:text-accent transition-colors duration-200">Help Center</a></li>
+        <li><a href="contact.html" class="text-[#7a95ad] no-underline text-[.85rem] hover:text-accent transition-colors duration-200">Contact</a></li>
+        <li><a href="privacy.html" class="text-[#7a95ad] no-underline text-[.85rem] hover:text-accent transition-colors duration-200">Privacy Policy</a></li>
+        <li><a href="terms.html"   class="text-[#7a95ad] no-underline text-[.85rem] hover:text-accent transition-colors duration-200">Terms of Service</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="max-w-[1080px] mx-auto mt-10 pt-5 border-t border-white/[.07] flex justify-between items-center text-[.78rem] text-[#3d576b] flex-wrap gap-2">
+    <span>© 2025 PulseOps. All rights reserved.</span>
+    <span>Built for local service businesses everywhere.</span>
+  </div>
+</footer>
+
+</body>
+</html>

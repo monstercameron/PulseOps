@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en" style="height:100%;">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Explorer — PulseOps</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="dist/output.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; font-family: 'Inter', sans-serif; background: #f4f6f9; color: #142235; }
+    body { display: flex; flex-direction: column; }
+
+    .app-shell { display: flex; flex: 1; min-height: 0; overflow: hidden; height: 100vh; }
+    .sidebar   { width: 220px; flex-shrink: 0; background: #0d1b2a; border-right: 1px solid rgba(255,255,255,.055); display: flex; flex-direction: column; overflow-x: hidden; overflow-y: auto; transition: width .22s ease; }
+    .sidebar.collapsed { width: 48px; }
+    .sidebar-toggle { display: flex; align-items: center; justify-content: center; width: 100%; height: 32px; border: none; background: transparent; color: rgba(255,255,255,.25); cursor: pointer; border-top: 1px solid rgba(255,255,255,.055); transition: color .15s; flex-shrink: 0; padding: 0; }
+    .sidebar-toggle:hover { color: rgba(255,255,255,.6); background: rgba(255,255,255,.04); }
+    .toggle-chevron { transition: transform .22s ease; }
+    .sidebar.collapsed .toggle-chevron { transform: rotate(180deg); }
+    .sidebar.collapsed .nav-link { justify-content: center; padding: 9px 0; font-size: 0; gap: 0; }
+    .sidebar.collapsed .nav-link svg { flex-shrink: 0; }
+    .sidebar.collapsed .nav-link > span { display: none; }
+    .sidebar.collapsed .sb-logo { padding: 20px 0 14px; justify-content: center; }
+    .sidebar.collapsed .sb-logo > :not(:first-child) { display: none; }
+    .sidebar.collapsed .ws-selector { margin: 4px 6px 14px; padding: 5px 0; justify-content: center; gap: 0; border-color: transparent; }
+    .sidebar.collapsed .ws-name, .sidebar.collapsed .ws-chevron { display: none !important; }
+    .sidebar.collapsed .user-row { justify-content: center; padding-left: 0; padding-right: 0; gap: 0; }
+    .sidebar.collapsed .user-row > :not(:first-child) { display: none; }
+    .main-area { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; background: #f4f6f9; }
+
+    .nav-link        { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px; font-size: 13.5px; font-weight: 500; color: rgba(255,255,255,.5); text-decoration: none; transition: background .1s, color .1s; white-space: nowrap; }
+    .nav-link:hover  { color: rgba(255,255,255,.85); background: rgba(255,255,255,.05); }
+    .nav-link.active { background: rgba(0,201,167,.13); color: #00c9a7; }
+
+    .card { background: #fff; border-radius: 12px; border: 1px solid rgba(20,34,53,.07); box-shadow: 0 1px 4px rgba(20,34,53,.06); }
+
+    /* Filter bar */
+    .filter-bar { position: sticky; top: 0; z-index: 10; background: rgba(244,246,249,.92); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(20,34,53,.07); padding: 10px 24px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .filter-pill { appearance: none; font-family: inherit; padding: 5px 12px; border-radius: 20px; border: 1px solid rgba(20,34,53,.1); background: #fff; font-size: 12.5px; font-weight: 500; color: rgba(20,34,53,.6); cursor: pointer; transition: all .12s; white-space: nowrap; }
+    .filter-pill:hover  { border-color: rgba(0,201,167,.4); color: #00a98e; }
+    .filter-pill.active { background: rgba(0,201,167,.1); border-color: rgba(0,201,167,.5); color: #00a98e; font-weight: 600; }
+
+    /* Data table */
+    .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .data-table thead tr { background: rgba(20,34,53,.02); border-bottom: 1px solid rgba(20,34,53,.07); position: sticky; top: 0; }
+    .data-table th { text-align: left; padding: 10px 16px; font-size: 11px; font-weight: 600; color: #8898aa; text-transform: uppercase; letter-spacing: .07em; white-space: nowrap; cursor: pointer; user-select: none; }
+    .data-table th:hover { color: #142235; }
+    .data-table td { padding: 11px 16px; border-bottom: 1px solid rgba(20,34,53,.04); vertical-align: middle; }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tr:hover td { background: rgba(20,34,53,.015); }
+
+    /* Confidence bar */
+    .conf-bar { display: flex; align-items: center; gap: 8px; }
+    .conf-track { flex: 1; max-width: 60px; height: 5px; border-radius: 3px; background: rgba(20,34,53,.08); overflow: hidden; }
+    .conf-fill  { height: 100%; border-radius: 3px; }
+
+    /* Tag chip */
+    .chip { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+
+    /* Sidebar panel */
+    .detail-panel { width: 320px; flex-shrink: 0; border-left: 1px solid rgba(20,34,53,.07); background: #fff; overflow-y: auto; display: flex; flex-direction: column; }
+
+    /* ── Mobile bottom nav ─────────────────────────────────── */
+    .mob-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; height: 56px; background: #0d1b2a; border-top: 1px solid rgba(255,255,255,.09); z-index: 200; }
+    .mob-nav-link { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-decoration: none; color: rgba(255,255,255,.38); font-size: 9.5px; font-weight: 600; letter-spacing: .01em; padding: 7px 0 10px; transition: color .1s; }
+    .mob-nav-link.active, .mob-nav-link:hover { color: #00c9a7; }
+
+    @media (max-width: 1100px) { .detail-panel { display: none; } }
+    @media (max-width: 900px) {
+      .mob-nav { display: flex; }
+      .app-shell { height: calc(100vh - 56px); }
+      .sidebar { display: none; }
+    }
+    @media (max-width: 600px) {
+      .filter-bar { padding: 8px 12px; overflow-x: auto; flex-wrap: nowrap; }
+      .data-table { min-width: 540px; }
+    }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- ══ SIDEBAR ══════════════════════════════════════════════════════════════ -->
+  <aside class="sidebar">
+    <div class="sb-logo" style="display:flex;align-items:center;gap:10px;padding:20px 16px 14px;">
+      <span style="width:28px;height:28px;background:#00c9a7;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:#0d1b2a;flex-shrink:0;">P</span>
+      <span style="font-size:15px;font-weight:700;color:#fff;letter-spacing:-.02em;">Pulse<span style="color:#00c9a7;">Ops</span></span>
+      <span style="margin-left:auto;width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 2px rgba(34,197,94,.22);flex-shrink:0;"></span>
+    </div>
+    <div class="ws-selector" style="margin:0 12px 14px;padding:7px 10px;border:1px solid rgba(255,255,255,.07);border-radius:8px;display:flex;align-items:center;gap:8px;cursor:pointer;" onmouseover="this.style.background='rgba(255,255,255,.06)'" onmouseout="this.style.background=''">
+      <span style="width:22px;height:22px;background:#1d4166;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0;">B</span>
+      <span class="ws-name" style="font-size:12.5px;font-weight:600;color:rgba(255,255,255,.85);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Broward HVAC Co.</span>
+      <svg class="ws-chevron" viewBox="0 0 10 6" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="10" height="6" style="display:block;flex-shrink:0;"><path d="M1 1l4 4 4-4"/></svg>
+    </div>
+    <nav style="flex:1;padding:0 8px;display:flex;flex-direction:column;gap:2px;">
+      <a href="app-dashboard.html" class="nav-link">
+        <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15"><path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+        Dashboard
+      </a>
+      <a href="app-pipeline.html" class="nav-link">
+        <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15"><path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 6a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2zm0 6a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2z" clip-rule="evenodd"/></svg>
+        Pipeline
+      </a>
+      <a href="app-explorer.html" class="nav-link active">
+        <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15"><path d="M3 12v3c0 1.657 3.134 3 7 3s7-1.343 7-3v-3c0 1.657-3.134 3-7 3s-7-1.343-7-3z"/><path d="M3 7v3c0 1.657 3.134 3 7 3s7-1.343 7-3V7c0 1.657-3.134 3-7 3S3 8.657 3 7z"/><path d="M17 5c0 1.657-3.134 3-7 3S3 6.657 3 5s3.134-3 7-3 7 1.343 7 3z"/></svg>
+        Explorer
+        <span style="margin-left:auto;width:6px;height:6px;border-radius:50%;background:#00c9a7;flex-shrink:0;"></span>
+      </a>
+      <a href="app-decision-packs.html" class="nav-link">
+        <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15"><path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z"/></svg>
+        Decision Packs
+      </a>
+      <a href="app-ask.html" class="nav-link">
+        <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15"><path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd"/></svg>
+        Ask
+      </a>
+    </nav>
+    <div style="border-top:1px solid rgba(255,255,255,.055);padding:8px 8px 12px;">
+      <a href="app-settings.html" class="nav-link"><svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/></svg> Settings</a>
+      <div class="user-row" style="display:flex;align-items:center;gap:10px;padding:10px 12px 0;margin-top:6px;border-top:1px solid rgba(255,255,255,.055);">
+        <span style="width:28px;height:28px;background:#1d4166;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;">JR</span>
+        <div><div style="font-size:12.5px;font-weight:600;color:rgba(255,255,255,.8);">Jamie R.</div><div style="font-size:11px;color:rgba(255,255,255,.35);">Operator</div></div>
+      </div>
+    </div>
+    <button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle sidebar" aria-label="Toggle sidebar">
+      <svg class="toggle-chevron" viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+    </button>
+  </aside>
+
+  <!-- ══ MAIN ════════════════════════════════════════════════════════════════ -->
+  <div class="main-area">
+
+    <!-- Page header -->
+    <div style="padding:16px 24px 14px;border-bottom:1px solid rgba(20,34,53,.07);display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;flex-shrink:0;">
+      <div>
+        <div style="font-size:12px;color:#8898aa;margin-bottom:4px;display:flex;align-items:center;gap:4px;">
+          <a href="app-dashboard.html" style="color:#8898aa;text-decoration:none;">Dashboard</a>
+          <span>/</span>
+          <span style="color:#142235;font-weight:500;">Explorer</span>
+        </div>
+        <h1 style="font-size:18px;font-weight:700;margin:0 0 3px;letter-spacing:-.02em;">Data explorer</h1>
+        <p style="font-size:13px;color:#8898aa;margin:0;">Browse every parsed artifact, extracted fact, and metric in your workspace.</p>
+      </div>
+      <div style="display:flex;gap:8px;flex-shrink:0;">
+        <button style="border:1px solid rgba(20,34,53,.12);background:#fff;color:#142235;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><path d="M8 2v9M4 8l4 4 4-4"/><path d="M2 13h12"/></svg>
+          Export CSV
+        </button>
+        <button style="background:#00c9a7;color:#0d1b2a;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">Upload file</button>
+      </div>
+    </div>
+
+    <!-- Filter bar -->
+    <div class="filter-bar" style="flex-shrink:0;">
+      <button class="filter-pill active">All records</button>
+      <button class="filter-pill">Invoices</button>
+      <button class="filter-pill">Job reports</button>
+      <button class="filter-pill">Expenses</button>
+      <button class="filter-pill">P&amp;L</button>
+      <button class="filter-pill">Tech logs</button>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+        <div style="display:flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid rgba(20,34,53,.1);border-radius:8px;background:#fff;">
+          <svg viewBox="0 0 16 16" fill="none" stroke="#8898aa" stroke-width="1.5" width="13" height="13"><circle cx="7" cy="7" r="5"/><path d="M11 11l2.5 2.5" stroke-linecap="round"/></svg>
+          <input type="text" placeholder="Search records…" style="border:none;outline:none;font-size:13px;font-family:inherit;color:#142235;width:160px;background:transparent;" />
+        </div>
+        <button style="border:1px solid rgba(20,34,53,.1);background:#fff;padding:6px 12px;border-radius:8px;font-size:12.5px;font-weight:600;color:rgba(20,34,53,.6);cursor:pointer;display:flex;align-items:center;gap:5px;">
+          <svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12" style="color:#8898aa;"><path fill-rule="evenodd" d="M2 4a1 1 0 011-1h10a1 1 0 110 2H3a1 1 0 01-1-1zm2 4a1 1 0 011-1h6a1 1 0 110 2H5a1 1 0 01-1-1zm2 4a1 1 0 011-1h2a1 1 0 110 2H7a1 1 0 01-1-1z" clip-rule="evenodd"/></svg>
+          Filters
+        </button>
+      </div>
+    </div>
+
+    <!-- Stats strip -->
+    <div style="display:flex;gap:0;border-bottom:1px solid rgba(20,34,53,.07);flex-shrink:0;background:#fff;">
+      <div style="flex:1;padding:12px 24px;border-right:1px solid rgba(20,34,53,.06);">
+        <div style="font-size:10.5px;font-weight:600;color:#8898aa;text-transform:uppercase;letter-spacing:.07em;">Total records</div>
+        <div style="font-size:20px;font-weight:800;color:#142235;margin-top:3px;letter-spacing:-.02em;">1,284</div>
+        <div style="font-size:11px;color:#8898aa;margin-top:2px;">across all sources and types</div>
+      </div>
+      <div style="flex:1;padding:12px 24px;border-right:1px solid rgba(20,34,53,.06);">
+        <div style="font-size:10.5px;font-weight:600;color:#8898aa;text-transform:uppercase;letter-spacing:.07em;">Avg confidence</div>
+        <div style="font-size:20px;font-weight:800;color:#142235;margin-top:3px;letter-spacing:-.02em;">0.91</div>
+        <div style="font-size:11px;color:#8898aa;margin-top:2px;">above 0.85 brief threshold</div>
+      </div>
+      <div style="flex:1;padding:12px 24px;">
+        <div style="font-size:10.5px;font-weight:600;color:#8898aa;text-transform:uppercase;letter-spacing:.07em;">Needs review</div>
+        <div style="font-size:20px;font-weight:800;color:#f59e0b;margin-top:3px;letter-spacing:-.02em;">14</div>
+        <div style="font-size:11px;color:#8898aa;margin-top:2px;">held — not yet downstream</div>
+      </div>
+    </div>
+
+    <!-- Table + detail panel -->
+    <div style="display:flex;flex:1;min-height:0;overflow:hidden;">
+
+      <!-- Table -->
+      <div style="flex:1;overflow:auto;min-width:0;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width:36px;padding-left:20px;"><input type="checkbox" style="accent-color:#00c9a7;" /></th>
+              <th>Document</th>
+              <th>Doc class</th>
+              <th>Source</th>
+              <th>Date</th>
+              <th>Confidence</th>
+              <th>Status</th>
+              <th>Facts extracted</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Row 1 — selected -->
+            <tr style="background:rgba(0,201,167,.04);" onclick="selectRow(this)">
+              <td style="padding-left:20px;"><input type="checkbox" checked style="accent-color:#00c9a7;" /></td>
+              <td>
+                <div style="font-weight:600;color:#142235;">AP_Invoice_Cooltek_0419.pdf</div>
+                <div style="font-size:11.5px;color:#8898aa;margin-top:1px;">Gmail / AP inbox · 847 KB</div>
+              </td>
+              <td><span class="chip" style="background:#eff6ff;color:#1d4ed8;">Invoice</span></td>
+              <td style="color:rgba(20,34,53,.65);">Gmail / AP</td>
+              <td style="color:rgba(20,34,53,.55);font-size:12.5px;white-space:nowrap;">Apr 19, 2026</td>
+              <td>
+                <div class="conf-bar">
+                  <div class="conf-track"><div class="conf-fill" style="width:94%;background:#22c55e;"></div></div>
+                  <span style="font-size:12px;font-weight:600;color:#15803d;">0.94</span>
+                </div>
+              </td>
+              <td><span class="chip" style="background:#f0fdf4;color:#15803d;">Extracted</span></td>
+              <td style="font-size:12.5px;color:rgba(20,34,53,.6);">12 facts</td>
+              <td style="padding-right:16px;"><button style="background:none;border:none;cursor:pointer;color:#8898aa;padding:4px;" title="Open detail">›</button></td>
+            </tr>
+
+            <tr onclick="selectRow(this)">
+              <td style="padding-left:20px;"><input type="checkbox" style="accent-color:#00c9a7;" /></td>
+              <td>
+                <div style="font-weight:600;">Job_Report_Week17_Batch.csv</div>
+                <div style="font-size:11.5px;color:#8898aa;margin-top:1px;">ServiceTitan · 124 KB</div>
+              </td>
+              <td><span class="chip" style="background:#f5f3ff;color:#7c3aed;">Job report</span></td>
+              <td style="color:rgba(20,34,53,.65);">ServiceTitan</td>
+              <td style="color:rgba(20,34,53,.55);font-size:12.5px;white-space:nowrap;">Apr 19, 2026</td>
+              <td>
+                <div class="conf-bar">
+                  <div class="conf-track"><div class="conf-fill" style="width:97%;background:#22c55e;"></div></div>
+                  <span style="font-size:12px;font-weight:600;color:#15803d;">0.97</span>
+                </div>
+              </td>
+              <td><span class="chip" style="background:#f0fdf4;color:#15803d;">Extracted</span></td>
+              <td style="font-size:12.5px;color:rgba(20,34,53,.6);">38 facts · 6 metrics</td>
+              <td style="padding-right:16px;"><button style="background:none;border:none;cursor:pointer;color:#8898aa;padding:4px;">›</button></td>
+            </tr>
+
+            <tr onclick="selectRow(this)">
+              <td style="padding-left:20px;"><input type="checkbox" style="accent-color:#00c9a7;" /></td>
+              <td>
+                <div style="font-weight:600;">QBO_PL_Mar2026.xlsx</div>
+                <div style="font-size:11.5px;color:#8898aa;margin-top:1px;">QuickBooks Online · 203 KB</div>
+              </td>
+              <td><span class="chip" style="background:#fff7ed;color:#c2410c;">P&amp;L</span></td>
+              <td style="color:rgba(20,34,53,.65);">QuickBooks</td>
+              <td style="color:rgba(20,34,53,.55);font-size:12.5px;white-space:nowrap;">Apr 18, 2026</td>
+              <td>
+                <div class="conf-bar">
+                  <div class="conf-track"><div class="conf-fill" style="width:89%;background:#22c55e;"></div></div>
+                  <span style="font-size:12px;font-weight:600;color:#15803d;">0.89</span>
+                </div>
+              </td>
+              <td><span class="chip" style="background:#f0fdf4;color:#15803d;">Extracted</span></td>
+              <td style="font-size:12.5px;color:rgba(20,34,53,.6);">24 facts · 9 metrics</td>
+              <td style="padding-right:16px;"><button style="background:none;border:none;cursor:pointer;color:#8898aa;padding:4px;">›</button></td>
+            </tr>
+
+            <tr onclick="selectRow(this)">
+              <td style="padding-left:20px;"><input type="checkbox" style="accent-color:#00c9a7;" /></td>
+              <td>
+                <div style="font-weight:600;display:flex;align-items:center;gap:6px;">
+                  Supplier_Receipt_Airpro_0418.pdf
+                  <span style="display:inline-block;padding:1px 6px;background:#fffbeb;color:#b45309;border-radius:4px;font-size:10px;font-weight:700;">Review</span>
+                </div>
+                <div style="font-size:11.5px;color:#8898aa;margin-top:1px;">Gmail / AP inbox · 2.1 MB</div>
+              </td>
+              <td><span class="chip" style="background:#fef9c3;color:#854d0e;">Receipt</span></td>
+              <td style="color:rgba(20,34,53,.65);">Gmail / AP</td>
+              <td style="color:rgba(20,34,53,.55);font-size:12.5px;white-space:nowrap;">Apr 18, 2026</td>
+              <td>
+                <div class="conf-bar">
+                  <div class="conf-track"><div class="conf-fill" style="width:72%;background:#f59e0b;"></div></div>
+                  <span style="font-size:12px;font-weight:600;color:#b45309;">0.72</span>
+                </div>
+              </td>
+              <td><span class="chip" style="background:#fffbeb;color:#b45309;">Needs review</span></td>
+              <td style="font-size:12.5px;color:rgba(20,34,53,.6);">5 facts (partial)</td>
+              <td style="padding-right:16px;"><button style="background:none;border:none;cursor:pointer;color:#8898aa;padding:4px;">›</button></td>
+            </tr>
+
+            <tr onclick="selectRow(this)">
+              <td style="padding-left:20px;"><input type="checkbox" style="accent-color:#00c9a7;" /></td>
+              <td>
+                <div style="font-weight:600;">Tech_Log_Apr15_Martinez.docx</div>
+                <div style="font-size:11.5px;color:#8898aa;margin-top:1px;">ServiceTitan · 56 KB</div>
+              </td>
+              <td><span class="chip" style="background:#f0fdf4;color:#166534;">Tech log</span></td>
+              <td style="color:rgba(20,34,53,.65);">ServiceTitan</td>
+              <td style="color:rgba(20,34,53,.55);font-size:12.5px;white-space:nowrap;">Apr 15, 2026</td>
+              <td>
+                <div class="conf-bar">
+                  <div class="conf-track"><div class="conf-fill" style="width:91%;background:#22c55e;"></div></div>
+                  <span style="font-size:12px;font-weight:600;color:#15803d;">0.91</span>
+                </div>
+              </td>
+              <td><span class="chip" style="background:#f4f6f9;color:#8898aa;">Parse only</span></td>
+              <td style="font-size:12.5px;color:rgba(20,34,53,.6);">—</td>
+              <td style="padding-right:16px;"><button style="background:none;border:none;cursor:pointer;color:#8898aa;padding:4px;">›</button></td>
+            </tr>
+
+            <tr onclick="selectRow(this)">
+              <td style="padding-left:20px;"><input type="checkbox" style="accent-color:#00c9a7;" /></td>
+              <td>
+                <div style="font-weight:600;">QBO_Expenses_Apr2026.xlsx</div>
+                <div style="font-size:11.5px;color:#8898aa;margin-top:1px;">QuickBooks Online · 189 KB</div>
+              </td>
+              <td><span class="chip" style="background:#fef2f2;color:#dc2626;">Expense</span></td>
+              <td style="color:rgba(20,34,53,.65);">QuickBooks</td>
+              <td style="color:rgba(20,34,53,.55);font-size:12.5px;white-space:nowrap;">Apr 15, 2026</td>
+              <td>
+                <div class="conf-bar">
+                  <div class="conf-track"><div class="conf-fill" style="width:95%;background:#22c55e;"></div></div>
+                  <span style="font-size:12px;font-weight:600;color:#15803d;">0.95</span>
+                </div>
+              </td>
+              <td><span class="chip" style="background:#f0fdf4;color:#15803d;">Extracted</span></td>
+              <td style="font-size:12.5px;color:rgba(20,34,53,.6);">31 facts · 4 metrics</td>
+              <td style="padding-right:16px;"><button style="background:none;border:none;cursor:pointer;color:#8898aa;padding:4px;">›</button></td>
+            </tr>
+
+            <tr onclick="selectRow(this)">
+              <td style="padding-left:20px;"><input type="checkbox" style="accent-color:#00c9a7;" /></td>
+              <td>
+                <div style="font-weight:600;display:flex;align-items:center;gap:6px;">
+                  Invoice_Brightside_0412.pdf
+                  <span style="display:inline-block;padding:1px 6px;background:#fef2f2;color:#dc2626;border-radius:4px;font-size:10px;font-weight:700;">Failed</span>
+                </div>
+                <div style="font-size:11.5px;color:#8898aa;margin-top:1px;">Gmail / AP inbox · 5.8 MB</div>
+              </td>
+              <td><span class="chip" style="background:#eff6ff;color:#1d4ed8;">Invoice</span></td>
+              <td style="color:rgba(20,34,53,.65);">Gmail / AP</td>
+              <td style="color:rgba(20,34,53,.55);font-size:12.5px;white-space:nowrap;">Apr 12, 2026</td>
+              <td>
+                <div class="conf-bar">
+                  <div class="conf-track"><div class="conf-fill" style="width:0%;background:#ef4444;"></div></div>
+                  <span style="font-size:12px;font-weight:600;color:#dc2626;">—</span>
+                </div>
+              </td>
+              <td><span class="chip" style="background:#fef2f2;color:#dc2626;">Parse failed</span></td>
+              <td style="font-size:12.5px;color:rgba(20,34,53,.6);">—</td>
+              <td style="padding-right:16px;"><button style="background:none;border:none;cursor:pointer;color:#8898aa;padding:4px;">›</button></td>
+            </tr>
+
+            <tr onclick="selectRow(this)">
+              <td style="padding-left:20px;"><input type="checkbox" style="accent-color:#00c9a7;" /></td>
+              <td>
+                <div style="font-weight:600;">Job_Report_Week16_Batch.csv</div>
+                <div style="font-size:11.5px;color:#8898aa;margin-top:1px;">ServiceTitan · 118 KB</div>
+              </td>
+              <td><span class="chip" style="background:#f5f3ff;color:#7c3aed;">Job report</span></td>
+              <td style="color:rgba(20,34,53,.65);">ServiceTitan</td>
+              <td style="color:rgba(20,34,53,.55);font-size:12.5px;white-space:nowrap;">Apr 12, 2026</td>
+              <td>
+                <div class="conf-bar">
+                  <div class="conf-track"><div class="conf-fill" style="width:96%;background:#22c55e;"></div></div>
+                  <span style="font-size:12px;font-weight:600;color:#15803d;">0.96</span>
+                </div>
+              </td>
+              <td><span class="chip" style="background:#f0fdf4;color:#15803d;">Extracted</span></td>
+              <td style="font-size:12.5px;color:rgba(20,34,53,.6);">41 facts · 6 metrics</td>
+              <td style="padding-right:16px;"><button style="background:none;border:none;cursor:pointer;color:#8898aa;padding:4px;">›</button></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <!-- Pagination -->
+        <div style="padding:14px 20px;border-top:1px solid rgba(20,34,53,.06);display:flex;align-items:center;justify-content:space-between;background:#fff;">
+          <span style="font-size:13px;color:#8898aa;">Showing 8 of 1,284 records</span>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <button style="width:30px;height:30px;border:1px solid rgba(20,34,53,.1);background:#fff;border-radius:6px;font-size:12px;cursor:pointer;color:#8898aa;">‹</button>
+            <button style="width:30px;height:30px;border:1px solid #00c9a7;background:rgba(0,201,167,.08);border-radius:6px;font-size:12px;font-weight:700;color:#00a98e;cursor:pointer;">1</button>
+            <button style="width:30px;height:30px;border:1px solid rgba(20,34,53,.1);background:#fff;border-radius:6px;font-size:12px;cursor:pointer;color:#142235;">2</button>
+            <button style="width:30px;height:30px;border:1px solid rgba(20,34,53,.1);background:#fff;border-radius:6px;font-size:12px;cursor:pointer;color:#142235;">3</button>
+            <span style="font-size:12px;color:#8898aa;">…</span>
+            <button style="width:30px;height:30px;border:1px solid rgba(20,34,53,.1);background:#fff;border-radius:6px;font-size:12px;cursor:pointer;color:#142235;">161</button>
+            <button style="width:30px;height:30px;border:1px solid rgba(20,34,53,.1);background:#fff;border-radius:6px;font-size:12px;cursor:pointer;color:#8898aa;">›</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Detail panel (shown when a row is selected) -->
+      <div class="detail-panel" id="detail-panel">
+        <div style="padding:16px 20px;border-bottom:1px solid rgba(20,34,53,.07);display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-size:13px;font-weight:600;">Record detail</span>
+          <button style="background:none;border:none;font-size:18px;color:#8898aa;cursor:pointer;padding:0;" onclick="closeDetail()">×</button>
+        </div>
+
+        <!-- File meta -->
+        <div style="padding:16px 20px;border-bottom:1px solid rgba(20,34,53,.06);">
+          <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:12px;">
+            <span style="width:36px;height:36px;background:#eff6ff;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <svg viewBox="0 0 20 20" fill="none" stroke="#1d4ed8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M4 4a2 2 0 012-2h5l5 5v9a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"/><path d="M11 2v5h5"/></svg>
+            </span>
+            <div>
+              <div style="font-size:13px;font-weight:600;word-break:break-all;">AP_Invoice_Cooltek_0419.pdf</div>
+              <div style="font-size:11.5px;color:#8898aa;margin-top:2px;">Gmail / AP inbox · 847 KB · Apr 19, 2026</div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div><div style="font-size:10px;font-weight:600;color:#8898aa;text-transform:uppercase;letter-spacing:.07em;">Doc class</div><div style="font-size:13px;font-weight:500;margin-top:2px;">Invoice</div></div>
+            <div><div style="font-size:10px;font-weight:600;color:#8898aa;text-transform:uppercase;letter-spacing:.07em;">Confidence</div><div style="font-size:13px;font-weight:600;margin-top:2px;color:#15803d;">0.94</div></div>
+            <div><div style="font-size:10px;font-weight:600;color:#8898aa;text-transform:uppercase;letter-spacing:.07em;">Status</div><div style="font-size:13px;font-weight:500;margin-top:2px;"><span class="chip" style="background:#f0fdf4;color:#15803d;">Extracted</span></div></div>
+            <div><div style="font-size:10px;font-weight:600;color:#8898aa;text-transform:uppercase;letter-spacing:.07em;">Policy</div><div style="font-size:13px;font-weight:500;margin-top:2px;">Parse + extract + SQL</div></div>
+          </div>
+        </div>
+
+        <!-- Facts -->
+        <div style="padding:14px 20px;border-bottom:1px solid rgba(20,34,53,.06);">
+          <div style="font-size:11px;font-weight:700;color:#8898aa;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Extracted facts <span style="color:#142235;">(12)</span></div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <div style="display:flex;justify-content:space-between;font-size:12.5px;padding:6px 10px;background:#f4f6f9;border-radius:6px;">
+              <span style="color:#8898aa;font-weight:500;">vendor_name</span>
+              <span style="font-weight:600;color:#142235;">Cooltek Supply</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:12.5px;padding:6px 10px;background:#f4f6f9;border-radius:6px;">
+              <span style="color:#8898aa;font-weight:500;">invoice_total</span>
+              <span style="font-weight:600;color:#142235;">$4,320.00</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:12.5px;padding:6px 10px;background:#f4f6f9;border-radius:6px;">
+              <span style="color:#8898aa;font-weight:500;">invoice_date</span>
+              <span style="font-weight:600;color:#142235;">Apr 17, 2026</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:12.5px;padding:6px 10px;background:#f4f6f9;border-radius:6px;">
+              <span style="color:#8898aa;font-weight:500;">due_date</span>
+              <span style="font-weight:600;color:#dc2626;">Apr 24, 2026</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:12.5px;padding:6px 10px;background:#f4f6f9;border-radius:6px;">
+              <span style="color:#8898aa;font-weight:500;">payment_terms</span>
+              <span style="font-weight:600;color:#142235;">Net 7</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:12.5px;padding:6px 10px;background:#f4f6f9;border-radius:6px;">
+              <span style="color:#8898aa;font-weight:500;">line_items</span>
+              <span style="font-weight:600;color:#142235;">4 items</span>
+            </div>
+            <button style="font-size:12px;font-weight:600;color:#00c9a7;background:none;border:none;cursor:pointer;text-align:left;padding:4px 0;">+ Show 6 more facts</button>
+          </div>
+        </div>
+
+        <!-- Data lineage -->
+        <div style="padding:14px 20px;border-bottom:1px solid rgba(20,34,53,.06);">
+          <div style="font-size:11px;font-weight:700;color:#8898aa;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Lineage</div>
+          <div style="display:flex;flex-direction:column;gap:6px;font-size:12.5px;">
+            <div style="display:flex;align-items:center;gap:8px;"><span style="width:20px;height:20px;border-radius:50%;background:#eff6ff;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#1d4ed8;flex-shrink:0;">1</span> Received via Gmail / AP inbox</div>
+            <div style="display:flex;align-items:center;gap:8px;"><span style="width:20px;height:20px;border-radius:50%;background:#f5f3ff;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#7c3aed;flex-shrink:0;">2</span> Parsed — PDF auto-detect v3</div>
+            <div style="display:flex;align-items:center;gap:8px;"><span style="width:20px;height:20px;border-radius:50%;background:#f0fdf4;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#15803d;flex-shrink:0;">3</span> Extracted — invoice-v2.json</div>
+            <div style="display:flex;align-items:center;gap:8px;"><span style="width:20px;height:20px;border-radius:50%;background:#f0fdf4;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#15803d;flex-shrink:0;">4</span> Written to SQL facts table</div>
+            <div style="display:flex;align-items:center;gap:8px;"><span style="width:20px;height:20px;border-radius:50%;background:#f0fdf4;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#15803d;flex-shrink:0;">5</span> Eligible for Money Pack</div>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div style="padding:14px 20px;display:flex;flex-direction:column;gap:8px;">
+          <button style="width:100%;background:#00c9a7;color:#0d1b2a;border:none;padding:10px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">Approve extraction</button>
+          <button style="width:100%;border:1px solid rgba(20,34,53,.12);background:#fff;color:#142235;padding:10px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">View raw file</button>
+          <button style="width:100%;border:none;background:none;color:#dc2626;padding:10px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">Reject &amp; archive</button>
+        </div>
+      </div>
+
+    </div><!-- /table + detail -->
+  </div><!-- /main-area -->
+
+  <!-- ── Mobile bottom navigation ─────────────────────────────────────── -->
+  <nav class="mob-nav" aria-label="Mobile navigation">
+    <a href="app-dashboard.html" class="mob-nav-link"><svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20"><path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>Home</a>
+    <a href="app-pipeline.html" class="mob-nav-link"><svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20"><path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 6a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2zm0 6a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2z" clip-rule="evenodd"/></svg>Pipeline</a>
+    <a href="app-explorer.html" class="mob-nav-link active"><svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20"><path d="M3 12v3c0 1.657 3.134 3 7 3s7-1.343 7-3v-3c0 1.657-3.134 3-7 3s-7-1.343-7-3z"/><path d="M3 7v3c0 1.657 3.134 3 7 3s7-1.343 7-3V7c0 1.657-3.134 3-7 3S3 8.657 3 7z"/><path d="M17 5c0 1.657-3.134 3-7 3S3 6.657 3 5s3.134-3 7-3 7 1.343 7 3z"/></svg>Explorer</a>
+    <a href="app-decision-packs.html" class="mob-nav-link"><svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20"><path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z"/></svg>Packs</a>
+    <a href="app-ask.html" class="mob-nav-link"><svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20"><path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd"/></svg>Ask</a>
+  </nav>
+</div><!-- /app-shell -->
+
+<script>
+function selectRow(row) {
+  document.querySelectorAll('.data-table tbody tr').forEach(function(r) { r.style.background = ''; });
+  row.style.background = 'rgba(0,201,167,.04)';
+}
+function closeDetail() {
+  document.getElementById('detail-panel').style.display = 'none';
+}
+function toggleSidebar() {
+  var sb = document.querySelector('.sidebar');
+  sb.classList.toggle('collapsed');
+  try { localStorage.setItem('sidebar-collapsed', sb.classList.contains('collapsed')); } catch(e) {}
+}
+(function() {
+  try { if (localStorage.getItem('sidebar-collapsed') === 'true') { document.querySelector('.sidebar').classList.add('collapsed'); } } catch(e) {}
+}());
+</script>
+</body>
+</html>

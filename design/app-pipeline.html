@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en" style="height:100%;">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pipeline — PulseOps</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="dist/output.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; font-family: 'Inter', sans-serif; background: #f4f6f9; color: #142235; }
+    body { display: flex; flex-direction: column; }
+
+    .app-shell { display: flex; flex: 1; min-height: 0; overflow: hidden; height: 100vh; }
+    .sidebar   { width: 220px; flex-shrink: 0; background: #0d1b2a; border-right: 1px solid rgba(255,255,255,.055); display: flex; flex-direction: column; overflow-x: hidden; overflow-y: auto; transition: width .22s ease; }
+    .sidebar.collapsed { width: 48px; }
+    .sidebar-toggle { display: flex; align-items: center; justify-content: center; width: 100%; height: 32px; border: none; background: transparent; color: rgba(255,255,255,.25); cursor: pointer; border-top: 1px solid rgba(255,255,255,.055); transition: color .15s; flex-shrink: 0; padding: 0; }
+    .sidebar-toggle:hover { color: rgba(255,255,255,.6); background: rgba(255,255,255,.04); }
+    .toggle-chevron { transition: transform .22s ease; }
+    .sidebar.collapsed .toggle-chevron { transform: rotate(180deg); }
+    .sidebar.collapsed .nav-link { justify-content: center; padding: 9px 0; font-size: 0; gap: 0; }
+    .sidebar.collapsed .nav-link svg { flex-shrink: 0; }
+    .sidebar.collapsed .nav-link > span { display: none; }
+    .sidebar.collapsed .sb-logo { padding: 20px 0 14px; justify-content: center; }
+    .sidebar.collapsed .sb-logo > :not(:first-child) { display: none; }
+    .sidebar.collapsed .ws-selector { margin: 4px 6px 14px; padding: 5px 0; justify-content: center; gap: 0; border-color: transparent; }
+    .sidebar.collapsed .ws-name, .sidebar.collapsed .ws-chevron { display: none !important; }
+    .sidebar.collapsed .user-row { justify-content: center; padding-left: 0; padding-right: 0; gap: 0; }
+    .sidebar.collapsed .user-row > :not(:first-child) { display: none; }
+    .main-area { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow-y: auto; background: #f4f6f9; }
+
+    .nav-link        { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px; font-size: 13.5px; font-weight: 500; color: rgba(255,255,255,.5); text-decoration: none; transition: background .1s, color .1s; white-space: nowrap; }
+    .nav-link:hover  { color: rgba(255,255,255,.85); background: rgba(255,255,255,.05); }
+    .nav-link.active { background: rgba(0,201,167,.13); color: #00c9a7; }
+
+    .card { background: #fff; border-radius: 12px; border: 1px solid rgba(20,34,53,.07); box-shadow: 0 1px 4px rgba(20,34,53,.06); }
+
+    .source-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; }
+
+    .policy-select { border: 1px solid rgba(20,34,53,.1); border-radius: 6px; padding: 6px 10px; font-size: 12px; font-weight: 500; color: #142235; background: #fff; font-family: inherit; cursor: pointer; }
+    .policy-select:hover { border-color: rgba(20,34,53,.2); }
+
+    details summary { list-style: none; cursor: pointer; transition: background .1s; }
+    details summary::-webkit-details-marker { display: none; }
+
+    /* ── Alert banner ─────────────────────────────────────────── */
+    .alert-banner { display:flex; align-items:flex-start; gap:12px; padding:12px 16px; border-radius:9px; border:1px solid; font-size:13px; line-height:1.5; }
+    .alert-banner.warn { background:#fffbeb; border-color:rgba(245,158,11,.35); color:#92400e; }
+    .alert-banner .ab-title { font-weight:700; }
+    .alert-banner a { color:#d97706; font-weight:600; text-decoration:none; }
+    .alert-banner a:hover { text-decoration:underline; }
+
+    /* ── Stat strip ───────────────────────────────────────────── */
+    .stat-strip { display:grid; grid-template-columns:repeat(4,1fr); border:1px solid rgba(20,34,53,.07); border-radius:10px; overflow:hidden; box-shadow:0 1px 4px rgba(20,34,53,.05); }
+    .stat-cell { background:#fff; padding:14px 18px; border-right:1px solid rgba(20,34,53,.07); }
+    .stat-cell:last-child { border-right:none; }
+    .stat-cell .s-label { font-size:10px; font-weight:700; color:#8898aa; text-transform:uppercase; letter-spacing:.07em; margin-bottom:5px; }
+    .stat-cell .s-value { font-size:20px; font-weight:800; color:#142235; letter-spacing:-.03em; line-height:1; }
+    .stat-cell .s-sub   { font-size:11px; color:#8898aa; margin-top:4px; line-height:1.4; }
+
+    /* ── Pipeline stage dots ──────────────────────────────────── */
+    .stg-yes { display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; background:#f0fdf4; color:#15803d; font-size:9px; font-weight:900; }
+    .stg-no  { display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px; border-radius:50%; background:rgba(20,34,53,.05); color:rgba(20,34,53,.22); font-size:11px; }
+
+    /* ── Pipeline rule rows ───────────────────────────────────── */
+    .rule-summary { display:grid; grid-template-columns:130px 155px 1fr 52px 52px 52px 52px 80px; gap:8px; padding:11px 18px; align-items:center; }
+    .rule-summary:hover { background:rgba(20,34,53,.015); }
+    details[open] .rule-summary { background:rgba(20,34,53,.015); }
+    .rule-detail { padding:12px 18px 14px; background:rgba(20,34,53,.014); border-top:1px solid rgba(20,34,53,.05); display:grid; grid-template-columns:repeat(4,1fr); gap:12px 20px; }
+    .rdl { font-size:10.5px; font-weight:600; color:#8898aa; text-transform:uppercase; letter-spacing:.06em; margin-bottom:3px; }
+    .rdv { font-size:13px; font-weight:500; color:#142235; }
+
+    /* ── Run activity table ───────────────────────────────────── */
+    .run-table { width:100%; border-collapse:collapse; font-size:12.5px; }
+    .run-table th { text-align:left; padding:9px 18px; font-size:10px; font-weight:700; color:#8898aa; text-transform:uppercase; letter-spacing:.07em; border-bottom:1px solid rgba(20,34,53,.07); background:rgba(20,34,53,.015); white-space:nowrap; }
+    .run-table td { padding:10px 18px; border-bottom:1px solid rgba(20,34,53,.05); vertical-align:middle; }
+    .run-table tr:last-child td { border-bottom:none; }
+    .run-table tr:hover td { background:rgba(20,34,53,.012); }
+    .run-ok   { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700; background:#f0fdf4; color:#15803d; }
+    .run-warn { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700; background:#fffbeb; color:#b45309; }
+    .run-hold { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700; background:rgba(20,34,53,.06); color:#8898aa; }
+
+    /* ── Section headings ─────────────────────────────────────── */
+    .sec-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:12px; flex-wrap:wrap; }
+    .sec-head h2 { font-size:12px; font-weight:700; color:#8898aa; text-transform:uppercase; letter-spacing:.1em; margin:0 0 3px; }
+    .sec-head p  { font-size:12px; color:#8898aa; margin:0; line-height:1.5; max-width:580px; }
+
+    /* ── Mobile bottom nav ─────────────────────────────────── */
+    .mob-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; height: 56px; background: #0d1b2a; border-top: 1px solid rgba(255,255,255,.09); z-index: 200; }
+    .mob-nav-link { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-decoration: none; color: rgba(255,255,255,.38); font-size: 9.5px; font-weight: 600; letter-spacing: .01em; padding: 7px 0 10px; transition: color .1s; }
+    .mob-nav-link.active, .mob-nav-link:hover { color: #00c9a7; }
+
+    @media (max-width: 1100px) { .source-grid { grid-template-columns: repeat(2,1fr); } }
+    @media (max-width: 900px) {
+      .mob-nav { display: flex; }
+      .app-shell { height: calc(100vh - 56px); }
+      .sidebar { display: none; }
+      .stat-strip { grid-template-columns: repeat(2,1fr); }
+      .stat-cell:nth-child(2n) { border-right: none; }
+      .stat-cell:nth-child(3), .stat-cell:nth-child(4) { border-top: 1px solid rgba(20,34,53,.07); }
+    }
+    @media (max-width: 700px) {
+      .source-grid { grid-template-columns: 1fr; }
+      .stat-strip { grid-template-columns: 1fr; }
+      .stat-cell { border-right: none !important; border-top: 1px solid rgba(20,34,53,.07); }
+      .stat-cell:first-child { border-top: none; }
+      .rule-detail { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 520px) {
+      .rules-card { overflow-x: auto !important; }
+      .run-card   { overflow-x: auto !important; }
+      .rules-card > div, .rule-summary { min-width: 560px; }
+      .run-table  { min-width: 500px; }
+      .rule-detail { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- ══ SIDEBAR ══════════════════════════════════════════════════════════════ -->
+  <aside class="sidebar">
+    <div class="sb-logo" style="display:flex;align-items:center;gap:10px;padding:20px 16px 14px;">
+      <span style="width:28px;height:28px;background:#00c9a7;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:#0d1b2a;flex-shrink:0;">P</span>
+      <span style="font-size:15px;font-weight:700;color:#fff;letter-spacing:-.02em;">Pulse<span style="color:#00c9a7;">Ops</span></span>
+      <span style="margin-left:auto;width:7px;height:7px;border-radius:50%;background:#f59e0b;box-shadow:0 0 0 2px rgba(245,158,11,.22);flex-shrink:0;"></span>
+    </div>
+    <div class="ws-selector" style="margin:0 12px 14px;padding:7px 10px;border:1px solid rgba(255,255,255,.07);border-radius:8px;display:flex;align-items:center;gap:8px;cursor:pointer;" onmouseover="this.style.background='rgba(255,255,255,.06)'" onmouseout="this.style.background=''">
+      <span style="width:22px;height:22px;background:#1d4166;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0;">B</span>
+      <span class="ws-name" style="font-size:12.5px;font-weight:600;color:rgba(255,255,255,.85);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Broward HVAC Co.</span>
+      <svg class="ws-chevron" viewBox="0 0 10 6" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="10" height="6" style="display:block;flex-shrink:0;"><path d="M1 1l4 4 4-4"/></svg>
+    </div>
+    <nav style="flex:1;padding:0 8px;display:flex;flex-direction:column;gap:2px;">
+      <a href="app-dashboard.html" class="nav-link">
+        <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15"><path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+        Dashboard
+      </a>
+      <a href="app-pipeline.html" class="nav-link active">
+        <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15"><path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 6a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2zm0 6a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2z" clip-rule="evenodd"/></svg>
+        Pipeline
+        <span style="margin-left:auto;width:6px;height:6px;border-radius:50%;background:#00c9a7;flex-shrink:0;"></span>
+      </a>
+      <a href="app-explorer.html" class="nav-link">
+        <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15"><path d="M3 12v3c0 1.657 3.134 3 7 3s7-1.343 7-3v-3c0 1.657-3.134 3-7 3s-7-1.343-7-3z"/><path d="M3 7v3c0 1.657 3.134 3 7 3s7-1.343 7-3V7c0 1.657-3.134 3-7 3S3 8.657 3 7z"/><path d="M17 5c0 1.657-3.134 3-7 3S3 6.657 3 5s3.134-3 7-3 7 1.343 7 3z"/></svg>
+        Explorer
+      </a>
+      <a href="app-decision-packs.html" class="nav-link">
+        <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15"><path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z"/></svg>
+        Decision Packs
+      </a>
+      <a href="app-ask.html" class="nav-link">
+        <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15"><path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd"/></svg>
+        Ask
+      </a>
+    </nav>
+    <div style="border-top:1px solid rgba(255,255,255,.055);padding:8px 8px 12px;">
+      <a href="app-settings.html" class="nav-link">
+        <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/></svg>
+        Settings
+      </a>
+      <div class="user-row" style="display:flex;align-items:center;gap:10px;padding:10px 12px 0;margin-top:6px;border-top:1px solid rgba(255,255,255,.055);">
+        <span style="width:28px;height:28px;background:#1d4166;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;">JR</span>
+        <div>
+          <div style="font-size:12.5px;font-weight:600;color:rgba(255,255,255,.8);">Jamie R.</div>
+          <div style="font-size:11px;color:rgba(255,255,255,.35);">Operator</div>
+        </div>
+      </div>
+    </div>
+    <button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle sidebar" aria-label="Toggle sidebar">
+      <svg class="toggle-chevron" viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+    </button>
+  </aside>
+
+  <!-- ══ MAIN ════════════════════════════════════════════════════════════════ -->
+  <div class="main-area">
+
+    <!-- Page header -->
+    <div style="padding:16px 24px 14px;border-bottom:1px solid rgba(20,34,53,.07);display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+      <div>
+        <div style="font-size:12px;color:#8898aa;margin-bottom:4px;display:flex;align-items:center;gap:4px;">
+          <a href="app-dashboard.html" style="color:#8898aa;text-decoration:none;">Dashboard</a>
+          <span>/</span>
+          <span style="color:#142235;font-weight:500;">Pipeline</span>
+        </div>
+        <h1 style="font-size:18px;font-weight:700;margin:0 0 3px;letter-spacing:-.02em;">Data pipeline</h1>
+        <p style="font-size:13px;color:#8898aa;margin:0;max-width:520px;">Monitor your data sources, control how each document type is processed, and track what feeds your weekly brief.</p>
+      </div>
+      <div style="display:flex;gap:8px;flex-shrink:0;">
+        <button title="Upload a CSV or XLSX file — it enters the manual upload queue and requires review before any extraction happens" style="border:1px solid rgba(20,34,53,.12);background:#fff;color:#142235;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:7px;">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M8 11V2M4 5l4-4 4 4"/><path d="M2 14h12"/></svg>
+          Upload file
+        </button>
+        <button title="Runs your pipeline rules against a sample document so you can verify extraction output before it affects live briefs" style="background:#00c9a7;color:#0d1b2a;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">
+          Test pipeline
+        </button>
+      </div>
+    </div>
+
+    <div style="padding:20px 24px 48px;display:flex;flex-direction:column;gap:24px;">
+
+      <!-- ── Alert: Gmail failures ─────────────────────────────
+           Shown when a source has unresolved errors.
+           "View failed records" takes you to the failed-records view
+           where you can retry, reclassify, or update the rule.
+      ─────────────────────────────────────────────────────────── -->
+      <div class="alert-banner warn">
+        <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16" style="flex-shrink:0;margin-top:1px;color:#f59e0b;"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-5a1 1 0 00-1 1v2a1 1 0 102 0V9a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+        <div style="flex:1;">
+          <span class="ab-title">Gmail / AP inbox &middot; 3 invoice PDFs failed in the last 14 minutes.</span>
+          Likely a layout change from your billing vendor &mdash; the parser couldn&rsquo;t locate the expected fields.
+          <a href="#" style="margin-left:6px;white-space:nowrap;">View failed records &rarr;</a>
+        </div>
+        <button onclick="this.closest('.alert-banner').remove()" style="background:none;border:1px solid rgba(245,158,11,.4);color:#d97706;padding:5px 10px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0;">Dismiss</button>
+      </div>
+
+      <!-- ── Health strip ─────────────────────────────────────── -->
+      <div class="stat-strip">
+        <div class="stat-cell">
+          <div class="s-label">Sources</div>
+          <div class="s-value">4</div>
+          <div class="s-sub">3 healthy &middot; 1 needs attention</div>
+        </div>
+        <div class="stat-cell">
+          <div class="s-label">Records today</div>
+          <div class="s-value">847</div>
+          <div class="s-sub">across all sources and types</div>
+        </div>
+        <div class="stat-cell">
+          <div class="s-label">Pipeline runs</div>
+          <div class="s-value">23</div>
+          <div class="s-sub">since midnight &middot; 20 ok &middot; 3 warnings</div>
+        </div>
+        <div class="stat-cell">
+          <div class="s-label">Avg. confidence</div>
+          <div class="s-value">0.87</div>
+          <div class="s-sub">above 0.85 minimum threshold</div>
+        </div>
+      </div>
+
+      <!-- ── Connected sources ──────────────────────────────────
+           Where your data comes from.
+           "Configure" = adjust credentials, sync schedule, and field mapping.
+           Gmail's "Investigate" = see the 3 failed records and decide
+           whether to retry, reclassify, or update the pipeline rule.
+      ─────────────────────────────────────────────────────────── -->
+      <section>
+        <div class="sec-head">
+          <div>
+            <h2>Connected sources</h2>
+            <p>Where data enters the system. Each source syncs on its own schedule and produces one or more document types that flow into the pipeline rules below.</p>
+          </div>
+          <button title="Connect a new source — API integration, email inbox, or upload folder" style="border:1px solid rgba(20,34,53,.12);background:#fff;color:#142235;padding:7px 14px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;flex-shrink:0;">+ Connect source</button>
+        </div>
+
+        <div class="source-grid">
+
+          <!-- ServiceTitan -->
+          <div class="card" style="overflow:hidden;">
+            <div style="padding:13px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(20,34,53,.06);">
+              <span style="width:9px;height:9px;border-radius:50%;flex-shrink:0;background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.15);"></span>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:13.5px;font-weight:700;letter-spacing:-.01em;">ServiceTitan</div>
+                <div style="font-size:11px;color:#8898aa;margin-top:1px;">Job management &middot; API &middot; every 15 min</div>
+              </div>
+              <button title="Adjust OAuth token, sync frequency, and which ServiceTitan fields are pulled" style="flex-shrink:0;border:1px solid rgba(20,34,53,.1);background:#fff;color:#142235;padding:5px 11px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">Configure</button>
+            </div>
+            <div style="padding:11px 16px 13px;display:grid;grid-template-columns:1fr 1fr;gap:7px 12px;">
+              <div>
+                <div style="font-size:10px;font-weight:700;color:#8898aa;text-transform:uppercase;letter-spacing:.07em;">Last sync</div>
+                <div style="font-size:13px;font-weight:600;margin-top:3px;">8 min ago</div>
+              </div>
+              <div>
+                <div style="font-size:10px;font-weight:700;color:#8898aa;text-transform:uppercase;letter-spacing:.07em;">Today</div>
+                <div style="font-size:13px;font-weight:600;margin-top:3px;">19 records</div>
+              </div>
+              <div style="grid-column:1/-1;">
+                <div style="font-size:10px;font-weight:700;color:#8898aa;text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px;">Document types</div>
+                <div style="display:flex;flex-wrap:wrap;gap:4px;">
+                  <span style="background:#f4f6f9;border:1px solid rgba(20,34,53,.09);color:rgba(20,34,53,.65);padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;">Job report</span>
+                  <span style="background:#f4f6f9;border:1px solid rgba(20,34,53,.09);color:rgba(20,34,53,.65);padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;">Invoice</span>
+                  <span style="background:#f4f6f9;border:1px solid rgba(20,34,53,.09);color:rgba(20,34,53,.65);padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;">Tech log</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- QuickBooks -->
+          <div class="card" style="overflow:hidden;">
+            <div style="padding:13px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(20,34,53,.06);">
+              <span style="width:9px;height:9px;border-radius:50%;flex-shrink:0;background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.15);"></span>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:13.5px;font-weight:700;letter-spacing:-.01em;">QuickBooks Online</div>
+                <div style="font-size:11px;color:#8898aa;margin-top:1px;">Accounting &middot; OAuth &middot; every 30 min</div>
+              </div>
+              <button title="Adjust OAuth token, chart-of-accounts mapping, and sync frequency" style="flex-shrink:0;border:1px solid rgba(20,34,53,.1);background:#fff;color:#142235;padding:5px 11px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">Configure</button>
+            </div>
+            <div style="padding:11px 16px 13px;display:grid;grid-template-columns:1fr 1fr;gap:7px 12px;">
+              <div>
+                <div style="font-size:10px;font-weight:700;color:#8898aa;text-transform:uppercase;letter-spacing:.07em;">Last sync</div>
+                <div style="font-size:13px;font-weight:600;margin-top:3px;">22 min ago</div>
+              </div>
+              <div>
+                <div style="font-size:10px;font-weight:700;color:#8898aa;text-transform:uppercase;letter-spacing:.07em;">Today</div>
+                <div style="font-size:13px;font-weight:600;margin-top:3px;">34 accounts</div>
+              </div>
+              <div style="grid-column:1/-1;">
+                <div style="font-size:10px;font-weight:700;color:#8898aa;text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px;">Document types</div>
+                <div style="display:flex;flex-wrap:wrap;gap:4px;">
+                  <span style="background:#f4f6f9;border:1px solid rgba(20,34,53,.09);color:rgba(20,34,53,.65);padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;">P&amp;L</span>
+                  <span style="background:#f4f6f9;border:1px solid rgba(20,34,53,.09);color:rgba(20,34,53,.65);padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;">Invoice</span>
+                  <span style="background:#f4f6f9;border:1px solid rgba(20,34,53,.09);color:rgba(20,34,53,.65);padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;">Expense</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Gmail — warning state -->
+          <div class="card" style="overflow:hidden;border-color:rgba(245,158,11,.45);">
+            <div style="padding:13px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(245,158,11,.2);background:rgba(245,158,11,.03);">
+              <span style="width:9px;height:9px;border-radius:50%;flex-shrink:0;background:#f59e0b;box-shadow:0 0 0 3px rgba(245,158,11,.2);"></span>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:13.5px;font-weight:700;letter-spacing:-.01em;">Gmail / AP inbox</div>
+                <div style="font-size:11px;color:#b45309;margin-top:1px;">Email &middot; 3 parse failures in the last 14 min</div>
+              </div>
+              <button title="See the 3 failed invoice PDFs — retry them, reclassify them, or update the extraction contract to handle the new format" style="flex-shrink:0;border:1px solid rgba(245,158,11,.45);background:#fffbeb;color:#b45309;padding:5px 11px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">Investigate &rarr;</button>
+            </div>
+            <div style="padding:11px 16px 13px;display:grid;grid-template-columns:1fr 1fr;gap:7px 12px;">
+              <div>
+                <div style="font-size:10px;font-weight:700;color:#8898aa;text-transform:uppercase;letter-spacing:.07em;">Last sync</div>
+                <div style="font-size:13px;font-weight:600;margin-top:3px;color:#b45309;">14 min &middot; 3 failed</div>
+              </div>
+              <div>
+                <div style="font-size:10px;font-weight:700;color:#8898aa;text-transform:uppercase;letter-spacing:.07em;">Today</div>
+                <div style="font-size:13px;font-weight:600;margin-top:3px;">47 messages</div>
+              </div>
+              <div style="grid-column:1/-1;">
+                <div style="font-size:10px;font-weight:700;color:#8898aa;text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px;">Document types</div>
+                <div style="display:flex;flex-wrap:wrap;gap:4px;">
+                  <span style="background:#f4f6f9;border:1px solid rgba(20,34,53,.09);color:rgba(20,34,53,.65);padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;">Invoice PDF</span>
+                  <span style="background:#f4f6f9;border:1px solid rgba(20,34,53,.09);color:rgba(20,34,53,.65);padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;">Vendor receipt</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Manual uploads -->
+          <div class="card" style="overflow:hidden;">
+            <div style="padding:13px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(20,34,53,.06);">
+              <span style="width:9px;height:9px;border-radius:50%;flex-shrink:0;background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.15);"></span>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:13.5px;font-weight:700;letter-spacing:-.01em;">Manual uploads</div>
+                <div style="font-size:11px;color:#8898aa;margin-top:1px;">CSV / XLSX &middot; review required before extraction</div>
+              </div>
+              <button title="Upload a CSV or XLSX file — it enters a review queue before any AI extraction or metric storage happens" style="flex-shrink:0;background:#00c9a7;color:#0d1b2a;border:none;padding:5px 11px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">&uarr; Upload</button>
+            </div>
+            <div style="padding:11px 16px 13px;display:grid;grid-template-columns:1fr 1fr;gap:7px 12px;">
+              <div>
+                <div style="font-size:10px;font-weight:700;color:#8898aa;text-transform:uppercase;letter-spacing:.07em;">Last upload</div>
+                <div style="font-size:13px;font-weight:600;margin-top:3px;">2 hours ago</div>
+              </div>
+              <div>
+                <div style="font-size:10px;font-weight:700;color:#8898aa;text-transform:uppercase;letter-spacing:.07em;">This week</div>
+                <div style="font-size:13px;font-weight:600;margin-top:3px;">6 files</div>
+              </div>
+              <div style="grid-column:1/-1;">
+                <div style="font-size:10px;font-weight:700;color:#8898aa;text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px;">Document types</div>
+                <div style="display:flex;flex-wrap:wrap;gap:4px;">
+                  <span style="background:#f4f6f9;border:1px solid rgba(20,34,53,.09);color:rgba(20,34,53,.65);padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;">Spreadsheet</span>
+                  <span style="background:#f4f6f9;border:1px solid rgba(20,34,53,.09);color:rgba(20,34,53,.65);padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;">XLSX export</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ── Pipeline rules ─────────────────────────────────────
+           One row per document type. The dropdown sets the pipeline
+           depth — how far the document travels before stopping.
+           The dots show what's active at the current depth:
+             LLM    = AI reads the doc and extracts structured facts
+             SQL    = extracted facts stored as queryable metrics
+             Vector = document embedded for semantic search in Ask
+             Brief  = facts eligible to feed your weekly cash &amp; margin brief
+           Expand any row to see the underlying technical route config.
+           "Test" runs a dry run against a sample to preview output.
+      ─────────────────────────────────────────────────────────── -->
+      <section>
+        <div class="sec-head">
+          <div>
+            <h2>Pipeline rules</h2>
+            <p>For each document type, choose how far it travels. <strong style="color:#142235;">LLM</strong> = AI extraction &middot; <strong style="color:#142235;">SQL</strong> = queryable metrics &middot; <strong style="color:#142235;">Vector</strong> = semantic search &middot; <strong style="color:#142235;">Brief</strong> = feeds your weekly brief. Changes apply to future documents only.</p>
+          </div>
+          <button title="Add a pipeline rule for a new document type" style="border:1px solid rgba(0,201,167,.3);background:none;color:#00a98e;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0;">+ Add rule</button>
+        </div>
+
+        <div class="card rules-card" style="overflow:hidden;">
+          <!-- Column headers -->
+          <div style="display:grid;grid-template-columns:130px 155px 1fr 52px 52px 52px 52px 80px;gap:8px;padding:9px 18px;border-bottom:1px solid rgba(20,34,53,.07);background:rgba(20,34,53,.015);align-items:center;">
+            <span style="font-size:10px;font-weight:700;color:#8898aa;text-transform:uppercase;letter-spacing:.07em;">Source</span>
+            <span style="font-size:10px;font-weight:700;color:#8898aa;text-transform:uppercase;letter-spacing:.07em;">Doc type</span>
+            <span style="font-size:10px;font-weight:700;color:#8898aa;text-transform:uppercase;letter-spacing:.07em;">Pipeline depth</span>
+            <span style="font-size:10px;font-weight:700;color:#8898aa;text-transform:uppercase;letter-spacing:.07em;text-align:center;">LLM</span>
+            <span style="font-size:10px;font-weight:700;color:#8898aa;text-transform:uppercase;letter-spacing:.07em;text-align:center;">SQL</span>
+            <span style="font-size:10px;font-weight:700;color:#8898aa;text-transform:uppercase;letter-spacing:.07em;text-align:center;">Vector</span>
+            <span style="font-size:10px;font-weight:700;color:#8898aa;text-transform:uppercase;letter-spacing:.07em;text-align:center;">Brief</span>
+            <span></span>
+          </div>
+
+          <!-- Rule 1: Gmail / Invoice PDF -->
+          <details>
+            <summary class="rule-summary">
+              <span style="font-size:12px;color:rgba(20,34,53,.5);font-weight:500;">Gmail / AP</span>
+              <span style="font-size:13px;font-weight:700;">Invoice PDF</span>
+              <select class="policy-select" onclick="event.stopPropagation()" style="width:100%;max-width:260px;">
+                <option selected>Parse &rarr; classify &rarr; extract facts</option>
+                <option>Parse only</option>
+                <option>Parse &rarr; classify</option>
+                <option>Full pipeline &rarr; feeds brief</option>
+                <option>Never send to LLM</option>
+                <option>Manual review required first</option>
+              </select>
+              <span style="text-align:center;"><span class="stg-yes">&#10003;</span></span>
+              <span style="text-align:center;"><span class="stg-yes">&#10003;</span></span>
+              <span style="text-align:center;"><span class="stg-yes">&#10003;</span></span>
+              <span style="text-align:center;"><span class="stg-yes">&#10003;</span></span>
+              <span style="display:flex;justify-content:flex-end;align-items:center;">
+                <svg viewBox="0 0 16 16" fill="none" stroke="rgba(20,34,53,.3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M4 6l4 4 4-4"/></svg>
+              </span>
+            </summary>
+            <div class="rule-detail">
+              <div><div class="rdl">Parse engine</div><div class="rdv">Auto-detect (v3)</div></div>
+              <div><div class="rdl">Extraction contract</div><div class="rdv" style="font-family:monospace;font-size:12px;color:#00a98e;">invoice-v2.json</div></div>
+              <div><div class="rdl">Redaction</div><div class="rdv">PII stripped before LLM</div></div>
+              <div><div class="rdl">Human review</div><div class="rdv">Not required</div></div>
+              <div><div class="rdl">Retention</div><div class="rdv">90 days post-cancellation</div></div>
+              <div><div class="rdl">Feeds brief</div><div class="rdv">Money Pack &middot; Margin Pack</div></div>
+              <div><div class="rdl">Sensitive</div><div class="rdv" style="color:#f59e0b;">Yes &mdash; vendor invoices</div></div>
+              <div style="display:flex;align-items:flex-end;gap:8px;">
+                <button style="border:1px solid rgba(20,34,53,.12);background:#fff;color:#142235;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">Edit rule</button>
+                <button title="Run extraction on a sample invoice PDF and preview the output before it affects live briefs" style="background:#00c9a7;color:#0d1b2a;border:none;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">Test</button>
+              </div>
+            </div>
+          </details>
+
+          <!-- Rule 2: Gmail / Vendor receipt -->
+          <details style="border-top:1px solid rgba(20,34,53,.05);">
+            <summary class="rule-summary">
+              <span style="font-size:12px;color:rgba(20,34,53,.5);font-weight:500;">Gmail / AP</span>
+              <span style="font-size:13px;font-weight:700;">Vendor receipt</span>
+              <select class="policy-select" onclick="event.stopPropagation()" style="width:100%;max-width:260px;">
+                <option selected>Parse &rarr; classify</option>
+                <option>Parse only</option>
+                <option>Parse &rarr; classify &rarr; extract facts</option>
+                <option>Full pipeline &rarr; feeds brief</option>
+                <option>Never send to LLM</option>
+              </select>
+              <span style="text-align:center;"><span class="stg-no">&mdash;</span></span>
+              <span style="text-align:center;"><span class="stg-no">&mdash;</span></span>
+              <span style="text-align:center;"><span class="stg-no">&mdash;</span></span>
+              <span style="text-align:center;"><span class="stg-no">&mdash;</span></span>
+              <span style="display:flex;justify-content:flex-end;align-items:center;">
+                <svg viewBox="0 0 16 16" fill="none" stroke="rgba(20,34,53,.3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M4 6l4 4 4-4"/></svg>
+              </span>
+            </summary>
+            <div class="rule-detail">
+              <div><div class="rdl">Parse engine</div><div class="rdv">Auto-detect (v3)</div></div>
+              <div><div class="rdl">LLM access</div><div class="rdv" style="color:#8898aa;">Blocked &mdash; classify only</div></div>
+              <div><div class="rdl">Human review</div><div class="rdv">Not required</div></div>
+              <div style="display:flex;align-items:flex-end;gap:8px;">
+                <button style="border:1px solid rgba(20,34,53,.12);background:#fff;color:#142235;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">Edit rule</button>
+                <button title="Test extraction on a sample vendor receipt" style="background:#00c9a7;color:#0d1b2a;border:none;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">Test</button>
+              </div>
+            </div>
+          </details>
+
+          <!-- Rule 3: ServiceTitan / Job report -->
+          <details style="border-top:1px solid rgba(20,34,53,.05);">
+            <summary class="rule-summary">
+              <span style="font-size:12px;color:rgba(20,34,53,.5);font-weight:500;">ServiceTitan</span>
+              <span style="font-size:13px;font-weight:700;">Job report</span>
+              <select class="policy-select" onclick="event.stopPropagation()" style="width:100%;max-width:260px;">
+                <option selected>Full pipeline &rarr; feeds brief</option>
+                <option>Parse only</option>
+                <option>Parse &rarr; classify</option>
+                <option>Parse &rarr; classify &rarr; extract facts</option>
+                <option>Never send to LLM</option>
+              </select>
+              <span style="text-align:center;"><span class="stg-yes">&#10003;</span></span>
+              <span style="text-align:center;"><span class="stg-yes">&#10003;</span></span>
+              <span style="text-align:center;"><span class="stg-no">&mdash;</span></span>
+              <span style="text-align:center;"><span class="stg-yes">&#10003;</span></span>
+              <span style="display:flex;justify-content:flex-end;align-items:center;">
+                <svg viewBox="0 0 16 16" fill="none" stroke="rgba(20,34,53,.3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M4 6l4 4 4-4"/></svg>
+              </span>
+            </summary>
+            <div class="rule-detail">
+              <div><div class="rdl">Parse engine</div><div class="rdv">Tabular (structured)</div></div>
+              <div><div class="rdl">Extraction contract</div><div class="rdv" style="font-family:monospace;font-size:12px;color:#00a98e;">job-report-v1.json</div></div>
+              <div><div class="rdl">Human review</div><div class="rdv">Not required</div></div>
+              <div><div class="rdl">Feeds brief</div><div class="rdv">Capacity Pack &middot; Money Pack</div></div>
+              <div style="display:flex;align-items:flex-end;gap:8px;">
+                <button style="border:1px solid rgba(20,34,53,.12);background:#fff;color:#142235;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">Edit rule</button>
+                <button title="Test extraction on a sample job report" style="background:#00c9a7;color:#0d1b2a;border:none;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">Test</button>
+              </div>
+            </div>
+          </details>
+
+          <!-- Rule 4: ServiceTitan / Technician log -->
+          <details style="border-top:1px solid rgba(20,34,53,.05);">
+            <summary class="rule-summary">
+              <span style="font-size:12px;color:rgba(20,34,53,.5);font-weight:500;">ServiceTitan</span>
+              <span style="font-size:13px;font-weight:700;">Technician log</span>
+              <select class="policy-select" onclick="event.stopPropagation()" style="width:100%;max-width:260px;">
+                <option selected>Parse only</option>
+                <option>Parse &rarr; classify</option>
+                <option>Parse &rarr; classify &rarr; extract facts</option>
+                <option>Full pipeline &rarr; feeds brief</option>
+                <option>Never send to LLM</option>
+              </select>
+              <span style="text-align:center;"><span class="stg-no">&mdash;</span></span>
+              <span style="text-align:center;"><span class="stg-no">&mdash;</span></span>
+              <span style="text-align:center;"><span class="stg-no">&mdash;</span></span>
+              <span style="text-align:center;"><span class="stg-no">&mdash;</span></span>
+              <span style="display:flex;justify-content:flex-end;align-items:center;">
+                <svg viewBox="0 0 16 16" fill="none" stroke="rgba(20,34,53,.3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M4 6l4 4 4-4"/></svg>
+              </span>
+            </summary>
+            <div class="rule-detail">
+              <div><div class="rdl">Parse engine</div><div class="rdv">Text (unstructured)</div></div>
+              <div><div class="rdl">LLM access</div><div class="rdv" style="color:#8898aa;">Blocked at parse depth</div></div>
+              <div><div class="rdl">Feeds brief</div><div class="rdv" style="color:#8898aa;">None &mdash; parse only right now</div></div>
+              <div style="display:flex;align-items:flex-end;gap:8px;">
+                <button style="border:1px solid rgba(20,34,53,.12);background:#fff;color:#142235;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">Edit rule</button>
+                <button title="Test the parse stage against a sample technician log" style="background:#00c9a7;color:#0d1b2a;border:none;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">Test</button>
+              </div>
+            </div>
+          </details>
+
+          <!-- Rule 5: QuickBooks / P&L -->
+          <details style="border-top:1px solid rgba(20,34,53,.05);">
+            <summary class="rule-summary">
+              <span style="font-size:12px;color:rgba(20,34,53,.5);font-weight:500;">QuickBooks</span>
+              <span style="font-size:13px;font-weight:700;">P&amp;L / Expense</span>
+              <select class="policy-select" onclick="event.stopPropagation()" style="width:100%;max-width:260px;">
+                <option selected>Parse &rarr; extract &rarr; SQL only</option>
+                <option>Parse only</option>
+                <option>Parse &rarr; classify</option>
+                <option>Parse &rarr; classify &rarr; extract facts</option>
+                <option>Full pipeline &rarr; feeds brief</option>
+              </select>
+              <span style="text-align:center;"><span class="stg-no">&mdash;</span></span>
+              <span style="text-align:center;"><span class="stg-yes">&#10003;</span></span>
+              <span style="text-align:center;"><span class="stg-no">&mdash;</span></span>
+              <span style="text-align:center;"><span class="stg-yes">&#10003;</span></span>
+              <span style="display:flex;justify-content:flex-end;align-items:center;">
+                <svg viewBox="0 0 16 16" fill="none" stroke="rgba(20,34,53,.3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M4 6l4 4 4-4"/></svg>
+              </span>
+            </summary>
+            <div class="rule-detail">
+              <div><div class="rdl">Parse engine</div><div class="rdv">Accounting (structured)</div></div>
+              <div><div class="rdl">LLM access</div><div class="rdv" style="color:#dc2626;">Blocked &mdash; SQL only</div></div>
+              <div><div class="rdl">Redaction</div><div class="rdv">Full PII redaction applied</div></div>
+              <div><div class="rdl">Feeds brief</div><div class="rdv">Money Pack &middot; Margin Pack</div></div>
+              <div style="display:flex;align-items:flex-end;gap:8px;">
+                <button style="border:1px solid rgba(20,34,53,.12);background:#fff;color:#142235;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">Edit rule</button>
+                <button title="Test the SQL extraction path on a sample P&amp;L export" style="background:#00c9a7;color:#0d1b2a;border:none;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">Test</button>
+              </div>
+            </div>
+          </details>
+
+          <!-- Rule 6: Manual / Spreadsheet -->
+          <details style="border-top:1px solid rgba(20,34,53,.05);">
+            <summary class="rule-summary">
+              <span style="font-size:12px;color:rgba(20,34,53,.5);font-weight:500;">Manual</span>
+              <span style="font-size:13px;font-weight:700;">Spreadsheet / XLSX</span>
+              <select class="policy-select" onclick="event.stopPropagation()" style="width:100%;max-width:260px;">
+                <option selected>Manual review required first</option>
+                <option>Parse only</option>
+                <option>Parse &rarr; classify</option>
+                <option>Parse &rarr; classify &rarr; extract facts</option>
+                <option>Full pipeline &rarr; feeds brief</option>
+              </select>
+              <span style="text-align:center;"><span class="stg-no">&mdash;</span></span>
+              <span style="text-align:center;"><span class="stg-no">&mdash;</span></span>
+              <span style="text-align:center;"><span class="stg-no">&mdash;</span></span>
+              <span style="text-align:center;"><span class="stg-no">&mdash;</span></span>
+              <span style="display:flex;justify-content:flex-end;align-items:center;">
+                <svg viewBox="0 0 16 16" fill="none" stroke="rgba(20,34,53,.3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M4 6l4 4 4-4"/></svg>
+              </span>
+            </summary>
+            <div class="rule-detail">
+              <div><div class="rdl">Parse engine</div><div class="rdv">Tabular (auto-detect)</div></div>
+              <div><div class="rdl">LLM access</div><div class="rdv" style="color:#dc2626;">Blocked until reviewed</div></div>
+              <div><div class="rdl">Human review</div><div class="rdv">Required before extraction</div></div>
+              <div><div class="rdl">Feeds brief</div><div class="rdv" style="color:#8898aa;">None &mdash; pending review</div></div>
+              <div style="display:flex;align-items:flex-end;gap:8px;">
+                <button style="border:1px solid rgba(20,34,53,.12);background:#fff;color:#142235;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">Edit rule</button>
+                <button title="Upload a sample spreadsheet and step through what the pipeline would do with it" style="background:#00c9a7;color:#0d1b2a;border:none;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;">Test</button>
+              </div>
+            </div>
+          </details>
+
+          <div style="padding:10px 18px;border-top:1px solid rgba(20,34,53,.05);">
+            <button style="font-size:12px;font-weight:700;color:#00c9a7;background:none;border:none;cursor:pointer;padding:0;">+ Add pipeline rule</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Recent pipeline activity ─────────────────────────
+           Every document that entered the system today.
+           Amber rows had issues — click the row to see the full
+           artifact, extraction output, and retry options.
+           "Awaiting review" rows are manual uploads held in queue.
+      ─────────────────────────────────────────────────────────── -->
+      <section>
+        <div class="sec-head">
+          <div>
+            <h2>Recent pipeline activity</h2>
+            <p>Every document processed today. Amber rows had issues &mdash; click to see what failed and decide whether to retry, reclassify, or update the rule.</p>
+          </div>
+          <a href="#" style="font-size:12px;font-weight:600;color:#00c9a7;text-decoration:none;white-space:nowrap;flex-shrink:0;">View full log &rarr;</a>
+        </div>
+
+        <div class="card run-card" style="overflow:hidden;">
+          <table class="run-table">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Source</th>
+                <th>Document type</th>
+                <th>Records</th>
+                <th>Outcome</th>
+                <th>Avg. confidence</th>
+                <th>Duration</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="cursor:pointer;">
+                <td style="color:#8898aa;white-space:nowrap;font-size:12px;">9:41 AM</td>
+                <td style="font-weight:500;">ServiceTitan</td>
+                <td>Job report</td>
+                <td style="font-weight:700;">7</td>
+                <td><span class="run-ok">&#10003; OK</span></td>
+                <td style="font-family:monospace;font-size:12px;color:#15803d;font-weight:600;">0.93</td>
+                <td style="color:#8898aa;font-size:12px;">1.2 s</td>
+              </tr>
+              <tr style="cursor:pointer;">
+                <td style="color:#8898aa;white-space:nowrap;font-size:12px;">9:27 AM</td>
+                <td style="font-weight:500;">QuickBooks</td>
+                <td>P&amp;L / Expense</td>
+                <td style="font-weight:700;">34</td>
+                <td><span class="run-ok">&#10003; OK</span></td>
+                <td style="font-family:monospace;font-size:12px;color:#15803d;font-weight:600;">0.91</td>
+                <td style="color:#8898aa;font-size:12px;">3.4 s</td>
+              </tr>
+              <tr style="cursor:pointer;background:rgba(245,158,11,.03);">
+                <td style="color:#8898aa;white-space:nowrap;font-size:12px;">9:14 AM</td>
+                <td style="font-weight:500;">Gmail / AP</td>
+                <td>Invoice PDF</td>
+                <td style="font-weight:700;">6 <span style="color:#b45309;font-size:11px;font-weight:600;">(3 failed)</span></td>
+                <td><span class="run-warn">&#9888; Partial</span></td>
+                <td style="font-family:monospace;font-size:12px;color:#b45309;font-weight:600;">0.61</td>
+                <td style="color:#8898aa;font-size:12px;">8.1 s</td>
+              </tr>
+              <tr style="cursor:pointer;">
+                <td style="color:#8898aa;white-space:nowrap;font-size:12px;">8:55 AM</td>
+                <td style="font-weight:500;">ServiceTitan</td>
+                <td>Invoice</td>
+                <td style="font-weight:700;">12</td>
+                <td><span class="run-ok">&#10003; OK</span></td>
+                <td style="font-family:monospace;font-size:12px;color:#15803d;font-weight:600;">0.89</td>
+                <td style="color:#8898aa;font-size:12px;">2.1 s</td>
+              </tr>
+              <tr style="cursor:pointer;">
+                <td style="color:#8898aa;white-space:nowrap;font-size:12px;">8:30 AM</td>
+                <td style="font-weight:500;">ServiceTitan</td>
+                <td>Job report</td>
+                <td style="font-weight:700;">5</td>
+                <td><span class="run-ok">&#10003; OK</span></td>
+                <td style="font-family:monospace;font-size:12px;color:#15803d;font-weight:600;">0.95</td>
+                <td style="color:#8898aa;font-size:12px;">0.9 s</td>
+              </tr>
+              <tr style="cursor:pointer;">
+                <td style="color:#8898aa;white-space:nowrap;font-size:12px;">8:00 AM</td>
+                <td style="font-weight:500;">QuickBooks</td>
+                <td>Invoice</td>
+                <td style="font-weight:700;">8</td>
+                <td><span class="run-ok">&#10003; OK</span></td>
+                <td style="font-family:monospace;font-size:12px;color:#15803d;font-weight:600;">0.88</td>
+                <td style="color:#8898aa;font-size:12px;">1.8 s</td>
+              </tr>
+              <tr style="cursor:pointer;background:rgba(20,34,53,.012);">
+                <td style="color:#8898aa;white-space:nowrap;font-size:12px;">7:30 AM</td>
+                <td style="font-weight:500;">Manual</td>
+                <td>Spreadsheet / XLSX</td>
+                <td style="font-weight:700;">1</td>
+                <td><span class="run-hold">&#9208; Awaiting review</span></td>
+                <td style="font-family:monospace;font-size:12px;color:#8898aa;">&mdash;</td>
+                <td style="color:#8898aa;font-size:12px;">&mdash;</td>
+              </tr>
+              <tr style="cursor:pointer;">
+                <td style="color:#8898aa;white-space:nowrap;font-size:12px;">7:00 AM</td>
+                <td style="font-weight:500;">Gmail / AP</td>
+                <td>Vendor receipt</td>
+                <td style="font-weight:700;">9</td>
+                <td><span class="run-ok">&#10003; OK</span></td>
+                <td style="font-family:monospace;font-size:12px;color:#8898aa;">n/a</td>
+                <td style="color:#8898aa;font-size:12px;">0.4 s</td>
+              </tr>
+              <tr style="cursor:pointer;">
+                <td style="color:#8898aa;white-space:nowrap;font-size:12px;">6:15 AM</td>
+                <td style="font-weight:500;">ServiceTitan</td>
+                <td>Tech log</td>
+                <td style="font-weight:700;">22</td>
+                <td><span class="run-ok">&#10003; OK</span></td>
+                <td style="font-family:monospace;font-size:12px;color:#15803d;font-weight:600;">0.87</td>
+                <td style="color:#8898aa;font-size:12px;">4.6 s</td>
+              </tr>
+              <tr style="cursor:pointer;">
+                <td style="color:#8898aa;white-space:nowrap;font-size:12px;">5:30 AM</td>
+                <td style="font-weight:500;">QuickBooks</td>
+                <td>P&amp;L / Expense</td>
+                <td style="font-weight:700;">34</td>
+                <td><span class="run-ok">&#10003; OK</span></td>
+                <td style="font-family:monospace;font-size:12px;color:#15803d;font-weight:600;">0.92</td>
+                <td style="color:#8898aa;font-size:12px;">3.1 s</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- ── Mobile bottom navigation ─────────────────────────────────────── -->
+  <nav class="mob-nav" aria-label="Mobile navigation">
+    <a href="app-dashboard.html" class="mob-nav-link"><svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20"><path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>Home</a>
+    <a href="app-pipeline.html" class="mob-nav-link active"><svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20"><path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 6a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2zm0 6a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2z" clip-rule="evenodd"/></svg>Pipeline</a>
+    <a href="app-explorer.html" class="mob-nav-link"><svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20"><path d="M3 12v3c0 1.657 3.134 3 7 3s7-1.343 7-3v-3c0 1.657-3.134 3-7 3s-7-1.343-7-3z"/><path d="M3 7v3c0 1.657 3.134 3 7 3s7-1.343 7-3V7c0 1.657-3.134 3-7 3S3 8.657 3 7z"/><path d="M17 5c0 1.657-3.134 3-7 3S3 6.657 3 5s3.134-3 7-3 7 1.343 7 3z"/></svg>Explorer</a>
+    <a href="app-decision-packs.html" class="mob-nav-link"><svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20"><path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z"/></svg>Packs</a>
+    <a href="app-ask.html" class="mob-nav-link"><svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20"><path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd"/></svg>Ask</a>
+  </nav>
+</div>
+<script>
+function toggleSidebar() {
+  var sb = document.querySelector('.sidebar');
+  sb.classList.toggle('collapsed');
+  try { localStorage.setItem('sidebar-collapsed', sb.classList.contains('collapsed')); } catch(e) {}
+}
+(function() {
+  try { if (localStorage.getItem('sidebar-collapsed') === 'true') { document.querySelector('.sidebar').classList.add('collapsed'); } } catch(e) {}
+}());
+</script>
+</body>
+</html>

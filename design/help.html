@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Help Center — PulseOps</title>
+  <meta name="description" content="Answers to common questions about PulseOps — getting started, connecting data, understanding your brief, and managing your account." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="dist/output.css" />
+  <style>
+    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+    .prose-balance { text-wrap: balance; }
+    .page-hero {
+      background-color: #0b1929;
+      background-image:
+        radial-gradient(circle at 1px 1px, rgba(255,255,255,.045) 1px, transparent 0),
+        linear-gradient(150deg, #0b1929 0%, #0d1e30 60%, #0c2640 100%);
+      background-size: 32px 32px, cover;
+    }
+    /* Pure-CSS accordion */
+    .faq-item input[type="checkbox"] { position: absolute; opacity: 0; pointer-events: none; }
+    .faq-item label { cursor: pointer; user-select: none; }
+    .faq-answer { max-height: 0; overflow: hidden; transition: max-height 0.25s ease; }
+    .faq-item input:checked ~ .faq-answer { max-height: 400px; }
+    .faq-chevron { transition: transform 0.2s ease; }
+    .faq-item input:checked ~ label .faq-chevron { transform: rotate(180deg); }
+  </style>
+</head>
+<body class="bg-light text-navy antialiased">
+
+<!-- NAV -->
+<nav class="sticky top-0 z-[100] bg-navy/95 backdrop-blur-sm border-b border-white/[.06]">
+  <input type="checkbox" id="nav-toggle" class="sr-only peer" />
+  <div class="flex items-center justify-between px-6 md:px-12 h-[68px]">
+    <a href="index.html" class="text-white text-xl font-bold tracking-tight no-underline select-none">Pulse<span class="text-accent">Ops</span></a>
+    <ul class="hidden md:flex gap-8 list-none m-0 p-0">
+      <li><a href="index.html#how-it-works" class="text-[#8fa8be] no-underline text-sm font-medium hover:text-white transition-colors duration-200">How It Works</a></li>
+      <li><a href="index.html#questions"    class="text-[#8fa8be] no-underline text-sm font-medium hover:text-white transition-colors duration-200">What You Get</a></li>
+      <li><a href="index.html#difference"   class="text-[#8fa8be] no-underline text-sm font-medium hover:text-white transition-colors duration-200">Why Different</a></li>
+      <li><a href="index.html#pricing"      class="text-[#8fa8be] no-underline text-sm font-medium hover:text-white transition-colors duration-200">Pricing</a></li>
+      <li><a href="blog.html"               class="text-[#8fa8be] no-underline text-sm font-medium hover:text-white transition-colors duration-200">Blog</a></li>
+    </ul>
+    <div class="flex items-center gap-2">
+      <a href="index.html#get-started" class="hidden md:inline-block bg-accent text-navy text-sm font-semibold px-5 py-2.5 rounded-lg no-underline hover:bg-accent2 transition-colors duration-200 whitespace-nowrap">Get Started Free</a>
+      <label for="nav-toggle" class="md:hidden cursor-pointer inline-flex items-center justify-center w-10 h-10 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors duration-200" aria-label="Toggle navigation menu">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </label>
+    </div>
+  </div>
+  <div class="hidden peer-checked:block md:hidden bg-navy border-t border-white/[.08] px-6 pb-5 pt-2">
+    <ul class="list-none m-0 p-0 flex flex-col">
+      <li><a href="index.html#how-it-works" class="block py-3.5 text-[#8fa8be] no-underline text-[.95rem] font-medium border-b border-white/[.07] hover:text-white transition-colors duration-200">How It Works</a></li>
+      <li><a href="index.html#questions"    class="block py-3.5 text-[#8fa8be] no-underline text-[.95rem] font-medium border-b border-white/[.07] hover:text-white transition-colors duration-200">What You Get</a></li>
+      <li><a href="index.html#difference"   class="block py-3.5 text-[#8fa8be] no-underline text-[.95rem] font-medium border-b border-white/[.07] hover:text-white transition-colors duration-200">Why Different</a></li>
+      <li><a href="index.html#pricing"      class="block py-3.5 text-[#8fa8be] no-underline text-[.95rem] font-medium border-b border-white/[.07] hover:text-white transition-colors duration-200">Pricing</a></li>
+      <li><a href="blog.html"               class="block py-3.5 text-[#8fa8be] no-underline text-[.95rem] font-medium hover:text-white transition-colors duration-200">Blog</a></li>
+    </ul>
+    <a href="index.html#get-started" class="mt-4 block w-full text-center bg-accent text-navy font-bold px-5 py-3 rounded-xl text-[.95rem] no-underline hover:bg-accent2 transition-colors duration-200">Get Started Free</a>
+  </div>
+</nav>
+
+<!-- PAGE HERO -->
+<section class="page-hero text-white px-6 md:px-12 pt-16 pb-20 md:pt-20 md:pb-24">
+  <div class="max-w-[760px] mx-auto text-center">
+    <div class="inline-flex items-center gap-2 border border-accent/25 bg-accent/[.08] text-accent rounded-full px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[.09em] mb-8">Help Center</div>
+    <h1 class="text-[clamp(2rem,5vw,3rem)] font-extrabold leading-[1.12] tracking-tight prose-balance mb-5">How can we help?</h1>
+    <p class="text-[1.05rem] text-[#94afc7] leading-relaxed prose-balance">Common questions about getting started, connecting your data, understanding your brief, and managing your account.</p>
+  </div>
+</section>
+
+<!-- CATEGORIES -->
+<section class="bg-white px-6 md:px-12 py-10 border-b border-[#e8eff5]">
+  <div class="max-w-[1080px] mx-auto grid grid-cols-2 sm:grid-cols-4 gap-4">
+    <a href="#getting-started" class="bg-light rounded-2xl border border-[#e4edf5] p-5 text-center no-underline hover:border-accent transition-colors duration-200 group">
+      <div class="text-2xl mb-2">🚀</div>
+      <div class="text-[.88rem] font-semibold text-navy group-hover:text-accent transition-colors duration-200">Getting Started</div>
+    </a>
+    <a href="#connecting-data" class="bg-light rounded-2xl border border-[#e4edf5] p-5 text-center no-underline hover:border-accent transition-colors duration-200 group">
+      <div class="text-2xl mb-2">🔌</div>
+      <div class="text-[.88rem] font-semibold text-navy group-hover:text-accent transition-colors duration-200">Connecting Data</div>
+    </a>
+    <a href="#your-brief" class="bg-light rounded-2xl border border-[#e4edf5] p-5 text-center no-underline hover:border-accent transition-colors duration-200 group">
+      <div class="text-2xl mb-2">📋</div>
+      <div class="text-[.88rem] font-semibold text-navy group-hover:text-accent transition-colors duration-200">Your Brief</div>
+    </a>
+    <a href="#account" class="bg-light rounded-2xl border border-[#e4edf5] p-5 text-center no-underline hover:border-accent transition-colors duration-200 group">
+      <div class="text-2xl mb-2">⚙️</div>
+      <div class="text-[.88rem] font-semibold text-navy group-hover:text-accent transition-colors duration-200">Account &amp; Billing</div>
+    </a>
+  </div>
+</section>
+
+<!-- FAQ SECTIONS -->
+<section class="bg-white px-6 md:px-12 py-12 md:py-16">
+  <div class="max-w-[800px] mx-auto">
+
+    <!-- Getting Started -->
+    <div id="getting-started" class="mb-12">
+      <div class="flex items-center gap-3 mb-6">
+        <div class="text-2xl">🚀</div>
+        <h2 class="text-[1.2rem] font-extrabold">Getting Started</h2>
+      </div>
+      <div class="flex flex-col gap-3">
+
+        <div class="faq-item relative bg-light rounded-2xl border border-[#e4edf5] overflow-hidden">
+          <input type="checkbox" id="faq-1" />
+          <label for="faq-1" class="flex items-center justify-between gap-4 p-5 cursor-pointer">
+            <span class="font-semibold text-[.93rem]">How long does setup take?</span>
+            <svg class="faq-chevron w-5 h-5 text-[#7a9ab4] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+          </label>
+          <div class="faq-answer">
+            <p class="px-5 pb-5 text-[.88rem] text-[#4e6278] leading-relaxed">Most businesses are fully connected in under 15 minutes. If you're using QuickBooks, Jobber, or ServiceTitan, setup is typically under 5 minutes — just authorize the connection. You'll receive your first brief on the following Monday, regardless of when you sign up.</p>
+          </div>
+        </div>
+
+        <div class="faq-item relative bg-light rounded-2xl border border-[#e4edf5] overflow-hidden">
+          <input type="checkbox" id="faq-2" />
+          <label for="faq-2" class="flex items-center justify-between gap-4 p-5 cursor-pointer">
+            <span class="font-semibold text-[.93rem]">Do I need to clean up my data before connecting?</span>
+            <svg class="faq-chevron w-5 h-5 text-[#7a9ab4] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+          </label>
+          <div class="faq-answer">
+            <p class="px-5 pb-5 text-[.88rem] text-[#4e6278] leading-relaxed">No. PulseOps is built specifically to handle messy, inconsistent, and incomplete real-world business data. Incomplete job records, mismatched categories, mixed cost codes — we handle all of it on our end. You don't need to do any cleanup before connecting.</p>
+          </div>
+        </div>
+
+        <div class="faq-item relative bg-light rounded-2xl border border-[#e4edf5] overflow-hidden">
+          <input type="checkbox" id="faq-3" />
+          <label for="faq-3" class="flex items-center justify-between gap-4 p-5 cursor-pointer">
+            <span class="font-semibold text-[.93rem]">What if I don't use any software — just spreadsheets or bank exports?</span>
+            <svg class="faq-chevron w-5 h-5 text-[#7a9ab4] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+          </label>
+          <div class="faq-answer">
+            <p class="px-5 pb-5 text-[.88rem] text-[#4e6278] leading-relaxed">That works too. You can upload an Excel or Google Sheets file, or drop in a bank statement export (CSV or PDF). We'll extract what we can and start building your picture from there. As you add more data sources over time, the brief gets sharper — but even a bank export plus a basic job list is enough to get started.</p>
+          </div>
+        </div>
+
+        <div class="faq-item relative bg-light rounded-2xl border border-[#e4edf5] overflow-hidden">
+          <input type="checkbox" id="faq-4" />
+          <label for="faq-4" class="flex items-center justify-between gap-4 p-5 cursor-pointer">
+            <span class="font-semibold text-[.93rem]">Is there a free trial? Do I need a credit card?</span>
+            <svg class="faq-chevron w-5 h-5 text-[#7a9ab4] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+          </label>
+          <div class="faq-answer">
+            <p class="px-5 pb-5 text-[.88rem] text-[#4e6278] leading-relaxed">Yes — you get a full 30-day free trial with no credit card required. You'll receive up to 4 weekly briefs before we ask you to enter payment details. If PulseOps isn't working for you after the first two briefs, let us know and we'll help figure out why — or cancel with no questions asked.</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Connecting Data -->
+    <div id="connecting-data" class="mb-12">
+      <div class="flex items-center gap-3 mb-6">
+        <div class="text-2xl">🔌</div>
+        <h2 class="text-[1.2rem] font-extrabold">Connecting Data</h2>
+      </div>
+      <div class="flex flex-col gap-3">
+
+        <div class="faq-item relative bg-light rounded-2xl border border-[#e4edf5] overflow-hidden">
+          <input type="checkbox" id="faq-5" />
+          <label for="faq-5" class="flex items-center justify-between gap-4 p-5 cursor-pointer">
+            <span class="font-semibold text-[.93rem]">Which software tools does PulseOps connect to?</span>
+            <svg class="faq-chevron w-5 h-5 text-[#7a9ab4] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+          </label>
+          <div class="faq-answer">
+            <p class="px-5 pb-5 text-[.88rem] text-[#4e6278] leading-relaxed">We support direct integrations with QuickBooks Online, Jobber, ServiceTitan, Housecall Pro, Square, and Clover. We also accept file imports (Excel, Google Sheets, CSV) and bank statement exports. If you use a tool that's not listed, contact us — we add new connectors regularly based on customer demand.</p>
+          </div>
+        </div>
+
+        <div class="faq-item relative bg-light rounded-2xl border border-[#e4edf5] overflow-hidden">
+          <input type="checkbox" id="faq-6" />
+          <label for="faq-6" class="flex items-center justify-between gap-4 p-5 cursor-pointer">
+            <span class="font-semibold text-[.93rem]">Is my financial data secure?</span>
+            <svg class="faq-chevron w-5 h-5 text-[#7a9ab4] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+          </label>
+          <div class="faq-answer">
+            <p class="px-5 pb-5 text-[.88rem] text-[#4e6278] leading-relaxed">Yes. All connections use OAuth (read-only where available), data is encrypted in transit and at rest, and we never store raw credentials. We access only the data needed to generate your brief and do not share your business data with any third parties. See our <a href="privacy.html" class="text-accent no-underline hover:underline">Privacy Policy</a> for full details.</p>
+          </div>
+        </div>
+
+        <div class="faq-item relative bg-light rounded-2xl border border-[#e4edf5] overflow-hidden">
+          <input type="checkbox" id="faq-7" />
+          <label for="faq-7" class="flex items-center justify-between gap-4 p-5 cursor-pointer">
+            <span class="font-semibold text-[.93rem]">How far back does PulseOps pull historical data?</span>
+            <svg class="faq-chevron w-5 h-5 text-[#7a9ab4] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+          </label>
+          <div class="faq-answer">
+            <p class="px-5 pb-5 text-[.88rem] text-[#4e6278] leading-relaxed">On initial setup, we pull up to 24 months of historical data from connected sources (where available). This gives us enough context to identify trends and seasonal patterns in your job types. The longer you use PulseOps, the more accurate the benchmarking becomes.</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Your Brief -->
+    <div id="your-brief" class="mb-12">
+      <div class="flex items-center gap-3 mb-6">
+        <div class="text-2xl">📋</div>
+        <h2 class="text-[1.2rem] font-extrabold">Your Brief</h2>
+      </div>
+      <div class="flex flex-col gap-3">
+
+        <div class="faq-item relative bg-light rounded-2xl border border-[#e4edf5] overflow-hidden">
+          <input type="checkbox" id="faq-8" />
+          <label for="faq-8" class="flex items-center justify-between gap-4 p-5 cursor-pointer">
+            <span class="font-semibold text-[.93rem]">When does my brief arrive?</span>
+            <svg class="faq-chevron w-5 h-5 text-[#7a9ab4] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+          </label>
+          <div class="faq-answer">
+            <p class="px-5 pb-5 text-[.88rem] text-[#4e6278] leading-relaxed">Your brief is delivered by email every Monday at 7:00 AM in your local time zone. You can also view it in the PulseOps web portal at any time. Full Operations Pack subscribers also receive a daily snapshot every weekday morning.</p>
+          </div>
+        </div>
+
+        <div class="faq-item relative bg-light rounded-2xl border border-[#e4edf5] overflow-hidden">
+          <input type="checkbox" id="faq-9" />
+          <label for="faq-9" class="flex items-center justify-between gap-4 p-5 cursor-pointer">
+            <span class="font-semibold text-[.93rem]">What if a recommendation doesn't look right?</span>
+            <svg class="faq-chevron w-5 h-5 text-[#7a9ab4] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+          </label>
+          <div class="faq-answer">
+            <p class="px-5 pb-5 text-[.88rem] text-[#4e6278] leading-relaxed">Every item in your brief shows the underlying data behind it — which jobs, which dates, and how confident we are. If something looks off, you can flag it directly from the brief. Flagged items are reviewed, and your correction teaches PulseOps more about how your business is structured. Over time this reduces incorrect recommendations significantly.</p>
+          </div>
+        </div>
+
+        <div class="faq-item relative bg-light rounded-2xl border border-[#e4edf5] overflow-hidden">
+          <input type="checkbox" id="faq-10" />
+          <label for="faq-10" class="flex items-center justify-between gap-4 p-5 cursor-pointer">
+            <span class="font-semibold text-[.93rem]">Can I share my brief with my bookkeeper or admin?</span>
+            <svg class="faq-chevron w-5 h-5 text-[#7a9ab4] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+          </label>
+          <div class="faq-answer">
+            <p class="px-5 pb-5 text-[.88rem] text-[#4e6278] leading-relaxed">Yes. You can add additional email recipients to your brief delivery so your bookkeeper, office manager, or business partner receives a copy automatically. Each brief has a shareable link that doesn't require login. You can manage recipients in your account settings.</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Account & Billing -->
+    <div id="account" class="mb-12">
+      <div class="flex items-center gap-3 mb-6">
+        <div class="text-2xl">⚙️</div>
+        <h2 class="text-[1.2rem] font-extrabold">Account &amp; Billing</h2>
+      </div>
+      <div class="flex flex-col gap-3">
+
+        <div class="faq-item relative bg-light rounded-2xl border border-[#e4edf5] overflow-hidden">
+          <input type="checkbox" id="faq-11" />
+          <label for="faq-11" class="flex items-center justify-between gap-4 p-5 cursor-pointer">
+            <span class="font-semibold text-[.93rem]">Can I cancel anytime?</span>
+            <svg class="faq-chevron w-5 h-5 text-[#7a9ab4] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+          </label>
+          <div class="faq-answer">
+            <p class="px-5 pb-5 text-[.88rem] text-[#4e6278] leading-relaxed">Yes. There are no contracts or cancellation fees. You can cancel from your account settings at any time. Your access continues until the end of the billing period, and we don't charge you again after that. If you cancel within the first 30 days, you pay nothing.</p>
+          </div>
+        </div>
+
+        <div class="faq-item relative bg-light rounded-2xl border border-[#e4edf5] overflow-hidden">
+          <input type="checkbox" id="faq-12" />
+          <label for="faq-12" class="flex items-center justify-between gap-4 p-5 cursor-pointer">
+            <span class="font-semibold text-[.93rem]">Can I switch plans?</span>
+            <svg class="faq-chevron w-5 h-5 text-[#7a9ab4] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+          </label>
+          <div class="faq-answer">
+            <p class="px-5 pb-5 text-[.88rem] text-[#4e6278] leading-relaxed">Yes. You can upgrade or downgrade your plan at any time from account settings. Upgrades take effect immediately (with prorated billing). Downgrades take effect at the next billing cycle.</p>
+          </div>
+        </div>
+
+        <div class="faq-item relative bg-light rounded-2xl border border-[#e4edf5] overflow-hidden">
+          <input type="checkbox" id="faq-13" />
+          <label for="faq-13" class="flex items-center justify-between gap-4 p-5 cursor-pointer">
+            <span class="font-semibold text-[.93rem]">Do you offer annual billing?</span>
+            <svg class="faq-chevron w-5 h-5 text-[#7a9ab4] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+          </label>
+          <div class="faq-answer">
+            <p class="px-5 pb-5 text-[.88rem] text-[#4e6278] leading-relaxed">Yes. Annual billing is available at a 15% discount. Contact us at <a href="mailto:support@pulseops.io" class="text-accent no-underline hover:underline">support@pulseops.io</a> or switch to annual in your account settings after your trial ends.</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Still need help -->
+    <div class="bg-navy rounded-2xl p-7 text-center">
+      <h3 class="text-white font-bold text-[1rem] mb-2">Still have a question?</h3>
+      <p class="text-[#7a9ab4] text-[.88rem] mb-5 leading-relaxed">Our support team typically responds within a few hours on business days.</p>
+      <a href="contact.html" class="inline-block bg-accent text-navy font-bold px-6 py-3 rounded-xl text-[.9rem] no-underline hover:bg-accent2 transition-colors duration-200">Contact Support</a>
+    </div>
+
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="bg-navy text-[#7a95ad] pt-10 md:pt-14 pb-7 px-6 md:px-12">
+  <div class="max-w-[1080px] mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-[2fr_1fr_1fr_1fr] gap-10">
+    <div>
+      <a href="index.html" class="text-white text-[1.2rem] font-bold tracking-tight no-underline select-none">Pulse<span class="text-accent">Ops</span></a>
+      <p class="text-[.85rem] mt-3 max-w-[250px] leading-[1.65]">Weekly cash and margin clarity for local service businesses — no analysts, no dashboards, no guesswork.</p>
+    </div>
+    <div>
+      <h4 class="text-white text-[.82rem] font-semibold uppercase tracking-[.08em] mb-4">Product</h4>
+      <ul class="list-none flex flex-col gap-2.5">
+        <li><a href="index.html#questions"    class="text-[#7a95ad] no-underline text-[.85rem] hover:text-accent transition-colors duration-200">What You Get</a></li>
+        <li><a href="index.html#how-it-works" class="text-[#7a95ad] no-underline text-[.85rem] hover:text-accent transition-colors duration-200">How It Works</a></li>
+        <li><a href="index.html#pricing"      class="text-[#7a95ad] no-underline text-[.85rem] hover:text-accent transition-colors duration-200">Pricing</a></li>
+        <li><a href="index.html#difference"   class="text-[#7a95ad] no-underline text-[.85rem] hover:text-accent transition-colors duration-200">Why Different</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4 class="text-white text-[.82rem] font-semibold uppercase tracking-[.08em] mb-4">Company</h4>
+      <ul class="list-none flex flex-col gap-2.5">
+        <li><a href="about.html"   class="text-[#7a95ad] no-underline text-[.85rem] hover:text-accent transition-colors duration-200">About</a></li>
+        <li><a href="blog.html"    class="text-[#7a95ad] no-underline text-[.85rem] hover:text-accent transition-colors duration-200">Blog</a></li>
+        <li><a href="careers.html" class="text-[#7a95ad] no-underline text-[.85rem] hover:text-accent transition-colors duration-200">Careers</a></li>
+        <li><a href="press.html"   class="text-[#7a95ad] no-underline text-[.85rem] hover:text-accent transition-colors duration-200">Press</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4 class="text-white text-[.82rem] font-semibold uppercase tracking-[.08em] mb-4">Support</h4>
+      <ul class="list-none flex flex-col gap-2.5">
+        <li><a href="help.html"    class="text-accent no-underline text-[.85rem]">Help Center</a></li>
+        <li><a href="contact.html" class="text-[#7a95ad] no-underline text-[.85rem] hover:text-accent transition-colors duration-200">Contact</a></li>
+        <li><a href="privacy.html" class="text-[#7a95ad] no-underline text-[.85rem] hover:text-accent transition-colors duration-200">Privacy Policy</a></li>
+        <li><a href="terms.html"   class="text-[#7a95ad] no-underline text-[.85rem] hover:text-accent transition-colors duration-200">Terms of Service</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="max-w-[1080px] mx-auto mt-10 pt-5 border-t border-white/[.07] flex justify-between items-center text-[.78rem] text-[#3d576b] flex-wrap gap-2">
+    <span>© 2025 PulseOps. All rights reserved.</span>
+    <span>Built for local service businesses everywhere.</span>
+  </div>
+</footer>
+
+</body>
+</html>

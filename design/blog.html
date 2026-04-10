@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Blog — PulseOps</title>
+  <meta name="description" content="Practical articles on cash flow, job profitability, and operations for local service businesses." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="dist/output.css" />
+  <style>
+    body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+    .prose-balance { text-wrap: balance; }
+    .page-hero {
+      background-color: #0b1929;
+      background-image:
+        radial-gradient(circle at 1px 1px, rgba(255,255,255,.045) 1px, transparent 0),
+        linear-gradient(150deg, #0b1929 0%, #0d1e30 60%, #0c2640 100%);
+      background-size: 32px 32px, cover;
+    }
+  </style>
+</head>
+<body class="bg-light text-navy antialiased">
+
+<!-- NAV -->
+<nav class="sticky top-0 z-[100] bg-navy/95 backdrop-blur-sm border-b border-white/[.06]">
+  <input type="checkbox" id="nav-toggle" class="sr-only peer" />
+  <div class="flex items-center justify-between px-6 md:px-12 h-[68px]">
+    <a href="index.html" class="text-white text-xl font-bold tracking-tight no-underline select-none">Pulse<span class="text-accent">Ops</span></a>
+    <ul class="hidden md:flex gap-8 list-none m-0 p-0">
+      <li><a href="index.html#how-it-works" class="text-[#8fa8be] no-underline text-sm font-medium hover:text-white transition-colors duration-200">How It Works</a></li>
+      <li><a href="index.html#questions"    class="text-[#8fa8be] no-underline text-sm font-medium hover:text-white transition-colors duration-200">What You Get</a></li>
+      <li><a href="index.html#difference"   class="text-[#8fa8be] no-underline text-sm font-medium hover:text-white transition-colors duration-200">Why Different</a></li>
+      <li><a href="index.html#pricing"      class="text-[#8fa8be] no-underline text-sm font-medium hover:text-white transition-colors duration-200">Pricing</a></li>
+      <li><a href="blog.html"               class="text-[#8fa8be] no-underline text-sm font-medium hover:text-white transition-colors duration-200">Blog</a></li>
+    </ul>
+    <div class="flex items-center gap-2">
+      <a href="index.html#get-started" class="hidden md:inline-block bg-accent text-navy text-sm font-semibold px-5 py-2.5 rounded-lg no-underline hover:bg-accent2 transition-colors duration-200 whitespace-nowrap">Get Started Free</a>
+      <label for="nav-toggle" class="md:hidden cursor-pointer inline-flex items-center justify-center w-10 h-10 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors duration-200" aria-label="Toggle navigation menu">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+      </label>
+    </div>
+  </div>
+  <div class="hidden peer-checked:block md:hidden bg-navy border-t border-white/[.08] px-6 pb-5 pt-2">
+    <ul class="list-none m-0 p-0 flex flex-col">
+      <li><a href="index.html#how-it-works" class="block py-3.5 text-[#8fa8be] no-underline text-[.95rem] font-medium border-b border-white/[.07] hover:text-white transition-colors duration-200">How It Works</a></li>
+      <li><a href="index.html#questions"    class="block py-3.5 text-[#8fa8be] no-underline text-[.95rem] font-medium border-b border-white/[.07] hover:text-white transition-colors duration-200">What You Get</a></li>
+      <li><a href="index.html#difference"   class="block py-3.5 text-[#8fa8be] no-underline text-[.95rem] font-medium border-b border-white/[.07] hover:text-white transition-colors duration-200">Why Different</a></li>
+      <li><a href="index.html#pricing"      class="block py-3.5 text-[#8fa8be] no-underline text-[.95rem] font-medium border-b border-white/[.07] hover:text-white transition-colors duration-200">Pricing</a></li>
+      <li><a href="blog.html"               class="block py-3.5 text-[#8fa8be] no-underline text-[.95rem] font-medium hover:text-white transition-colors duration-200">Blog</a></li>
+    </ul>
+    <a href="index.html#get-started" class="mt-4 block w-full text-center bg-accent text-navy font-bold px-5 py-3 rounded-xl text-[.95rem] no-underline hover:bg-accent2 transition-colors duration-200">Get Started Free</a>
+  </div>
+</nav>
+
+<!-- PAGE HERO -->
+<section class="page-hero text-white px-6 md:px-12 pt-16 pb-20 md:pt-20 md:pb-24">
+  <div class="max-w-[800px] mx-auto">
+    <div class="inline-flex items-center gap-2 border border-accent/25 bg-accent/[.08] text-accent rounded-full px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[.09em] mb-8">Blog</div>
+    <h1 class="text-[clamp(2rem,5vw,3rem)] font-extrabold leading-[1.12] tracking-tight prose-balance mb-5">Practical thinking for service business owners.</h1>
+    <p class="text-[1.05rem] text-[#94afc7] leading-relaxed max-w-[520px] prose-balance">Cash flow, job margin, pricing, and ops — written by people who've actually run field service businesses.</p>
+  </div>
+</section>
+
+<!-- FEATURED POST -->
+<section class="bg-white px-6 md:px-12 py-10 border-b border-[#e8eff5]">
+  <div class="max-w-[1080px] mx-auto">
+    <div class="text-[11px] uppercase tracking-[.09em] font-semibold text-accent mb-5">Featured</div>
+    <div class="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-8 items-start">
+      <div>
+        <div class="flex flex-wrap gap-2 mb-3">
+          <span class="text-[.75rem] bg-accent/[.10] text-accent font-semibold px-3 py-1 rounded-full">Cash Flow</span>
+          <span class="text-[.75rem] text-[#7a9ab4] font-medium">March 24, 2026 · 8 min read</span>
+        </div>
+        <h2 class="text-[clamp(1.3rem,2.5vw,1.8rem)] font-extrabold leading-[1.2] tracking-tight mb-3 prose-balance">Why most HVAC businesses can't answer "are we profitable this month?" — and what to do about it.</h2>
+        <p class="text-[.95rem] text-[#4e6278] leading-relaxed mb-5 max-w-[640px]">Revenue is up. You're booking more jobs than ever. But the cash account doesn't feel like it reflects that. Here's how the gap between project revenue and actual cash position develops — and the three numbers that close it.</p>
+        <a href="#" class="inline-block text-accent font-semibold text-[.9rem] no-underline hover:underline">Read the article →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- POSTS GRID -->
+<section class="bg-white px-6 md:px-12 py-12 md:py-16">
+  <div class="max-w-[1080px] mx-auto">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+
+      <article class="bg-light rounded-2xl border border-[#e4edf5] p-6 flex flex-col">
+        <div class="flex flex-wrap gap-2 mb-3">
+          <span class="text-[.72rem] bg-[#ffc947]/[.15] text-[#b38600] font-semibold px-2.5 py-0.5 rounded-full">Pricing</span>
+          <span class="text-[.72rem] text-[#7a9ab4]">Mar 17, 2026</span>
+        </div>
+        <h3 class="text-[.97rem] font-bold leading-snug mb-2 prose-balance flex-1">How to know when your labor rate is out of date — before it starts costing you jobs.</h3>
+        <p class="text-[.83rem] text-[#4e6278] leading-relaxed mb-4">Most service businesses update their pricing once a year, if that. Here are the three signals that tell you it's time to reprice, and how to do it without losing existing customers.</p>
+        <a href="#" class="text-accent text-[.84rem] font-semibold no-underline hover:underline mt-auto">Read more →</a>
+      </article>
+
+      <article class="bg-light rounded-2xl border border-[#e4edf5] p-6 flex flex-col">
+        <div class="flex flex-wrap gap-2 mb-3">
+          <span class="text-[.72rem] bg-accent/[.10] text-accent font-semibold px-2.5 py-0.5 rounded-full">Receivables</span>
+          <span class="text-[.72rem] text-[#7a9ab4]">Mar 10, 2026</span>
+        </div>
+        <h3 class="text-[.97rem] font-bold leading-snug mb-2 prose-balance flex-1">The commercial customer deposit conversation: when to have it and exactly what to say.</h3>
+        <p class="text-[.83rem] text-[#4e6278] leading-relaxed mb-4">Requiring deposits from commercial clients is the single highest-leverage thing most service businesses aren't doing. Here's how to introduce it without damaging the relationship.</p>
+        <a href="#" class="text-accent text-[.84rem] font-semibold no-underline hover:underline mt-auto">Read more →</a>
+      </article>
+
+      <article class="bg-light rounded-2xl border border-[#e4edf5] p-6 flex flex-col">
+        <div class="flex flex-wrap gap-2 mb-3">
+          <span class="text-[.72rem] bg-[#ff5a5f]/[.12] text-[#cc3338] font-semibold px-2.5 py-0.5 rounded-full">Job Margin</span>
+          <span class="text-[.72rem] text-[#7a9ab4]">Feb 28, 2026</span>
+        </div>
+        <h3 class="text-[.97rem] font-bold leading-snug mb-2 prose-balance flex-1">Drive time is destroying your per-job margin. Here's what the math actually looks like.</h3>
+        <p class="text-[.83rem] text-[#4e6278] leading-relaxed mb-4">A technician driving 40 minutes between jobs costs you more than you think once you factor in the full hourly burden rate. Here's the calculation and what to do about route density.</p>
+        <a href="#" class="text-accent text-[.84rem] font-semibold no-underline hover:underline mt-auto">Read more →</a>
+      </article>
+
+      <article class="bg-light rounded-2xl border border-[#e4edf5] p-6 flex flex-col">
+        <div class="flex flex-wrap gap-2 mb-3">
+          <span class="text-[.72rem] bg-accent/[.10] text-accent font-semibold px-2.5 py-0.5 rounded-full">Cash Flow</span>
+          <span class="text-[.72rem] text-[#7a9ab4]">Feb 17, 2026</span>
+        </div>
+        <h3 class="text-[.97rem] font-bold leading-snug mb-2 prose-balance flex-1">The 30/60/90 invoice problem: why most trades businesses let bad AR become a habit.</h3>
+        <p class="text-[.83rem] text-[#4e6278] leading-relaxed mb-4">Once an invoice hits 45 days, the odds of collecting in full drop significantly. Here's a simple receivables system that keeps you from letting that happen.</p>
+        <a href="#" class="text-accent text-[.84rem] font-semibold no-underline hover:underline mt-auto">Read more →</a>
+      </article>
+
+      <article class="bg-light rounded-2xl border border-[#e4edf5] p-6 flex flex-col">
+        <div class="flex flex-wrap gap-2 mb-3">
+          <span class="text-[.72rem] bg-[#ffc947]/[.15] text-[#b38600] font-semibold px-2.5 py-0.5 rounded-full">Operations</span>
+          <span class="text-[.72rem] text-[#7a9ab4]">Feb 5, 2026</span>
+        </div>
+        <h3 class="text-[.97rem] font-bold leading-snug mb-2 prose-balance flex-1">How one plumbing business found $3,200/month in margin by fixing one job category.</h3>
+        <p class="text-[.83rem] text-[#4e6278] leading-relaxed mb-4">A case study on how job-level profitability tracking surfaced a single service type that was quietly unprofitable — and what the owner did about it in a single week.</p>
+        <a href="#" class="text-accent text-[.84rem] font-semibold no-underline hover:underline mt-auto">Read more →</a>
+      </article>
+
+      <article class="bg-light rounded-2xl border border-[#e4edf5] p-6 flex flex-col">
+        <div class="flex flex-wrap gap-2 mb-3">
+          <span class="text-[.72rem] bg-[#ff5a5f]/[.12] text-[#cc3338] font-semibold px-2.5 py-0.5 rounded-full">Job Margin</span>
+          <span class="text-[.72rem] text-[#7a9ab4]">Jan 21, 2026</span>
+        </div>
+        <h3 class="text-[.97rem] font-bold leading-snug mb-2 prose-balance flex-1">Material cost creep: why your job estimates go stale faster than you think.</h3>
+        <p class="text-[.83rem] text-[#4e6278] leading-relaxed mb-4">Material prices have moved significantly over the past 18 months. Here's a practical way to audit your most-used materials and update your estimates before the next job cycle.</p>
+        <a href="#" class="text-accent text-[.84rem] font-semibold no-underline hover:underline mt-auto">Read more →</a>
+      </article>
+
+    </div>
+
+    <div class="mt-10 text-center">
+      <a href="#" class="inline-block border border-[#c8d8e6] text-navy font-semibold px-6 py-3 rounded-xl text-[.9rem] no-underline hover:border-accent hover:text-accent transition-colors duration-200">Load more articles</a>
+    </div>
+  </div>
+</section>
+
+<!-- NEWSLETTER -->
+<section class="bg-navy px-6 md:px-12 py-14 md:py-20 text-center">
+  <div class="max-w-[520px] mx-auto">
+    <h2 class="text-[clamp(1.4rem,3vw,2rem)] font-extrabold leading-[1.15] tracking-tight text-white mb-3 prose-balance">Get the weekly brief — free for 30 days.</h2>
+    <p class="text-[.95rem] text-[#7a9ab4] mb-7 leading-relaxed">New articles and practical guides, directly to your inbox. No dashboards. No jargon.</p>
+    <a href="index.html#get-started" class="inline-block bg-accent text-navy font-bold px-8 py-3.5 rounded-xl text-[.95rem] no-underline hover:bg-accent2 transition-colors duration-200">Start Free Trial</a>
+    <p class="text-[.82rem] text-[#7a9ab4] mt-4">Learn more: <a href="about.html" class="text-accent no-underline hover:underline">About PulseOps</a> · <a href="careers.html" class="text-accent no-underline hover:underline">We're hiring</a></p>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="bg-navy text-[#7a95ad] pt-10 md:pt-14 pb-7 px-6 md:px-12">
+  <div class="max-w-[1080px] mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-[2fr_1fr_1fr_1fr] gap-10">
+    <div>
+      <a href="index.html" class="text-white text-[1.2rem] font-bold tracking-tight no-underline select-none">Pulse<span class="text-accent">Ops</span></a>
+      <p class="text-[.85rem] mt-3 max-w-[250px] leading-[1.65]">Weekly cash and margin clarity for local service businesses — no analysts, no dashboards, no guesswork.</p>
+    </div>
+    <div>
+      <h4 class="text-white text-[.82rem] font-semibold uppercase tracking-[.08em] mb-4">Product</h4>
+      <ul class="list-none flex flex-col gap-2.5">
+        <li><a href="index.html#questions"    class="text-[#7a95ad] no-underline text-[.85rem] hover:text-accent transition-colors duration-200">What You Get</a></li>
+        <li><a href="index.html#how-it-works" class="text-[#7a95ad] no-underline text-[.85rem] hover:text-accent transition-colors duration-200">How It Works</a></li>
+        <li><a href="index.html#pricing"      class="text-[#7a95ad] no-underline text-[.85rem] hover:text-accent transition-colors duration-200">Pricing</a></li>
+        <li><a href="index.html#difference"   class="text-[#7a95ad] no-underline text-[.85rem] hover:text-accent transition-colors duration-200">Why Different</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4 class="text-white text-[.82rem] font-semibold uppercase tracking-[.08em] mb-4">Company</h4>
+      <ul class="list-none flex flex-col gap-2.5">
+        <li><a href="about.html"   class="text-[#7a95ad] no-underline text-[.85rem] hover:text-accent transition-colors duration-200">About</a></li>
+        <li><a href="blog.html"    class="text-accent no-underline text-[.85rem]">Blog</a></li>
+        <li><a href="careers.html" class="text-[#7a95ad] no-underline text-[.85rem] hover:text-accent transition-colors duration-200">Careers</a></li>
+        <li><a href="press.html"   class="text-[#7a95ad] no-underline text-[.85rem] hover:text-accent transition-colors duration-200">Press</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4 class="text-white text-[.82rem] font-semibold uppercase tracking-[.08em] mb-4">Support</h4>
+      <ul class="list-none flex flex-col gap-2.5">
+        <li><a href="help.html"    class="text-[#7a95ad] no-underline text-[.85rem] hover:text-accent transition-colors duration-200">Help Center</a></li>
+        <li><a href="contact.html" class="text-[#7a95ad] no-underline text-[.85rem] hover:text-accent transition-colors duration-200">Contact</a></li>
+        <li><a href="privacy.html" class="text-[#7a95ad] no-underline text-[.85rem] hover:text-accent transition-colors duration-200">Privacy Policy</a></li>
+        <li><a href="terms.html"   class="text-[#7a95ad] no-underline text-[.85rem] hover:text-accent transition-colors duration-200">Terms of Service</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="max-w-[1080px] mx-auto mt-10 pt-5 border-t border-white/[.07] flex justify-between items-center text-[.78rem] text-[#3d576b] flex-wrap gap-2">
+    <span>© 2025 PulseOps. All rights reserved.</span>
+    <span>Built for local service businesses everywhere.</span>
+  </div>
+</footer>
+
+</body>
+</html>

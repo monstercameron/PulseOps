@@ -1,0 +1,48 @@
+{
+  "name": "web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "lint:domain": "eslint src/features/audit/domain src/features/audit/repositories src/features/auth/domain src/features/brief/domain src/features/chunks/domain src/features/chunks/lib src/features/chunks/repositories src/features/chunks/services src/features/config src/features/cost/domain src/features/cost/repositories src/features/cost/server src/features/delivery/email src/features/delivery/sms src/features/documents/domain src/features/documents/repositories src/features/entities/domain src/features/entities/repositories src/features/evaluation/domain src/features/evaluation/services src/features/experiments/domain src/features/experiments/repositories src/features/extraction/domain src/features/facts/domain src/features/facts/repositories src/features/facts/services src/features/feedback/domain src/features/feedback/repositories src/features/feedback/server src/features/feedback/services src/features/foundation/domain src/features/governance/domain src/features/governance/repositories src/features/ingestion/domain src/features/ingestion/queue src/features/ingestion/repositories src/features/ingestion/services src/features/integrations/email/server src/features/marts/domain src/features/marts/repositories src/features/marts/services src/features/observability/lib src/features/outcomes/domain src/features/outcomes/repositories src/features/packs/domain src/features/packs/repositories src/features/packs/server src/features/parsing/domain src/features/parsing/lib src/features/parsing/repositories src/features/parsing/services src/features/persistence/lib src/features/pwa/domain src/features/query/domain src/features/query/repositories src/features/query/server src/features/query/services src/features/runtime src/features/security/domain src/features/settings/domain src/features/settings/repositories src/features/settings/server src/features/storage/lib src/features/trust/domain src/features/uploads/server",
+    "test": "vitest run",
+    "test:postgres:integration": "vitest run src/features/ingestion/services/process-next-ingestion-job.postgres.integration.test.ts src/features/runtime/foundation-records.postgres.integration.test.ts",
+    "test:watch": "vitest",
+    "coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit",
+    "typecheck:domain": "tsc --noEmit -p tsconfig.domain.json"
+  },
+  "dependencies": {
+    "@opentelemetry/api": "^1.9.1",
+    "csv-parse": "^6.1.0",
+    "docx": "^9.6.1",
+    "exceljs": "^4.4.0",
+    "fast-xml-parser": "^5.5.11",
+    "mammoth": "^1.12.0",
+    "next": "16.2.3",
+    "node-html-parser": "^7.1.0",
+    "openai": "^6.34.0",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^5.6.205",
+    "pg": "^8.20.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/pg": "^8.20.0",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitest/coverage-v8": "^4.1.4",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.3",
+    "tailwindcss": "^4",
+    "typescript": "^5",
+    "vitest": "^4.1.4"
+  }
+}

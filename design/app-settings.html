@@ -1,0 +1,1582 @@
+<!DOCTYPE html>
+<html lang="en" style="height:100%;" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Settings — PulseOps</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="dist/output.css" />
+  <!-- Prevent flash of wrong theme: apply saved theme before first paint -->
+  <script>document.documentElement.setAttribute('data-theme',localStorage.getItem('pulseops-theme')||'dark');</script>
+  <style>
+    /* ── Design tokens ─────────────────────────────────────────────────────
+     * REFERENCE PATTERN — copy these two blocks + the JS theme snippet
+     * to any page to get instant light/dark toggle support.
+     * Toggle is driven by: <html data-theme="dark|light">
+     * Persisted via localStorage key: "pulseops-theme"
+     * ──────────────────────────────────────────────────────────────────── */
+
+    /* Dark theme (default) */
+    [data-theme="dark"] {
+      --bg:          #090f17;
+      --surface:     #0d1824;
+      --surface-2:   #111f30;
+      --surface-3:   #172843;
+      --border:      rgba(255,255,255,.065);
+      --border-hi:   rgba(255,255,255,.13);
+      --text-1:      #dce4ef;
+      --text-2:      #607592;
+      --text-3:      rgba(220,228,239,.28);
+      --accent:      #00c9a7;
+      --accent-2:    #00a98e;
+      --accent-dim:  rgba(0,201,167,.11);
+      --accent-glow: rgba(0,201,167,.18);
+      --red:         #ef4444;
+      --red-dim:     rgba(239,68,68,.12);
+      --amber:       #f59e0b;
+      --blue-dim:    rgba(59,130,246,.12);
+      --ease:        cubic-bezier(.25,.8,.25,1);
+    }
+
+    /* Light theme */
+    [data-theme="light"] {
+      --bg:          #f2f5f9;
+      --surface:     #ffffff;
+      --surface-2:   #f4f7fb;
+      --surface-3:   #e8edf4;
+      --border:      rgba(20,34,53,.08);
+      --border-hi:   rgba(20,34,53,.16);
+      --text-1:      #142235;
+      --text-2:      #5a7291;
+      --text-3:      rgba(20,34,53,.3);
+      --accent:      #00a98e;
+      --accent-2:    #008f78;
+      --accent-dim:  rgba(0,169,142,.1);
+      --accent-glow: rgba(0,169,142,.2);
+      --red:         #dc2626;
+      --red-dim:     rgba(220,38,38,.08);
+      --amber:       #d97706;
+      --blue-dim:    rgba(59,130,246,.1);
+      --ease:        cubic-bezier(.25,.8,.25,1);
+    }
+
+    /* ── Reset & base ──────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; }
+    html { transition: background .2s, color .2s; }
+    html, body { height: 100%; margin: 0; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text-1); }
+    body { display: flex; flex-direction: column; }
+    ::selection { background: var(--accent-glow); }
+
+    /* ── Layout shell ──────────────────────────────────────── */
+    .app-shell { display: flex; flex: 1; min-height: 0; height: 100vh; overflow: hidden; }
+    .sidebar   { width: 220px; flex-shrink: 0; background: #060e18; border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow-x: hidden; overflow-y: auto; transition: width .22s ease; }
+    .sidebar.collapsed { width: 48px; }
+    .sidebar-toggle { display: flex; align-items: center; justify-content: center; width: 100%; height: 32px; border: none; background: transparent; color: rgba(255,255,255,.25); cursor: pointer; border-top: 1px solid rgba(255,255,255,.055); transition: color .15s; flex-shrink: 0; padding: 0; }
+    .sidebar-toggle:hover { color: rgba(255,255,255,.6); background: rgba(255,255,255,.04); }
+    .toggle-chevron { transition: transform .22s ease; }
+    .sidebar.collapsed .toggle-chevron { transform: rotate(180deg); }
+    .sidebar.collapsed .nav-link { justify-content: center; padding: 9px 0; font-size: 0; gap: 0; }
+    .sidebar.collapsed .nav-link svg { flex-shrink: 0; opacity: 1; }
+    .sidebar.collapsed .nav-link > span { display: none; }
+    .sidebar.collapsed .sb-logo { padding: 20px 0 14px; justify-content: center; }
+    .sidebar.collapsed .sb-logo > :not(:first-child) { display: none; }
+    .sidebar.collapsed .ws-selector { margin: 4px 6px 14px; padding: 5px 0; justify-content: center; gap: 0; border-color: transparent; }
+    .sidebar.collapsed .ws-name, .sidebar.collapsed .ws-chevron { display: none !important; }
+    .sidebar.collapsed .user-row { justify-content: center; padding-left: 0; padding-right: 0; gap: 0; }
+    .sidebar.collapsed .user-row > :not(:first-child) { display: none; }
+    .main-area { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow-y: auto; background: var(--bg); }
+
+    /* ── Sidebar nav ───────────────────────────────────────── */
+    .nav-link        { display: flex; align-items: center; gap: 10px; padding: 8px 11px; border-radius: 7px; font-size: 13px; font-weight: 500; color: rgba(255,255,255,.38); text-decoration: none; transition: background .12s var(--ease), color .12s var(--ease); white-space: nowrap; letter-spacing: -.01em; }
+    .nav-link:hover  { color: rgba(255,255,255,.78); background: rgba(255,255,255,.05); }
+    .nav-link.active { background: var(--accent-dim); color: var(--accent); }
+    .nav-link svg    { opacity: .55; flex-shrink: 0; transition: opacity .12s; }
+    .nav-link:hover svg { opacity: .85; }
+    .nav-link.active svg { opacity: 1; }
+
+    /* ── Cards ─────────────────────────────────────────────── */
+    .card { background: var(--surface); border-radius: 10px; border: 1px solid var(--border); }
+
+    /* ── Settings layout ────────────────────────────────────── */
+    .settings-body { display: flex; gap: 20px; flex: 1; min-height: 0; align-items: flex-start; }
+    .settings-tabs { width: 172px; flex-shrink: 0; display: flex; flex-direction: column; gap: 2px; padding-top: 2px; position: sticky; top: 0; }
+
+    .settings-tab {
+      display: flex; align-items: center; gap: 9px;
+      padding: 8px 11px; border-radius: 7px;
+      font-size: 13px; font-weight: 500; letter-spacing: -.01em;
+      color: var(--text-2); cursor: pointer;
+      transition: background .12s var(--ease), color .12s var(--ease), transform .1s var(--ease);
+      border: none; background: none; text-align: left; width: 100%;
+    }
+    .settings-tab:hover  { background: rgba(255,255,255,.047); color: var(--text-1); }
+    .settings-tab:active { transform: scale(.98); }
+    .settings-tab.active { background: var(--accent-dim); color: var(--accent); font-weight: 600; }
+    .settings-tab svg    { opacity: .5; flex-shrink: 0; transition: opacity .12s; }
+    .settings-tab:hover svg  { opacity: .8; }
+    .settings-tab.active svg { opacity: 1; }
+
+    /* ── Labels & hints ─────────────────────────────────────── */
+    .field-label { font-size: 11px; font-weight: 700; color: var(--text-2); margin-bottom: 5px; display: block; letter-spacing: .04em; text-transform: uppercase; }
+    .field-hint  { font-size: 11.5px; color: var(--text-2); margin-top: 3px; line-height: 1.5; }
+    .section-title { font-size: 10.5px; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: .1em; padding: 14px 0 6px; }
+
+    /* ── Text inputs ─────────────────────────────────────────── */
+    .text-input {
+      width: 100%; padding: 8px 11px;
+      border: 1px solid var(--border-hi); border-radius: 7px;
+      font-size: 13px; font-family: inherit; color: var(--text-1);
+      background: var(--surface-2);
+      outline: none;
+      transition: border-color .15s var(--ease), box-shadow .15s var(--ease), background .12s;
+      -webkit-appearance: none; appearance: none;
+    }
+    .text-input:hover  { border-color: rgba(255,255,255,.2); background: var(--surface-3); }
+    .text-input:focus  { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); background: var(--surface-3); }
+    select.text-input  { cursor: pointer; }
+    select.text-input option { background: var(--surface-2); color: var(--text-1); }
+
+    /* ── Choice pills ────────────────────────────────────────── */
+    .pill {
+      padding: 5px 12px; border-radius: 6px; font-size: 12px; font-weight: 500;
+      cursor: pointer; border: 1px solid var(--border-hi);
+      background: var(--surface-2); color: var(--text-2);
+      transition: border-color .12s var(--ease), color .12s var(--ease), background .12s var(--ease), transform .1s var(--ease);
+      letter-spacing: -.01em;
+    }
+    .pill:hover  { border-color: rgba(255,255,255,.22); color: var(--text-1); background: var(--surface-3); }
+    .pill:active { transform: scale(.97); }
+    .pill.sel    { border-color: var(--accent); background: var(--accent-dim); color: var(--accent); font-weight: 600; }
+
+    /* ── Toggles ─────────────────────────────────────────────── */
+    .toggle-row { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .toggle-row:last-child { border-bottom: none; }
+    .toggle { position: relative; display: inline-block; width: 32px; height: 18px; flex-shrink: 0; }
+    .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .toggle-slider {
+      position: absolute; inset: 0; border-radius: 9px;
+      background: rgba(255,255,255,.1); cursor: pointer;
+      transition: background .2s var(--ease);
+      border: 1px solid rgba(255,255,255,.1);
+    }
+    .toggle-slider::after {
+      content: ''; position: absolute; left: 2px; top: 2px;
+      width: 12px; height: 12px; border-radius: 50%;
+      background: rgba(255,255,255,.45);
+      transition: transform .2s var(--ease), background .2s var(--ease);
+      box-shadow: 0 1px 3px rgba(0,0,0,.4);
+    }
+    .toggle input:checked + .toggle-slider { background: var(--accent); border-color: var(--accent-2); }
+    .toggle input:checked + .toggle-slider::after { transform: translateX(14px); background: #fff; }
+    .toggle-slider:hover { border-color: rgba(255,255,255,.22); }
+
+    /* ── Checkboxes ──────────────────────────────────────────── */
+    .ck-label {
+      display: flex; align-items: center; gap: 10px;
+      cursor: pointer; font-size: 13px; color: var(--text-1);
+      padding: 5px 0;
+      transition: color .12s;
+      border-radius: 6px;
+    }
+    .ck-label input[type=checkbox] { width: 14px; height: 14px; border-radius: 4px; accent-color: var(--accent); cursor: pointer; flex-shrink: 0; }
+
+    /* ── Buttons ─────────────────────────────────────────────── */
+    .btn-primary {
+      background: var(--accent); color: #060e18;
+      border: 1px solid transparent; padding: 8px 16px; border-radius: 7px;
+      font-size: 12.5px; font-weight: 700; cursor: pointer; letter-spacing: -.01em;
+      transition: background .12s var(--ease), transform .1s var(--ease), box-shadow .12s var(--ease), color .12s var(--ease);
+    }
+    .btn-primary:hover  { background: var(--accent-2); box-shadow: 0 0 0 3px var(--accent-glow); }
+    .btn-primary:active { transform: scale(.97); }
+
+    /* Dark mode: filled-ghost style — muted teal surface instead of full neon fill */
+    [data-theme="dark"] .btn-primary {
+      background: var(--accent-dim); color: var(--accent);
+      border-color: rgba(0,201,167,.2);
+    }
+    [data-theme="dark"] .btn-primary:hover {
+      background: rgba(0,201,167,.18); border-color: rgba(0,201,167,.35);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .btn-secondary {
+      border: 1px solid var(--border-hi); background: var(--surface-2);
+      color: var(--text-1); padding: 8px 16px; border-radius: 7px;
+      font-size: 12.5px; font-weight: 600; cursor: pointer; letter-spacing: -.01em;
+      transition: border-color .12s var(--ease), background .12s var(--ease), transform .1s var(--ease);
+    }
+    .btn-secondary:hover  { border-color: var(--border-hi); background: var(--surface-3); }
+    .btn-secondary:active { transform: scale(.97); }
+
+    .btn-ghost {
+      background: none; border: none; padding: 7px 4px;
+      font-size: 12.5px; font-weight: 600; cursor: pointer; letter-spacing: -.01em;
+      transition: opacity .12s var(--ease);
+    }
+    .btn-ghost:hover { opacity: .7; }
+    .btn-ghost.danger { color: var(--red); }
+    .btn-ghost.muted  { color: var(--text-2); }
+
+    /* Dark mode: soften danger ghost — red is very vivid on dark bg */
+    [data-theme="dark"] .btn-ghost.danger { color: #e07070; }
+    [data-theme="dark"] .btn-ghost.danger:hover { opacity: 1; color: var(--red); }
+
+    /* ── Status badges ───────────────────────────────────────── */
+    .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 20px; font-size: 10.5px; font-weight: 700; letter-spacing: .02em; }
+    .badge.green  { background: rgba(34,197,94,.1); color: #4ade80; }
+    .badge.amber  { background: rgba(245,158,11,.1); color: #fbbf24; }
+    .badge.red    { background: var(--red-dim); color: #f87171; }
+    .badge.blue   { background: var(--blue-dim); color: #60a5fa; }
+    .badge.grey   { background: rgba(255,255,255,.06); color: var(--text-2); }
+
+    /* ── Member table ────────────────────────────────────────── */
+    .member-table { width: 100%; border-collapse: collapse; }
+    .member-table th { text-align: left; padding: 9px 18px; font-size: 10.5px; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: .07em; border-bottom: 1px solid var(--border); background: rgba(255,255,255,.02); }
+    .member-table td { padding: 11px 18px; border-bottom: 1px solid var(--border); vertical-align: middle; font-size: 13px; }
+    .member-table tr:last-child td { border-bottom: none; }
+    .member-table tbody tr { transition: background .1s; }
+    .member-table tbody tr:hover td { background: rgba(255,255,255,.025); }
+
+    /* ── Permission table ────────────────────────────────────── */
+    .perm-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    .perm-table th { text-align: left; padding: 8px 14px; font-size: 10.5px; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: .07em; border-bottom: 1px solid var(--border); }
+    .perm-table td { padding: 8px 14px; border-bottom: 1px solid var(--border); text-align: center; color: var(--text-2); }
+    .perm-table td:first-child { text-align: left; font-weight: 500; color: var(--text-1); }
+    .perm-table tr:last-child td { border-bottom: none; }
+    .perm-table tbody tr { transition: background .1s; }
+    .perm-table tbody tr:hover td { background: rgba(255,255,255,.02); }
+    .check-yes { display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:rgba(34,197,94,.12);color:#4ade80;font-size:10px;font-weight:800; }
+    .check-no  { display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:rgba(255,255,255,.05);color:var(--text-3);font-size:12px; }
+
+    /* ── Integration list ────────────────────────────────────── */
+    .integration-card { display: flex; align-items: center; gap: 14px; padding: 13px 18px; border-bottom: 1px solid var(--border); transition: background .12s; }
+    .integration-card:last-child { border-bottom: none; }
+    .integration-card:hover { background: rgba(255,255,255,.02); }
+    .int-logo { width: 36px; height: 36px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex-shrink: 0; }
+
+    /* ── Plan card ───────────────────────────────────────────── */
+    .plan-card { background: linear-gradient(135deg, #0d1f36 0%, #0a1625 100%); border-radius: 10px; padding: 22px; border: 1px solid rgba(0,201,167,.15); }
+
+    /* ── Session row ─────────────────────────────────────────── */
+    .session-row { display: flex; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--border); gap: 12px; }
+    .session-row:last-child { border-bottom: none; }
+
+    /* ── Tab panels ──────────────────────────────────────────── */
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── Progress bars ───────────────────────────────────────── */
+    .prog-track { height: 4px; background: rgba(255,255,255,.07); border-radius: 2px; overflow: hidden; margin-bottom: 5px; }
+    .prog-fill  { height: 100%; border-radius: 2px; }
+
+    /* ── Card section header ─────────────────────────────────── */
+    .card-header {
+      padding: 13px 18px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .card-header h3 { font-size: 13px; font-weight: 600; margin: 0; color: var(--text-1); letter-spacing: -.015em; }
+    .card-header p  { font-size: 11.5px; color: var(--text-2); margin: 2px 0 0; line-height: 1.4; }
+    .card-header .section-title { padding: 0; }
+
+    /* ── Page header ─────────────────────────────────────────── */
+    .page-header { padding: 13px 22px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    .breadcrumb  { font-size: 11.5px; color: var(--text-2); margin-bottom: 4px; display: flex; align-items: center; gap: 5px; }
+    .breadcrumb a { color: var(--text-2); text-decoration: none; transition: color .12s; }
+    .breadcrumb a:hover { color: var(--text-1); }
+
+    /* ── Modals ───────────────────────────────────────────────── */
+    /* REFERENCE PATTERN — theme-aware modal system.
+     * Structure: .modal-backdrop > .modal-box
+     * Open:  openModal('modal-id')
+     * Close: closeModal('modal-id') or click backdrop or press Escape
+     */
+    .modal-backdrop {
+      position: fixed; inset: 0; z-index: 200;
+      background: rgba(0,0,0,.55); backdrop-filter: blur(3px);
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+      opacity: 0; pointer-events: none;
+      transition: opacity .18s var(--ease);
+    }
+    .modal-backdrop.open { opacity: 1; pointer-events: all; }
+    .modal-box {
+      background: var(--surface); border: 1px solid var(--border-hi);
+      border-radius: 12px; width: 100%; max-width: 440px;
+      box-shadow: 0 24px 60px rgba(0,0,0,.45);
+      transform: translateY(10px) scale(.98);
+      transition: transform .18s var(--ease);
+    }
+    .modal-backdrop.open .modal-box { transform: translateY(0) scale(1); }
+    .modal-box.wide { max-width: 560px; }
+    .modal-header {
+      padding: 16px 20px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+    }
+    .modal-header h2 { font-size: 14px; font-weight: 700; margin: 0 0 2px; letter-spacing: -.015em; color: var(--text-1); }
+    .modal-header p  { font-size: 12px; color: var(--text-2); margin: 0; line-height: 1.4; }
+    .modal-close {
+      background: none; border: none; cursor: pointer;
+      color: var(--text-2); padding: 2px; border-radius: 5px; flex-shrink: 0;
+      transition: color .1s, background .1s;
+      font-size: 18px; line-height: 1;
+    }
+    .modal-close:hover { color: var(--text-1); background: var(--surface-3); }
+    .modal-body   { padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; }
+    .modal-footer {
+      padding: 12px 20px 16px;
+      border-top: 1px solid var(--border);
+      display: flex; justify-content: flex-end; gap: 8px;
+    }
+
+    /* Step indicator (2FA modal) */
+    .modal-steps { display: flex; gap: 6px; align-items: center; margin-bottom: 4px; }
+    .modal-step  { width: 20px; height: 3px; border-radius: 2px; background: var(--border-hi); transition: background .2s; }
+    .modal-step.done { background: var(--accent); }
+
+    /* Danger zone styling */
+    .modal-danger-icon {
+      width: 42px; height: 42px; border-radius: 50%;
+      background: var(--red-dim); display: flex; align-items: center; justify-content: center;
+      font-size: 20px; flex-shrink: 0;
+    }
+
+    /* ── API key box ─────────────────────────────────────────── */
+    .api-row {
+      display: flex; align-items: center; gap: 12px; padding: 11px 14px;
+      background: var(--surface-2); border-radius: 7px; border: 1px solid var(--border);
+      transition: border-color .12s;
+    }
+    .api-row:hover { border-color: var(--border-hi); }
+
+    /* ── Primitive controls ──────────────────────────────────────── */
+    /* REFERENCE PATTERN — copy individual blocks to any page */
+
+    /* Radio group */
+    .radio-group { display: flex; flex-direction: column; gap: 7px; }
+    .radio-label {
+      display: flex; align-items: flex-start; gap: 10px;
+      cursor: pointer; padding: 9px 11px; border-radius: 8px;
+      border: 1px solid var(--border-hi); background: var(--surface-2);
+      transition: border-color .12s var(--ease), background .12s var(--ease);
+    }
+    .radio-label:hover { border-color: rgba(0,201,167,.3); background: var(--surface-3); }
+    .radio-label input[type=radio] { margin-top: 2px; accent-color: var(--accent); flex-shrink: 0; width: 14px; height: 14px; cursor: pointer; }
+    .radio-label.checked { border-color: var(--accent); background: var(--accent-dim); }
+    .radio-label .rl-title { font-size: 12.5px; font-weight: 600; color: var(--text-1); line-height: 1.25; }
+    .radio-label .rl-desc  { font-size: 11.5px; color: var(--text-2); margin-top: 2px; line-height: 1.4; }
+
+    /* Segmented control (button-group) */
+    .seg-group { display: inline-flex; border-radius: 8px; border: 1px solid var(--border-hi); overflow: hidden; background: var(--surface-2); }
+    .seg-btn {
+      padding: 6px 14px; font-size: 12px; font-weight: 600; cursor: pointer;
+      border: none; background: none; color: var(--text-2);
+      border-right: 1px solid var(--border-hi); font-family: inherit; letter-spacing: -.01em;
+      transition: background .1s var(--ease), color .1s var(--ease);
+    }
+    .seg-btn:last-child { border-right: none; }
+    .seg-btn:hover  { background: var(--surface-3); color: var(--text-1); }
+    .seg-btn.sel    { background: var(--accent-dim); color: var(--accent); }
+    [data-theme="light"] .seg-btn.sel { background: var(--accent); color: #fff; }
+
+    /* Range slider */
+    .range-wrap { display: flex; flex-direction: column; gap: 6px; }
+    .range-track { position: relative; }
+    input[type=range] {
+      -webkit-appearance: none; appearance: none;
+      width: 100%; height: 4px; border-radius: 2px; outline: none; cursor: pointer;
+      background: var(--border-hi);
+      transition: background .12s;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none;
+      width: 16px; height: 16px; border-radius: 50%;
+      background: var(--accent); border: 2px solid var(--surface);
+      box-shadow: 0 0 0 1px var(--accent);
+      cursor: pointer; transition: transform .1s var(--ease), box-shadow .1s var(--ease);
+    }
+    input[type=range]:hover::-webkit-slider-thumb { transform: scale(1.15); box-shadow: 0 0 0 3px var(--accent-glow); }
+    input[type=range]::-moz-range-thumb {
+      width: 16px; height: 16px; border-radius: 50%;
+      background: var(--accent); border: 2px solid var(--surface);
+      cursor: pointer;
+    }
+    .range-labels { display: flex; justify-content: space-between; font-size: 10.5px; color: var(--text-2); }
+    .range-value  { font-size: 12.5px; font-weight: 700; color: var(--accent); min-width: 32px; text-align: right; }
+
+    /* Number stepper */
+    .stepper {
+      display: inline-flex; align-items: center;
+      border: 1px solid var(--border-hi); border-radius: 8px;
+      overflow: hidden; background: var(--surface-2);
+    }
+    .stepper-btn {
+      background: none; border: none; cursor: pointer;
+      width: 32px; height: 32px; font-size: 16px; font-weight: 600;
+      color: var(--text-2); display: flex; align-items: center; justify-content: center;
+      transition: background .1s, color .1s;
+    }
+    .stepper-btn:hover { background: var(--surface-3); color: var(--text-1); }
+    .stepper-val {
+      min-width: 42px; text-align: center; font-size: 13px; font-weight: 700;
+      color: var(--text-1); border-left: 1px solid var(--border-hi); border-right: 1px solid var(--border-hi);
+      height: 32px; line-height: 32px; padding: 0 6px;
+      background: var(--surface-2);
+    }
+
+    /* Color swatch picker */
+    .swatch-group { display: flex; gap: 8px; align-items: center; }
+    .swatch {
+      width: 24px; height: 24px; border-radius: 50%; cursor: pointer;
+      border: 2px solid transparent;
+      transition: transform .12s var(--ease), border-color .12s var(--ease), box-shadow .12s var(--ease);
+      flex-shrink: 0;
+    }
+    .swatch:hover  { transform: scale(1.15); }
+    .swatch.sel    { border-color: var(--text-1); box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--text-1); }
+
+    /* Pref row layout */
+    .pref-row {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 24px; padding: 14px 18px; border-bottom: 1px solid var(--border);
+    }
+    .pref-row:last-child { border-bottom: none; padding-bottom: 14px; }
+    .pref-info { flex: 1; min-width: 0; }
+    .pref-info strong { font-size: 13px; font-weight: 600; display: block; color: var(--text-1); margin-bottom: 2px; }
+    .pref-info span   { font-size: 11.5px; color: var(--text-2); line-height: 1.4; }
+
+    /* ── Mobile bottom nav ─────────────────────────────────── */
+    .mob-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; height: 56px; background: #0d1b2a; border-top: 1px solid rgba(255,255,255,.09); z-index: 200; }
+    .mob-nav-link { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-decoration: none; color: rgba(255,255,255,.38); font-size: 9.5px; font-weight: 600; letter-spacing: .01em; padding: 7px 0 10px; transition: color .1s; }
+    .mob-nav-link.active, .mob-nav-link:hover { color: #00c9a7; }
+
+    @media (max-width: 900px) {
+      .mob-nav { display: flex; }
+      .app-shell { height: calc(100vh - 56px); }
+      .sidebar { display: none; }
+    }
+    @media (max-width: 700px) {
+      .settings-body { flex-direction: column; }
+      .settings-tabs { width: 100%; flex-direction: row; flex-wrap: wrap; }
+    }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- ══ SIDEBAR ══════════════════════════════════════════════════════════════ -->
+  <aside class="sidebar">
+    <div class="sb-logo" style="display:flex;align-items:center;gap:10px;padding:20px 16px 14px;">
+      <span style="width:28px;height:28px;background:#00c9a7;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:#0d1b2a;flex-shrink:0;">P</span>
+      <span style="font-size:15px;font-weight:700;color:#fff;letter-spacing:-.02em;">Pulse<span style="color:#00c9a7;">Ops</span></span>
+      <span style="margin-left:auto;width:7px;height:7px;border-radius:50%;background:#f59e0b;box-shadow:0 0 0 2px rgba(245,158,11,.22);flex-shrink:0;"></span>
+    </div>
+    <div class="ws-selector" style="margin:0 12px 14px;padding:7px 10px;border:1px solid rgba(255,255,255,.07);border-radius:8px;display:flex;align-items:center;gap:8px;cursor:pointer;" onmouseover="this.style.background='rgba(255,255,255,.06)'" onmouseout="this.style.background=''">
+      <span style="width:22px;height:22px;background:#1d4166;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0;">B</span>
+      <span class="ws-name" style="font-size:12.5px;font-weight:600;color:rgba(255,255,255,.85);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Broward HVAC Co.</span>
+      <svg class="ws-chevron" viewBox="0 0 10 6" fill="none" stroke="rgba(255,255,255,.35)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="10" height="6" style="display:block;flex-shrink:0;"><path d="M1 1l4 4 4-4"/></svg>
+    </div>
+    <nav style="flex:1;padding:0 8px;display:flex;flex-direction:column;gap:2px;">
+      <a href="app-dashboard.html" class="nav-link">
+        <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15"><path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+        Dashboard
+      </a>
+      <a href="app-pipeline.html" class="nav-link">
+        <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15"><path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 6a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2zm0 6a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2z" clip-rule="evenodd"/></svg>
+        Pipeline
+      </a>
+      <a href="app-explorer.html" class="nav-link"><svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15"><path d="M3 12v3c0 1.657 3.134 3 7 3s7-1.343 7-3v-3c0 1.657-3.134 3-7 3s-7-1.343-7-3z"/><path d="M3 7v3c0 1.657 3.134 3 7 3s7-1.343 7-3V7c0 1.657-3.134 3-7 3S3 8.657 3 7z"/><path d="M17 5c0 1.657-3.134 3-7 3S3 6.657 3 5s3.134-3 7-3 7 1.343 7 3z"/></svg> Explorer</a>
+      <a href="app-decision-packs.html" class="nav-link"><svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15"><path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z"/></svg> Decision Packs</a>
+      <a href="app-ask.html" class="nav-link"><svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15"><path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd"/></svg> Ask</a>
+    </nav>
+    <div style="border-top:1px solid rgba(255,255,255,.055);padding:8px 8px 12px;">
+      <a href="app-settings.html" class="nav-link active"><svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/></svg> Settings
+        <span style="margin-left:auto;width:6px;height:6px;border-radius:50%;background:#00c9a7;flex-shrink:0;"></span>
+      </a>
+      <div class="user-row" style="display:flex;align-items:center;gap:10px;padding:10px 12px 0;margin-top:6px;border-top:1px solid rgba(255,255,255,.055);">
+        <span style="width:28px;height:28px;background:#1d4166;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;">JR</span>
+        <div><div style="font-size:12.5px;font-weight:600;color:rgba(255,255,255,.8);">Jamie R.</div><div style="font-size:11px;color:rgba(255,255,255,.35);">Operator</div></div>
+      </div>
+    </div>
+    <button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle sidebar" aria-label="Toggle sidebar">
+      <svg class="toggle-chevron" viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+    </button>
+  </aside>
+
+  <!-- ══ MAIN ════════════════════════════════════════════════════════════════ -->
+  <div class="main-area">
+
+    <!-- Page header -->
+    <div class="page-header">
+      <div>
+        <div class="breadcrumb">
+          <a href="app-dashboard.html">Dashboard</a>
+          <span>/</span>
+          <span style="color:var(--text-1);font-weight:500;">Settings</span>
+        </div>
+        <h1 style="font-size:18px;font-weight:700;margin:0 0 3px;letter-spacing:-.02em;">Settings</h1>
+        <p style="font-size:13px;color:var(--text-2);margin:0;line-height:1.4;">Manage your organization, team, integrations, and security preferences.</p>
+      </div>
+      <!-- Theme toggle — reference implementation -->
+      <button id="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode" style="
+        display:flex;align-items:center;gap:7px;
+        padding:6px 11px;border-radius:7px;
+        border:1px solid var(--border-hi);background:var(--surface-2);
+        color:var(--text-2);font-size:12px;font-weight:600;cursor:pointer;
+        font-family:inherit;letter-spacing:-.01em;
+        transition:border-color .12s var(--ease),background .12s var(--ease),color .12s var(--ease);
+      " onmouseover="this.style.background='var(--surface-3)';this.style.color='var(--text-1)';" onmouseout="this.style.background='var(--surface-2)';this.style.color='var(--text-2)';">
+        <span id="theme-icon" style="font-size:14px;line-height:1;">🌙</span>
+        <span id="theme-label">Light mode</span>
+      </button>
+    </div>
+
+    <div style="padding:18px 22px 40px;flex:1;">
+      <div class="settings-body">
+
+        <!-- ── Left tab nav ── -->
+        <div class="settings-tabs">
+          <button class="settings-tab active" onclick="showTab('org',this)">
+            <svg viewBox="0 0 18 18" fill="currentColor" width="14" height="14"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/></svg>
+            Organization
+          </button>
+          <button class="settings-tab" onclick="showTab('team',this)">
+            <svg viewBox="0 0 18 18" fill="currentColor" width="14" height="14"><path d="M9 6a3 3 0 100-6 3 3 0 000 6zM17 6a3 3 0 10-6 0 3 3 0 006 0zM12.93 17H4.07c.08-3.08 2.44-5 4.93-5s4.85 1.92 4.93 5zM14.5 11a3 3 0 10-3 2.83A4.97 4.97 0 0114.5 17H17a3 3 0 000-6z"/></svg>
+            Team
+          </button>
+          <button class="settings-tab" onclick="showTab('integrations',this)">
+            <svg viewBox="0 0 18 18" fill="currentColor" width="14" height="14"><path fill-rule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+            Integrations
+          </button>
+          <button class="settings-tab" onclick="showTab('notifications',this)">
+            <svg viewBox="0 0 18 18" fill="currentColor" width="14" height="14"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zm0 16a2 2 0 01-2-2h4a2 2 0 01-2 2z"/></svg>
+            Notifications
+          </button>
+          <button class="settings-tab" onclick="showTab('security',this)">
+            <svg viewBox="0 0 18 18" fill="currentColor" width="14" height="14"><path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+            Security
+          </button>
+          <button class="settings-tab" onclick="showTab('billing',this)">
+            <svg viewBox="0 0 18 18" fill="currentColor" width="14" height="14"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"/><path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"/></svg>
+            Billing
+          </button>
+          <button class="settings-tab" onclick="showTab('prefs',this)">
+            <svg viewBox="0 0 18 18" fill="currentColor" width="14" height="14"><path d="M3 5a1 1 0 011-1h10a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h6a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h4a1 1 0 110 2H4a1 1 0 01-1-1z"/></svg>
+            Preferences
+          </button>
+        </div>
+
+        <!-- ── Tab panels ── -->
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:0;">
+
+          <!-- ORGANIZATION -->
+          <div id="tab-org" class="tab-panel active">
+            <div class="card" style="padding:20px 22px;">
+              <h2 style="font-size:14px;font-weight:700;margin:0 0 3px;letter-spacing:-.015em;">Business profile</h2>
+              <p style="font-size:12px;color:var(--text-2);margin:0 0 18px;line-height:1.5;">This information shapes how PulseOps interprets your data and builds your Cash &amp; Margin Brief.</p>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+                <div>
+                  <label class="field-label" for="biz-name">Business name</label>
+                  <input id="biz-name" class="text-input" type="text" value="Broward HVAC Co." />
+                </div>
+                <div>
+                  <label class="field-label" for="biz-location">Primary location</label>
+                  <input id="biz-location" class="text-input" type="text" value="Fort Lauderdale, FL" />
+                </div>
+                <div style="grid-column:1/-1;">
+                  <label class="field-label">Industry</label>
+                  <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:6px;">
+                    <button class="pill sel">HVAC / Field service</button>
+                    <button class="pill">Plumbing</button>
+                    <button class="pill">Electrical</button>
+                    <button class="pill">Landscaping</button>
+                    <button class="pill">Roofing</button>
+                    <button class="pill">Other…</button>
+                  </div>
+                </div>
+                <div>
+                  <label class="field-label">Revenue model</label>
+                  <div style="display:flex;gap:7px;margin-top:6px;">
+                    <button class="pill sel">Job-based</button>
+                    <button class="pill">Subscription</button>
+                    <button class="pill">Mixed</button>
+                  </div>
+                </div>
+                <div>
+                  <label class="field-label" for="biz-cycle">Invoice cycle</label>
+                  <select id="biz-cycle" class="text-input">
+                    <option>Weekly</option>
+                    <option>Bi-weekly</option>
+                    <option>Monthly</option>
+                    <option>Per job</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="field-label" for="biz-size">Team size</label>
+                  <select id="biz-size" class="text-input">
+                    <option>5–10 people</option>
+                    <option>1–4 people</option>
+                    <option>11–25 people</option>
+                    <option>26–50 people</option>
+                    <option>51+ people</option>
+                  </select>
+                </div>
+                <div style="grid-column:1/-1;">
+                  <label class="field-label" style="margin-bottom:8px;">Goals (all that apply)</label>
+                  <div style="display:flex;flex-direction:column;gap:4px;">
+                    <label class="ck-label"><input type="checkbox" checked /> Improve cash flow visibility</label>
+                    <label class="ck-label"><input type="checkbox" checked /> Increase job margin</label>
+                    <label class="ck-label"><input type="checkbox" /> Reduce overhead costs</label>
+                    <label class="ck-label"><input type="checkbox" /> Cut time spent on reporting</label>
+                    <label class="ck-label"><input type="checkbox" checked /> Reduce cost per job</label>
+                  </div>
+                </div>
+              </div>
+              <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border);display:flex;gap:8px;">
+                <button class="btn-primary">Save profile</button>
+                <button class="btn-secondary">Reset</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- TEAM -->
+          <div id="tab-team" class="tab-panel">
+            <div style="display:flex;flex-direction:column;gap:16px;">
+              <div class="card" style="overflow:hidden;">
+                <div class="card-header">
+                  <div>
+                    <h3 style="display:inline;">Team members</h3>
+                    <span class="badge grey" style="margin-left:8px;">3 members</span>
+                  </div>
+                  <button class="btn-primary" style="flex-shrink:0;" onclick="openModal('modal-invite')">+ Invite member</button>
+                </div>
+                <table class="member-table">
+                  <thead><tr><th>Name</th><th>Role</th><th>Status</th><th>Joined</th><th></th></tr></thead>
+                  <tbody>
+                    <tr>
+                      <td>
+                        <div style="display:flex;align-items:center;gap:10px;">
+                          <span style="width:30px;height:30px;background:#1d4166;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;color:#fff;flex-shrink:0;">JR</span>
+                          <div><div style="font-weight:600;font-size:13px;">Jamie Reynolds</div><div style="font-size:11px;color:var(--text-2);">jamie@browardhvac.com</div></div>
+                        </div>
+                      </td>
+                      <td><span class="badge green">Admin</span></td>
+                      <td><span style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:500;color:#4ade80;"><span style="width:6px;height:6px;border-radius:50%;background:#4ade80;flex-shrink:0;"></span>Active</span></td>
+                      <td style="color:var(--text-2);font-size:12px;">Jan 12, 2025</td>
+                      <td><button class="btn-ghost muted">Edit</button></td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <div style="display:flex;align-items:center;gap:10px;">
+                          <span style="width:30px;height:30px;background:#6d28d9;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;color:#fff;flex-shrink:0;">TN</span>
+                          <div><div style="font-weight:600;font-size:13px;">Tara Nguyen</div><div style="font-size:11px;color:var(--text-2);">tara@browardhvac.com</div></div>
+                        </div>
+                      </td>
+                      <td><span class="badge blue">Operator</span></td>
+                      <td><span style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:500;color:#4ade80;"><span style="width:6px;height:6px;border-radius:50%;background:#4ade80;flex-shrink:0;"></span>Active</span></td>
+                      <td style="color:var(--text-2);font-size:12px;">Feb 3, 2025</td>
+                      <td><button class="btn-ghost muted">Edit</button></td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <div style="display:flex;align-items:center;gap:10px;">
+                          <span style="width:30px;height:30px;background:#92400e;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:700;color:#fff;flex-shrink:0;">MK</span>
+                          <div><div style="font-weight:600;font-size:13px;">Marcus Kim</div><div style="font-size:11px;color:var(--text-2);">mkimm@gmail.com</div></div>
+                        </div>
+                      </td>
+                      <td><span class="badge grey">Viewer</span></td>
+                      <td><span style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:500;color:var(--text-2);"><span style="width:6px;height:6px;border-radius:50%;background:var(--text-2);flex-shrink:0;"></span>Invited</span></td>
+                      <td style="color:var(--text-2);font-size:12px;">Apr 1, 2025</td>
+                      <td><button class="btn-ghost danger">Revoke</button></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Role permissions -->
+              <div class="card" style="overflow:hidden;">
+                <div class="card-header">
+                  <div>
+                    <h3>Role permissions</h3>
+                    <p>Defines what each role can see and do in your workspace.</p>
+                  </div>
+                </div>
+                <div style="overflow-x:auto;">
+                  <table class="perm-table">
+                    <thead>
+                      <tr>
+                        <th style="min-width:180px;">Permission</th>
+                        <th>Admin</th>
+                        <th>Operator</th>
+                        <th>Viewer</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td>View dashboard &amp; briefs</td><td><span class="check-yes">✓</span></td><td><span class="check-yes">✓</span></td><td><span class="check-yes">✓</span></td></tr>
+                      <tr><td>Approve operator queue items</td><td><span class="check-yes">✓</span></td><td><span class="check-yes">✓</span></td><td><span class="check-no">—</span></td></tr>
+                      <tr><td>Upload files manually</td><td><span class="check-yes">✓</span></td><td><span class="check-yes">✓</span></td><td><span class="check-no">—</span></td></tr>
+                      <tr><td>Configure pipeline &amp; routes</td><td><span class="check-yes">✓</span></td><td><span class="check-no">—</span></td><td><span class="check-no">—</span></td></tr>
+                      <tr><td>Manage integrations</td><td><span class="check-yes">✓</span></td><td><span class="check-no">—</span></td><td><span class="check-no">—</span></td></tr>
+                      <tr><td>Invite or remove team members</td><td><span class="check-yes">✓</span></td><td><span class="check-no">—</span></td><td><span class="check-no">—</span></td></tr>
+                      <tr><td>Manage billing</td><td><span class="check-yes">✓</span></td><td><span class="check-no">—</span></td><td><span class="check-no">—</span></td></tr>
+                      <tr><td>Export data or artifacts</td><td><span class="check-yes">✓</span></td><td><span class="check-yes">✓</span></td><td><span class="check-no">—</span></td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- INTEGRATIONS -->
+          <div id="tab-integrations" class="tab-panel">
+            <div class="card" style="overflow:hidden;">
+              <div class="card-header">
+                <div>
+                  <h3>Connected sources</h3>
+                  <p>Connect your business systems to feed the ingestion pipeline.</p>
+                </div>
+              </div>
+
+              <!-- ServiceTitan -->
+              <div class="integration-card">
+                <span class="int-logo" style="background:rgba(220,38,38,.12);color:#f87171;">S</span>
+                <div style="flex:1;min-width:0;">
+                  <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:13px;font-weight:600;">ServiceTitan</span><span class="badge green">Connected</span></div>
+                  <div style="font-size:11.5px;color:var(--text-2);margin-top:2px;">Job reports, invoices, technician logs · API v3</div>
+                </div>
+                <div style="display:flex;gap:8px;flex-shrink:0;">
+                  <button class="btn-secondary" style="font-size:12px;padding:6px 13px;">Manage</button>
+                  <button class="btn-ghost danger">Disconnect</button>
+                </div>
+              </div>
+
+              <!-- QuickBooks -->
+              <div class="integration-card">
+                <span class="int-logo" style="background:rgba(217,119,6,.12);color:#fbbf24;">Q</span>
+                <div style="flex:1;min-width:0;">
+                  <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:13px;font-weight:600;">QuickBooks Online</span><span class="badge green">Connected</span></div>
+                  <div style="font-size:11.5px;color:var(--text-2);margin-top:2px;">P&amp;L, expenses, chart of accounts · OAuth 2.0</div>
+                </div>
+                <div style="display:flex;gap:8px;flex-shrink:0;">
+                  <button class="btn-secondary" style="font-size:12px;padding:6px 13px;">Manage</button>
+                  <button class="btn-ghost danger">Disconnect</button>
+                </div>
+              </div>
+
+              <!-- Gmail -->
+              <div class="integration-card">
+                <span class="int-logo" style="background:rgba(59,130,246,.12);color:#60a5fa;">G</span>
+                <div style="flex:1;min-width:0;">
+                  <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:13px;font-weight:600;">Gmail / AP inbox</span><span class="badge amber">3 failures</span></div>
+                  <div style="font-size:11.5px;color:var(--text-2);margin-top:2px;">Invoice PDF attachments · IMAP forwarder</div>
+                </div>
+                <div style="display:flex;gap:8px;flex-shrink:0;">
+                  <button class="btn-primary" style="font-size:12px;padding:6px 13px;">Review failures</button>
+                  <button class="btn-secondary" style="font-size:12px;padding:6px 13px;">Configure</button>
+                </div>
+              </div>
+
+              <!-- Xero (not connected) -->
+              <div class="integration-card" style="opacity:.5;">
+                <span class="int-logo" style="background:rgba(255,255,255,.05);color:var(--text-2);">X</span>
+                <div style="flex:1;min-width:0;">
+                  <div style="font-size:13px;font-weight:600;">Xero</div>
+                  <div style="font-size:11.5px;color:var(--text-2);margin-top:2px;">Accounting · not connected</div>
+                </div>
+                <button class="btn-secondary" style="font-size:12px;padding:6px 13px;">Connect</button>
+              </div>
+
+              <!-- Stripe (not connected) -->
+              <div class="integration-card" style="opacity:.4;">
+                <span class="int-logo" style="background:rgba(255,255,255,.05);color:var(--text-2);">$</span>
+                <div style="flex:1;min-width:0;">
+                  <div style="display:flex;align-items:center;gap:8px;"><span style="font-size:13px;font-weight:600;">Stripe</span><span class="badge grey">Coming soon</span></div>
+                  <div style="font-size:11.5px;color:var(--text-2);margin-top:2px;">Payment data · not available yet</div>
+                </div>
+                <button class="btn-secondary" style="font-size:12px;padding:6px 13px;opacity:.5;cursor:default;" disabled>Coming soon</button>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- NOTIFICATIONS -->
+          <div id="tab-notifications" class="tab-panel">
+            <div class="card" style="overflow:hidden;">
+              <div class="card-header">
+                <div>
+                  <h3>Notification preferences</h3>
+                  <p>Choose how and when PulseOps contacts you. Operator role or above required.</p>
+                </div>
+              </div>
+              <div style="padding:0 18px 4px;">
+
+                <div class="section-title">Weekly briefs</div>
+                <div class="toggle-row">
+                  <div style="flex:1;"><div style="font-size:13px;font-weight:500;">Cash &amp; Margin Brief — weekly email</div><div class="field-hint">Sent every Monday morning with last week's data.</div></div>
+                  <label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label>
+                </div>
+                <div class="toggle-row">
+                  <div style="flex:1;"><div style="font-size:13px;font-weight:500;">Brief ready in-app notification</div><div class="field-hint">Notify when a new pack finishes generating.</div></div>
+                  <label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label>
+                </div>
+
+                <div class="section-title">Pipeline alerts</div>
+                <div class="toggle-row">
+                  <div style="flex:1;"><div style="font-size:13px;font-weight:500;">Parse failure — email alert</div><div class="field-hint">Email when more than 2 files fail in a single sync.</div></div>
+                  <label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label>
+                </div>
+                <div class="toggle-row">
+                  <div style="flex:1;"><div style="font-size:13px;font-weight:500;">Confidence drop alert</div><div class="field-hint">Notify when avg extraction confidence drops below 0.75.</div></div>
+                  <label class="toggle"><input type="checkbox" /><span class="toggle-slider"></span></label>
+                </div>
+                <div class="toggle-row">
+                  <div style="flex:1;"><div style="font-size:13px;font-weight:500;">Source disconnected</div><div class="field-hint">Notify immediately if a connected source stops syncing.</div></div>
+                  <label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label>
+                </div>
+
+                <div class="section-title">Operator queue</div>
+                <div class="toggle-row">
+                  <div style="flex:1;"><div style="font-size:13px;font-weight:500;">New high-priority queue item</div><div class="field-hint">In-app badge and optional email for urgent items.</div></div>
+                  <label class="toggle"><input type="checkbox" checked /><span class="toggle-slider"></span></label>
+                </div>
+                <div class="toggle-row" style="margin-bottom:4px;">
+                  <div style="flex:1;"><div style="font-size:13px;font-weight:500;">Daily queue digest</div><div class="field-hint">Single summary email of all pending items at 8 am.</div></div>
+                  <label class="toggle"><input type="checkbox" /><span class="toggle-slider"></span></label>
+                </div>
+              </div>
+              <div style="padding:12px 18px;border-top:1px solid var(--border);">
+                <button class="btn-primary">Save preferences</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECURITY -->
+          <div id="tab-security" class="tab-panel">
+            <div style="display:flex;flex-direction:column;gap:16px;">
+
+              <!-- Auth -->
+              <div class="card" style="padding:18px 20px;">
+                <p style="font-size:13.5px;font-weight:600;margin:0 0 14px;letter-spacing:-.01em;">Authentication</p>
+                <div style="display:flex;flex-direction:column;gap:11px;">
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;">
+                    <div><div style="font-size:13px;font-weight:500;">Email + password</div><div class="field-hint">jamie@browardhvac.com</div></div>
+                    <button class="btn-secondary" style="font-size:12px;padding:6px 13px;flex-shrink:0;">Change password</button>
+                  </div>
+                  <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding-top:11px;border-top:1px solid var(--border);">
+                    <div>
+                      <div style="font-size:13px;font-weight:500;">Two-factor authentication</div>
+                      <div class="field-hint">Protect your account with a second verification step.</div>
+                    </div>
+                    <span class="badge red" style="flex-shrink:0;">Not enabled</span>
+                  </div>
+                  <button class="btn-primary" style="align-self:flex-start;" onclick="openModal('modal-2fa')">Enable 2FA</button>
+                </div>
+              </div>
+
+              <!-- Active sessions -->
+              <div class="card" style="overflow:hidden;">
+                <div class="card-header">
+                  <h3>Active sessions</h3>
+                  <button class="btn-ghost danger" style="font-size:12px;">Revoke all other sessions</button>
+                </div>
+                <div style="padding:0 18px;">
+                  <div class="session-row">
+                    <span style="font-size:17px;">💻</span>
+                    <div style="flex:1;"><div style="font-size:13px;font-weight:500;">Chrome on macOS</div><div class="field-hint">Fort Lauderdale, FL · Active now</div></div>
+                    <span class="badge green">This session</span>
+                  </div>
+                  <div class="session-row">
+                    <span style="font-size:17px;">📱</span>
+                    <div style="flex:1;"><div style="font-size:13px;font-weight:500;">Safari on iPhone</div><div class="field-hint">Fort Lauderdale, FL · 3 hours ago</div></div>
+                    <button class="btn-ghost muted" style="font-size:12px;">Revoke</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- API keys -->
+              <div class="card" style="overflow:hidden;">
+                <div class="card-header">
+                  <div>
+                    <h3>API keys</h3>
+                    <p>For programmatic access only. Treat keys like passwords — never expose them in browser code.</p>
+                  </div>
+                  <button class="btn-secondary" style="font-size:12px;padding:6px 13px;flex-shrink:0;">Create key</button>
+                </div>
+                <div style="padding:14px 18px;">
+                  <div class="api-row" style="cursor:default;">
+                    <div style="flex:1;min-width:0;">
+                      <div style="font-size:12.5px;font-weight:600;margin-bottom:2px;">Pipeline integration key</div>
+                      <div style="font-family:monospace;font-size:11.5px;color:var(--text-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">pops_live_••••••••••••••••••••HJKQ</div>
+                    </div>
+                    <div style="font-size:11px;color:var(--text-2);flex-shrink:0;">Created Jan 14, 2025</div>
+                    <button class="btn-ghost danger" style="font-size:12px;" onclick="openModal('modal-revoke-key')">Revoke</button>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- BILLING -->
+          <div id="tab-billing" class="tab-panel">
+            <div style="display:flex;flex-direction:column;gap:16px;">
+
+              <!-- Current plan -->
+              <div class="plan-card">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+                  <div>
+                    <span class="badge green" style="text-transform:uppercase;letter-spacing:.06em;">Active plan</span>
+                    <h2 style="font-size:20px;font-weight:800;color:var(--text-1);margin:10px 0 3px;letter-spacing:-.03em;">Starter</h2>
+                    <p style="font-size:12px;color:var(--text-2);margin:0;">Billed monthly · renews May 7, 2025</p>
+                  </div>
+                  <div style="text-align:right;">
+                    <div style="font-size:26px;font-weight:800;color:var(--text-1);letter-spacing:-.03em;">$79<span style="font-size:14px;font-weight:500;color:var(--text-2);">/mo</span></div>
+                    <button class="btn-primary" style="margin-top:8px;">Upgrade plan</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Usage this month -->
+              <div class="card" style="overflow:hidden;">
+                <div class="card-header">
+                  <div>
+                    <h3>Usage this billing period</h3>
+                    <p>Apr 7 – May 7, 2025 · Resets in 28 days</p>
+                  </div>
+                </div>
+                <div style="padding:18px;display:grid;grid-template-columns:repeat(4,1fr);gap:18px;">
+                  <div>
+                    <div class="field-label" style="margin-bottom:8px;">Files processed</div>
+                    <div class="prog-track"><div class="prog-fill" style="width:52%;background:var(--accent);"></div></div>
+                    <div style="font-size:13px;font-weight:600;">52 <span style="font-weight:400;color:var(--text-2);">/ 100</span></div>
+                  </div>
+                  <div>
+                    <div class="field-label" style="margin-bottom:8px;">AI extractions</div>
+                    <div class="prog-track"><div class="prog-fill" style="width:39%;background:#8b5cf6;"></div></div>
+                    <div style="font-size:13px;font-weight:600;">390 <span style="font-weight:400;color:var(--text-2);">/ 1,000</span></div>
+                  </div>
+                  <div>
+                    <div class="field-label" style="margin-bottom:8px;">Pack runs</div>
+                    <div class="prog-track"><div class="prog-fill" style="width:14%;background:#3b82f6;"></div></div>
+                    <div style="font-size:13px;font-weight:600;">1 <span style="font-weight:400;color:var(--text-2);">/ 7</span></div>
+                  </div>
+                  <div>
+                    <div class="field-label" style="margin-bottom:8px;">Team seats</div>
+                    <div class="prog-track"><div class="prog-fill" style="width:75%;background:var(--amber);"></div></div>
+                    <div style="font-size:13px;font-weight:600;">3 <span style="font-weight:400;color:var(--text-2);">/ 4</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Billing contact -->
+              <div class="card" style="padding:18px 20px;">
+                <p style="font-size:13.5px;font-weight:600;margin:0 0 12px;letter-spacing:-.01em;">Billing contact</p>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                  <div><label class="field-label">Name</label><input class="text-input" type="text" value="Jamie Reynolds" /></div>
+                  <div><label class="field-label">Email</label><input class="text-input" type="email" value="jamie@browardhvac.com" /></div>
+                </div>
+                <div style="margin-top:14px;display:flex;align-items:center;gap:12px;">
+                  <button class="btn-primary">Update billing info</button>
+                  <button class="btn-ghost danger">Cancel subscription</button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- ══ PREFERENCES TAB ════════════════════════════════════════════ -->
+          <div id="tab-prefs" class="tab-panel">
+
+            <!-- 1. Display & Format -->
+            <div class="card">
+              <div class="card-header">
+                <span class="section-title">Display &amp; Format</span>
+                <span class="badge grey">Regional</span>
+              </div>
+
+              <div class="pref-row">
+                <div class="pref-info">
+                  <strong>Date format</strong>
+                  <span>How dates appear across briefs and tables</span>
+                </div>
+                <div class="seg-group" id="sg-date">
+                  <button class="seg-btn sel" onclick="setSeg('sg-date',this)">MM/DD/YYYY</button>
+                  <button class="seg-btn"     onclick="setSeg('sg-date',this)">DD/MM/YYYY</button>
+                  <button class="seg-btn"     onclick="setSeg('sg-date',this)">YYYY-MM-DD</button>
+                </div>
+              </div>
+
+              <div class="pref-row">
+                <div class="pref-info">
+                  <strong>Currency display</strong>
+                  <span>Controls symbol and decimal formatting in all derived metrics</span>
+                </div>
+                <div class="seg-group" id="sg-currency">
+                  <button class="seg-btn sel" onclick="setSeg('sg-currency',this)">$1,234.56</button>
+                  <button class="seg-btn"     onclick="setSeg('sg-currency',this)">1.234,56 €</button>
+                  <button class="seg-btn"     onclick="setSeg('sg-currency',this)">£1,234.56</button>
+                </div>
+              </div>
+
+              <div class="pref-row">
+                <div class="pref-info">
+                  <strong>Number abbreviation</strong>
+                  <span>Large numbers shown in briefs and charts</span>
+                </div>
+                <div class="seg-group" id="sg-abbr">
+                  <button class="seg-btn sel" onclick="setSeg('sg-abbr',this)">12.4k / 1.2M</button>
+                  <button class="seg-btn"     onclick="setSeg('sg-abbr',this)">12,400 / 1,200,000</button>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- 2. Weekly Brief delivery (radio group) -->
+            <div class="card" style="margin-top:16px;">
+              <div class="card-header">
+                <span class="section-title">Weekly Brief Delivery</span>
+              </div>
+              <div style="padding:14px 18px 18px;">
+                <p class="field-hint" style="margin:0 0 12px;">Choose how you receive your cash &amp; margin brief each week.</p>
+                <div class="radio-group" id="rg-delivery">
+                <label class="radio-label checked" onclick="setRadio('rg-delivery',this)">
+                  <input type="radio" name="brief-delivery" checked>
+                  <div>
+                    <div class="rl-title">Email &amp; in-app</div>
+                    <div class="rl-desc">Sent to your inbox and visible in the dashboard inbox</div>
+                  </div>
+                </label>
+                <label class="radio-label" onclick="setRadio('rg-delivery',this)">
+                  <input type="radio" name="brief-delivery">
+                  <div>
+                    <div class="rl-title">In-app only</div>
+                    <div class="rl-desc">No email — check the dashboard for new briefs</div>
+                  </div>
+                </label>
+                <label class="radio-label" onclick="setRadio('rg-delivery',this)">
+                  <input type="radio" name="brief-delivery">
+                  <div>
+                    <div class="rl-title">Email only</div>
+                    <div class="rl-desc">Full brief in email, does not appear in dashboard</div>
+                  </div>
+                </label>
+                <label class="radio-label" onclick="setRadio('rg-delivery',this)">
+                  <input type="radio" name="brief-delivery">
+                  <div>
+                    <div class="rl-title">Paused</div>
+                    <div class="rl-desc">No delivery — briefs are generated but not sent</div>
+                  </div>
+                </label>
+              </div>
+              </div><!-- end padding wrapper -->
+            </div>
+
+            <!-- 3. Alert thresholds (sliders + steppers) -->
+            <div class="card" style="margin-top:16px;">
+              <div class="card-header">
+                <span class="section-title">Alert Thresholds</span>
+              </div>
+
+              <div class="pref-row">
+                <div class="pref-info">
+                  <strong>Confidence threshold</strong>
+                  <span>Facts below this confidence level are flagged for review</span>
+                </div>
+                <div style="width:220px; flex-shrink:0;">
+                  <div class="range-wrap">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                      <span class="field-label" style="margin-bottom:0;">Minimum acceptable</span>
+                      <span class="range-value" id="conf-val">75%</span>
+                    </div>
+                    <div class="range-track">
+                      <input type="range" min="0" max="100" value="75" step="5"
+                             id="conf-slider"
+                             oninput="document.getElementById('conf-val').textContent=this.value+'%'">
+                    </div>
+                    <div class="range-labels"><span>0%</span><span>100%</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pref-row">
+                <div class="pref-info">
+                  <strong>Margin drop alert</strong>
+                  <span>Alert when gross margin falls by more than this percentage week-over-week</span>
+                </div>
+                <div style="width:220px; flex-shrink:0;">
+                  <div class="range-wrap">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                      <span class="field-label" style="margin-bottom:0;">Drop threshold</span>
+                      <span class="range-value" id="margin-val">5%</span>
+                    </div>
+                    <div class="range-track">
+                      <input type="range" min="1" max="30" value="5" step="1"
+                             id="margin-slider"
+                             oninput="document.getElementById('margin-val').textContent=this.value+'%'">
+                    </div>
+                    <div class="range-labels"><span>1%</span><span>30%</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pref-row">
+                <div class="pref-info">
+                  <strong>Cash reserve alert</strong>
+                  <span>Trigger an alert when projected cash drops below this number of days of runway</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:10px; flex-shrink:0;">
+                  <div class="stepper" id="stepper-days">
+                    <button class="stepper-btn" onclick="stepperAdj('stepper-days',-1)">−</button>
+                    <div class="stepper-val" id="stepper-days-val">14</div>
+                    <button class="stepper-btn" onclick="stepperAdj('stepper-days',+1)">+</button>
+                  </div>
+                  <span class="field-hint" style="white-space:nowrap;">days of runway</span>
+                </div>
+              </div>
+
+              <div class="pref-row">
+                <div class="pref-info">
+                  <strong>Revenue anomaly — max items</strong>
+                  <span>Cap on anomalies surfaced per brief to avoid alert fatigue</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:10px; flex-shrink:0;">
+                  <div class="stepper" id="stepper-anoms">
+                    <button class="stepper-btn" onclick="stepperAdj('stepper-anoms',-1)">−</button>
+                    <div class="stepper-val" id="stepper-anoms-val">5</div>
+                    <button class="stepper-btn" onclick="stepperAdj('stepper-anoms',+1)">+</button>
+                  </div>
+                  <span class="field-hint" style="white-space:nowrap;">items max</span>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- 4. Accent / theme swatch -->
+            <div class="card" style="margin-top:16px;">
+              <div class="card-header">
+                <span class="section-title">Appearance</span>
+              </div>
+
+              <div class="pref-row">
+                <div class="pref-info">
+                  <strong>Color mode</strong>
+                  <span>Persisted across sessions via localStorage</span>
+                </div>
+                <div class="seg-group" id="sg-theme">
+                  <button class="seg-btn" id="seg-dark"  onclick="setSeg('sg-theme',this);applyTheme('dark')">Dark</button>
+                  <button class="seg-btn" id="seg-light" onclick="setSeg('sg-theme',this);applyTheme('light')">Light</button>
+                </div>
+              </div>
+
+              <div class="pref-row">
+                <div class="pref-info">
+                  <strong>Accent color</strong>
+                  <span>Used on charts, badges, active states, and highlights (placeholder — single accent at MVP)</span>
+                </div>
+                <div class="swatch-group">
+                  <div class="swatch sel" style="background:#00c9a7;" title="Teal (default)"></div>
+                  <div class="swatch"     style="background:#6366f1;" title="Indigo"></div>
+                  <div class="swatch"     style="background:#f59e0b;" title="Amber"></div>
+                  <div class="swatch"     style="background:#3b82f6;" title="Blue"></div>
+                  <div class="swatch"     style="background:#ec4899;" title="Pink"></div>
+                </div>
+              </div>
+
+            </div>
+
+          </div><!-- end tab-prefs -->
+
+        </div><!-- end tab panels -->
+      </div><!-- end settings-body -->
+    </div>
+  </div>
+
+  <!-- ── Mobile bottom navigation ─────────────────────────────────────── -->
+  <nav class="mob-nav" aria-label="Mobile navigation">
+    <a href="app-dashboard.html" class="mob-nav-link"><svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20"><path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>Home</a>
+    <a href="app-pipeline.html" class="mob-nav-link"><svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20"><path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 6a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2zm0 6a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2z" clip-rule="evenodd"/></svg>Pipeline</a>
+    <a href="app-explorer.html" class="mob-nav-link"><svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20"><path d="M3 12v3c0 1.657 3.134 3 7 3s7-1.343 7-3v-3c0 1.657-3.134 3-7 3s-7-1.343-7-3z"/><path d="M3 7v3c0 1.657 3.134 3 7 3s7-1.343 7-3V7c0 1.657-3.134 3-7 3S3 8.657 3 7z"/><path d="M17 5c0 1.657-3.134 3-7 3S3 6.657 3 5s3.134-3 7-3 7 1.343 7 3z"/></svg>Explorer</a>
+    <a href="app-decision-packs.html" class="mob-nav-link"><svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20"><path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z"/></svg>Packs</a>
+    <a href="app-ask.html" class="mob-nav-link"><svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20"><path fill-rule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.841 8.841 0 01-4.083-.98L2 17l1.338-3.123C2.493 12.767 2 11.434 2 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9H5v2h2V9zm8 0h-2v2h2V9zM9 9h2v2H9V9z" clip-rule="evenodd"/></svg>Ask</a>
+  </nav>
+</div>
+
+<!-- ══ MODALS ══════════════════════════════════════════════════════════════
+     REFERENCE PATTERN — three interaction archetypes:
+     1. modal-invite  → simple form modal
+     2. modal-2fa     → multi-step modal
+     3. modal-revoke  → destructive confirm modal
+══════════════════════════════════════════════════════════════════════════ -->
+
+<!-- 1. Invite member modal (simple form) -->
+<div id="modal-invite" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-invite-title" onclick="handleBackdropClick(event,'modal-invite')">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div>
+        <h2 id="modal-invite-title">Invite team member</h2>
+        <p>They'll receive an email with a link to join your workspace.</p>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal-invite')" aria-label="Close">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div>
+        <label class="field-label" for="invite-email">Email address</label>
+        <input id="invite-email" class="text-input" type="email" placeholder="colleague@example.com" />
+      </div>
+      <div>
+        <label class="field-label" style="margin-bottom:8px;">Role</label>
+        <div style="display:flex;gap:8px;">
+          <button class="pill" onclick="selectInviteRole(this)">Admin</button>
+          <button class="pill sel" onclick="selectInviteRole(this)">Operator</button>
+          <button class="pill" onclick="selectInviteRole(this)">Viewer</button>
+        </div>
+        <p class="field-hint" style="margin-top:8px;">Operators can upload files and approve queue items. Viewers have read-only access.</p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('modal-invite')">Cancel</button>
+      <button class="btn-primary" onclick="closeModal('modal-invite')">Send invite</button>
+    </div>
+  </div>
+</div>
+
+<!-- 2. Enable 2FA modal (multi-step) -->
+<div id="modal-2fa" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-2fa-title" onclick="handleBackdropClick(event,'modal-2fa')">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div>
+        <div class="modal-steps">
+          <div class="modal-step done" id="step-ind-1"></div>
+          <div class="modal-step" id="step-ind-2"></div>
+          <div class="modal-step" id="step-ind-3"></div>
+        </div>
+        <h2 id="modal-2fa-title">Set up two-factor authentication</h2>
+        <p id="modal-2fa-subtitle">Step 1 of 3 — Scan QR code</p>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal-2fa')" aria-label="Close">&times;</button>
+    </div>
+
+    <!-- Step 1: QR code -->
+    <div id="tfa-step-1" class="modal-body">
+      <p style="font-size:12.5px;color:var(--text-2);line-height:1.55;margin:0;">Use an authenticator app like Google Authenticator or 1Password to scan this code.</p>
+      <div style="display:flex;gap:18px;align-items:flex-start;">
+        <!-- QR placeholder -->
+        <div style="width:100px;height:100px;flex-shrink:0;border-radius:8px;border:1px solid var(--border-hi);background:var(--surface-2);display:flex;align-items:center;justify-content:center;">
+          <svg viewBox="0 0 60 60" width="60" height="60" fill="none">
+            <rect x="2" y="2" width="22" height="22" rx="2" stroke="var(--text-1)" stroke-width="2.5"/>
+            <rect x="8" y="8" width="10" height="10" fill="var(--text-1)" rx="1"/>
+            <rect x="36" y="2" width="22" height="22" rx="2" stroke="var(--text-1)" stroke-width="2.5"/>
+            <rect x="42" y="8" width="10" height="10" fill="var(--text-1)" rx="1"/>
+            <rect x="2" y="36" width="22" height="22" rx="2" stroke="var(--text-1)" stroke-width="2.5"/>
+            <rect x="8" y="42" width="10" height="10" fill="var(--text-1)" rx="1"/>
+            <rect x="36" y="36" width="4" height="4" fill="var(--text-1)" rx=".5"/>
+            <rect x="44" y="36" width="4" height="4" fill="var(--text-1)" rx=".5"/>
+            <rect x="52" y="36" width="4" height="4" fill="var(--text-1)" rx=".5"/>
+            <rect x="36" y="44" width="4" height="4" fill="var(--text-1)" rx=".5"/>
+            <rect x="44" y="52" width="4" height="4" fill="var(--text-1)" rx=".5"/>
+            <rect x="52" y="44" width="4" height="4" fill="var(--text-1)" rx=".5"/>
+            <rect x="52" y="52" width="4" height="4" fill="var(--text-1)" rx=".5"/>
+          </svg>
+        </div>
+        <div style="flex:1;">
+          <div class="field-label" style="margin-bottom:5px;">Or enter code manually</div>
+          <div style="font-family:monospace;font-size:12px;letter-spacing:.1em;color:var(--accent);background:var(--surface-2);border:1px solid var(--border-hi);border-radius:6px;padding:7px 10px;word-break:break-all;line-height:1.6;">JBSW Y3DP EHPK 3PXP</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: Verify code (hidden) -->
+    <div id="tfa-step-2" class="modal-body" style="display:none;">
+      <p style="font-size:12.5px;color:var(--text-2);line-height:1.55;margin:0;">Enter the 6-digit code from your authenticator app to confirm it's working.</p>
+      <div>
+        <label class="field-label" for="tfa-code">Verification code</label>
+        <input id="tfa-code" class="text-input" type="text" inputmode="numeric" maxlength="6" placeholder="000 000" style="letter-spacing:.2em;font-size:18px;text-align:center;font-family:monospace;" />
+      </div>
+    </div>
+
+    <!-- Step 3: Recovery codes (hidden) -->
+    <div id="tfa-step-3" class="modal-body" style="display:none;">
+      <p style="font-size:12.5px;color:var(--text-2);line-height:1.55;margin:0;">Save these recovery codes somewhere safe. Each can be used once if you lose your authenticator.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-family:monospace;font-size:12px;background:var(--surface-2);border:1px solid var(--border-hi);border-radius:8px;padding:12px 14px;">
+        <span>8f2k-mn94</span><span>t7qp-38xc</span>
+        <span>w2ra-91bz</span><span>6mds-44yt</span>
+        <span>vx7j-2kf0</span><span>p9nq-56rw</span>
+        <span>3bec-uh18</span><span>l4gs-7mv2</span>
+      </div>
+      <button class="btn-secondary" style="align-self:flex-start;font-size:12px;padding:6px 12px;">Copy all codes</button>
+    </div>
+
+    <div class="modal-footer" id="tfa-footer">
+      <button class="btn-secondary" onclick="closeModal('modal-2fa')" id="tfa-cancel">Cancel</button>
+      <button class="btn-primary" onclick="tfaNext()" id="tfa-next">Next — verify code</button>
+    </div>
+  </div>
+</div>
+
+<!-- 3. Revoke API key modal (destructive confirm) -->
+<div id="modal-revoke-key" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-revoke-title" onclick="handleBackdropClick(event,'modal-revoke-key')">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div class="modal-danger-icon">🗑</div>
+        <div>
+          <h2 id="modal-revoke-title" style="color:var(--red);">Revoke API key?</h2>
+          <p>This cannot be undone.</p>
+        </div>
+      </div>
+      <button class="modal-close" onclick="closeModal('modal-revoke-key')" aria-label="Close">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;color:var(--text-1);line-height:1.6;margin:0;">The key <code style="font-family:monospace;font-size:12px;background:var(--surface-2);padding:2px 6px;border-radius:4px;border:1px solid var(--border-hi);">pops_live_••••HJKQ</code> will stop working immediately. Any service using it will lose access.</p>
+      <div>
+        <label class="field-label" for="revoke-confirm">Type <strong style="color:var(--text-1);font-weight:700;">revoke</strong> to confirm</label>
+        <input id="revoke-confirm" class="text-input" type="text" placeholder="revoke" oninput="checkRevokeInput()" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('modal-revoke-key')">Cancel</button>
+      <button id="revoke-submit" class="btn-primary" style="background:var(--red-dim);color:var(--red);border-color:rgba(239,68,68,.25);opacity:.45;cursor:not-allowed;" disabled onclick="closeModal('modal-revoke-key')">
+        Revoke key
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── Theme toggle — reference implementation ─────────────────────────────
+ * Copy this block + the [data-theme] CSS token blocks to any page.
+ * Pattern: html[data-theme="dark|light"] drives all CSS custom properties.
+ * ──────────────────────────────────────────────────────────────────────── */
+
+
+function toggleTheme() {
+  var current = document.documentElement.getAttribute('data-theme');
+  var next = current === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('pulseops-theme', next);
+  updateThemeButton(next);
+}
+
+function updateThemeButton(theme) {
+  var icon  = document.getElementById('theme-icon');
+  var label = document.getElementById('theme-label');
+  if (!icon || !label) return;
+  if (theme === 'light') {
+    icon.textContent  = '☀️';
+    label.textContent = 'Dark mode';
+  } else {
+    icon.textContent  = '🌙';
+    label.textContent = 'Light mode';
+  }
+}
+
+// Init button state on load
+document.addEventListener('DOMContentLoaded', function() {
+  updateThemeButton(document.documentElement.getAttribute('data-theme'));
+});
+/* ── End theme toggle ──────────────────────────────────────────────────── */
+
+function showTab(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
+  document.querySelectorAll('.settings-tab').forEach(function(t) { t.classList.remove('active'); });
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+
+// Pill toggle: click to select within a group (siblings)
+document.querySelectorAll('.pill').forEach(function(pill) {
+  pill.addEventListener('click', function() {
+    var siblings = this.parentElement.querySelectorAll('.pill');
+    siblings.forEach(function(s) { s.classList.remove('sel'); });
+    this.classList.add('sel');
+  });
+});
+
+/* ── Modal system — reference implementation ─────────────────────────────
+ * openModal(id)  — show modal, trap focus, bind Escape key
+ * closeModal(id) — hide modal, restore focus
+ * handleBackdropClick(event, id) — close on backdrop click
+ * ──────────────────────────────────────────────────────────────────────── */
+var _modalOpener = null;
+
+function openModal(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  _modalOpener = document.activeElement;
+  el.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  // Focus first focusable element
+  var first = el.querySelector('input, button:not(.modal-close), select, textarea');
+  if (first) setTimeout(function() { first.focus(); }, 180);
+  document.addEventListener('keydown', _escHandler);
+}
+
+function closeModal(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.classList.remove('open');
+  document.body.style.overflow = '';
+  document.removeEventListener('keydown', _escHandler);
+  if (_modalOpener) { _modalOpener.focus(); _modalOpener = null; }
+}
+
+function _escHandler(e) {
+  if (e.key === 'Escape') {
+    var open = document.querySelector('.modal-backdrop.open');
+    if (open) closeModal(open.id);
+  }
+}
+
+function handleBackdropClick(e, id) {
+  // Only close when clicking the backdrop itself, not the box
+  if (e.target === e.currentTarget) closeModal(id);
+}
+
+// ── Invite modal helpers
+function selectInviteRole(btn) {
+  btn.closest('.modal-body').querySelectorAll('.pill').forEach(function(p) { p.classList.remove('sel'); });
+  btn.classList.add('sel');
+}
+
+// ── 2FA multi-step
+var _tfaStep = 1;
+var _tfaLabels = [
+  'Next — verify code',
+  'Next — view recovery codes',
+  'Done — 2FA enabled'
+];
+var _tfaSubtitles = [
+  'Step 1 of 3 — Scan QR code',
+  'Step 2 of 3 — Verify code',
+  'Step 3 of 3 — Save recovery codes'
+];
+
+function tfaNext() {
+  if (_tfaStep >= 3) { closeModal('modal-2fa'); _tfaStep = 1; _tfaReset(); return; }
+  document.getElementById('tfa-step-' + _tfaStep).style.display = 'none';
+  document.getElementById('step-ind-' + _tfaStep).classList.add('done');
+  _tfaStep++;
+  document.getElementById('tfa-step-' + _tfaStep).style.display = 'flex';
+  document.getElementById('step-ind-' + _tfaStep).classList.add('done');
+  document.getElementById('tfa-next').textContent = _tfaLabels[_tfaStep - 1];
+  document.getElementById('modal-2fa-subtitle').textContent = _tfaSubtitles[_tfaStep - 1];
+  if (_tfaStep === 2) {
+    document.getElementById('tfa-cancel').textContent = 'Back';
+    document.getElementById('tfa-cancel').onclick = function() { tfaBack(); };
+  }
+  if (_tfaStep === 3) {
+    document.getElementById('tfa-cancel').style.display = 'none';
+  }
+}
+
+function tfaBack() {
+  document.getElementById('tfa-step-' + _tfaStep).style.display = 'none';
+  document.getElementById('step-ind-' + _tfaStep).classList.remove('done');
+  _tfaStep--;
+  document.getElementById('tfa-step-' + _tfaStep).style.display = 'flex';
+  document.getElementById('tfa-next').textContent = _tfaLabels[_tfaStep - 1];
+  document.getElementById('modal-2fa-subtitle').textContent = _tfaSubtitles[_tfaStep - 1];
+  document.getElementById('tfa-cancel').textContent = 'Cancel';
+  document.getElementById('tfa-cancel').onclick = function() { closeModal('modal-2fa'); };
+}
+
+function _tfaReset() {
+  [1,2,3].forEach(function(i) {
+    document.getElementById('tfa-step-' + i).style.display = i === 1 ? 'flex' : 'none';
+    document.getElementById('step-ind-' + i).classList.toggle('done', i === 1);
+  });
+  document.getElementById('tfa-next').textContent = _tfaLabels[0];
+  document.getElementById('modal-2fa-subtitle').textContent = _tfaSubtitles[0];
+  document.getElementById('tfa-cancel').textContent = 'Cancel';
+  document.getElementById('tfa-cancel').style.display = '';
+  document.getElementById('tfa-cancel').onclick = function() { closeModal('modal-2fa'); };
+}
+
+// ── Revoke confirm
+function checkRevokeInput() {
+  var val = document.getElementById('revoke-confirm').value.trim();
+  var btn = document.getElementById('revoke-submit');
+  var ok  = val === 'revoke';
+  btn.disabled = !ok;
+  btn.style.opacity  = ok ? '1'    : '.45';
+  btn.style.cursor   = ok ? 'pointer' : 'not-allowed';
+}
+/* ── End modal system ──────────────────────────────────────────────────── */
+
+// ── Preferences tab primitives ────────────────────────────────────────────
+
+// Segmented control — mark the clicked button .sel within its group
+function setSeg(groupId, btn) {
+  var group = document.getElementById(groupId);
+  if (!group) return;
+  group.querySelectorAll('.seg-btn').forEach(function(b) { b.classList.remove('sel'); });
+  btn.classList.add('sel');
+}
+
+// Radio group — mark the clicked label .checked within its group
+function setRadio(groupId, label) {
+  var group = document.getElementById(groupId);
+  if (!group) return;
+  group.querySelectorAll('.radio-label').forEach(function(l) { l.classList.remove('checked'); });
+  label.classList.add('checked');
+  var radio = label.querySelector('input[type=radio]');
+  if (radio) radio.checked = true;
+}
+
+// Number stepper — adjust value, clamp to reasonable bounds
+var _stepperMeta = {
+  'stepper-days':  { min: 1, max: 90 },
+  'stepper-anoms': { min: 1, max: 20 }
+};
+function stepperAdj(id, delta) {
+  var valEl = document.getElementById(id + '-val');
+  if (!valEl) return;
+  var meta = _stepperMeta[id] || { min: 1, max: 99 };
+  var cur  = parseInt(valEl.textContent, 10) || 0;
+  var next = Math.max(meta.min, Math.min(meta.max, cur + delta));
+  valEl.textContent = next;
+}
+
+// Theme toggle from prefs panel segmented control — sync with header button
+function applyTheme(mode) {
+  document.documentElement.setAttribute('data-theme', mode);
+  try { localStorage.setItem('pulseops-theme', mode); } catch(e) {}
+  if (typeof updateThemeButton === 'function') updateThemeButton();
+  // keep the prefs seg-group in sync
+  var dark  = document.getElementById('seg-dark');
+  var light = document.getElementById('seg-light');
+  if (dark && light) {
+    dark.classList.toggle('sel',  mode === 'dark');
+    light.classList.toggle('sel', mode === 'light');
+  }
+}
+
+// Init prefs panel controls to match current state on load
+(function initPrefs() {
+  document.addEventListener('DOMContentLoaded', function() {
+    var theme = document.documentElement.getAttribute('data-theme') || 'dark';
+    applyTheme(theme); // sync swatch seg-group to current theme
+
+    // Swatch click — cosmetic only at MVP; swapping accent would need CSS var override
+    document.querySelectorAll('.swatch').forEach(function(sw) {
+      sw.addEventListener('click', function() {
+        document.querySelectorAll('.swatch').forEach(function(s) { s.classList.remove('sel'); });
+        sw.classList.add('sel');
+      });
+    });
+  });
+}());
+function toggleSidebar() {
+  var sb = document.querySelector('.sidebar');
+  sb.classList.toggle('collapsed');
+  try { localStorage.setItem('sidebar-collapsed', sb.classList.contains('collapsed')); } catch(e) {}
+}
+(function() {
+  try { if (localStorage.getItem('sidebar-collapsed') === 'true') { document.querySelector('.sidebar').classList.add('collapsed'); } } catch(e) {}
+}());
+</script>
+</body>
+</html>

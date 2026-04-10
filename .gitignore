@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+apps/*/node_modules/
+
+# Tailwind build output
+design/dist/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# Next.js
+.next/
+apps/*/.next/
+out/
+apps/*/out/
+.vercel/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+*.swp
+*.swo
+.env
+.local-data/
+.tmp/
