@@ -1,53 +1,26 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { WorkspaceHeader } from "@/features/catalog/components/workspace-catalog-blocks";
 import { CatalogButton, StatusBadge } from "@/features/catalog/components/catalog-primitives";
 import { CatalogModalOverlay, PlaceholderActionDialog } from "@/features/catalog/components/catalog-dialogs";
 import { DialogFrame } from "@/features/catalog/components/settings-catalog-blocks";
-import type { BlogPost, BlogPostStatus, CreateBlogPostInput } from "@/features/blog/domain/blog-post";
+import type { BlogPost, BlogPostStatus } from "@/features/blog/domain/blog-post";
 import { useUiI18n } from "@/features/i18n/components/ui-i18n-provider";
 
-type DraftState = Readonly<{
-  id: string | null; // null = new post
-  title: string;
-  slug: string;
-  summary: string;
-  body: string;
-  author: string;
-  status: BlogPostStatus;
-}>;
-
-const emptyDraft = (author = "PulseOps Team"): DraftState => ({
-  id: null,
-  title: "",
-  slug: "",
-  summary: "",
-  body: "",
-  author,
-  status: "draft",
-});
-
-function slugify(title: string): string {
-  return title
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, "")
-    .trim()
-    .replace(/\s+/g, "-")
-    .slice(0, 80);
-}
-
-export function BlogAdminPage({
-  orgId: _orgId,
-}: Readonly<{ orgId?: string }>) {
+export function BlogAdminPage({ orgId: _orgId }: Readonly<{ orgId?: string }>) {
+  const router = useRouter();
   const { locale, messages } = useUiI18n();
+
   const [posts, setPosts] = useState<readonly BlogPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [draft, setDraft] = useState<DraftState | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [placeholderAction, setPlaceholderAction] = useState<{ title: string; description?: string } | null>(null);
+  const [placeholderAction, setPlaceholderAction] = useState<{
+    title: string;
+    description?: string;
+  } | null>(null);
 
   async function loadPosts() {
     setIsLoading(true);
@@ -63,67 +36,6 @@ export function BlogAdminPage({
   useEffect(() => {
     void loadPosts();
   }, []);
-
-  function openNew() {
-    setDraft(emptyDraft(messages.contentPage.placeholders.author));
-  }
-
-  function openEdit(post: BlogPost) {
-    setDraft({
-      id: post.id,
-      title: post.title,
-      slug: post.slug,
-      summary: post.summary,
-      body: post.body,
-      author: post.author,
-      status: post.status,
-    });
-  }
-
-  function updateDraft<K extends keyof DraftState>(key: K, value: DraftState[K]) {
-    setDraft((prev) => {
-      if (prev === null) return prev;
-      const next = { ...prev, [key]: value };
-      // Auto-generate slug from title when creating new
-      if (key === "title" && prev.id === null) {
-        next.slug = slugify(value as string);
-      }
-      return next;
-    });
-  }
-
-  async function handleSave() {
-    if (draft === null || isSubmitting) return;
-    if (!draft.title.trim() || !draft.slug.trim()) return;
-
-    setIsSubmitting(true);
-    try {
-      const body: CreateBlogPostInput = {
-        author: draft.author,
-        body: draft.body,
-        slug: draft.slug,
-        status: draft.status,
-        summary: draft.summary,
-        title: draft.title,
-      };
-
-      const res = await fetch(
-        draft.id === null ? "/api/blog" : `/api/blog/${draft.id}`,
-        {
-          body: JSON.stringify(body),
-          headers: { "content-type": "application/json" },
-          method: draft.id === null ? "POST" : "PATCH",
-        },
-      );
-
-      if (res.ok) {
-        setDraft(null);
-        await loadPosts();
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
 
   async function handleDelete(id: string) {
     setIsDeleting(true);
@@ -154,16 +66,12 @@ export function BlogAdminPage({
         actions={[
           {
             label: messages.contentPage.actions.newPost,
-            onClick: openNew,
+            onClick: () => router.push("/content/new"),
             variant: "primary",
           },
           {
             label: messages.contentPage.actions.viewPublicBlog,
-            onClick: () =>
-              setPlaceholderAction({
-                title: messages.contentPage.actions.viewPublicBlog,
-                description: messages.contentPage.publicBlogDescription,
-              }),
+            onClick: () => window.open("/blog", "_blank"),
             variant: "secondary",
           },
         ]}
@@ -187,7 +95,7 @@ export function BlogAdminPage({
             </p>
             <button
               className="mt-2 rounded-[8px] bg-accent px-4 py-2 text-[12.5px] font-bold text-[#0d1b2a]"
-              onClick={openNew}
+              onClick={() => router.push("/content/new")}
               type="button"
             >
               {messages.contentPage.actions.newPost}
@@ -220,7 +128,7 @@ export function BlogAdminPage({
                   <tr key={post.id} className="transition-colors hover:bg-surface-subtle">
                     <td className="px-4 py-3">
                       <div className="font-medium text-foreground">{post.title}</div>
-                      <div className="mt-0.5 truncate text-[11.5px] text-muted max-w-[380px]">
+                      <div className="mt-0.5 max-w-[380px] truncate text-[11.5px] text-muted">
                         {post.summary}
                       </div>
                     </td>
@@ -249,13 +157,13 @@ export function BlogAdminPage({
                             month: "short",
                             year: "numeric",
                           }).format(new Date(post.publishedAt))
-                        : "—"}
+                        : "â€”"}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <button
                           className="rounded-[6px] border border-border-strong bg-surface-subtle px-2.5 py-1 text-[11.5px] font-medium text-muted transition hover:bg-surface-muted hover:text-foreground"
-                          onClick={() => openEdit(post)}
+                          onClick={() => router.push(`/content/${post.id}`)}
                           type="button"
                         >
                           {messages.contentPage.actions.edit}
@@ -277,100 +185,7 @@ export function BlogAdminPage({
         )}
       </div>
 
-      {/* Create / Edit modal */}
-      {draft !== null ? (
-        <CatalogModalOverlay>
-          <DialogFrame
-            description={
-              draft.id === null
-                ? messages.contentPage.editor.newDescription
-                : messages.contentPage.editor.editDescription
-            }
-            footer={
-              <>
-                <CatalogButton onClick={() => setDraft(null)} variant="secondary">
-                  {messages.contentPage.editor.cancel}
-                </CatalogButton>
-                <CatalogButton
-                  disabled={isSubmitting || !draft.title.trim() || !draft.slug.trim()}
-                  onClick={() => void handleSave()}
-                  variant="primary"
-                >
-                  {isSubmitting
-                    ? messages.contentPage.editor.saving
-                    : draft.id === null
-                      ? messages.contentPage.editor.create
-                      : messages.contentPage.editor.saveChanges}
-                </CatalogButton>
-              </>
-            }
-            onClose={() => setDraft(null)}
-            title={
-              draft.id === null
-                ? messages.contentPage.editor.newTitle
-                : messages.contentPage.editor.editTitle
-            }
-          >
-            <div className="space-y-3">
-              <BlogField label={messages.contentPage.fields.title}>
-                <input
-                  autoFocus
-                  className="w-full rounded-[8px] border border-border bg-surface-subtle px-3 py-2 text-[13px] text-foreground outline-none transition focus:border-accent focus:shadow-[0_0_0_3px_var(--accent-glow)] placeholder:text-muted"
-                  onChange={(e) => updateDraft("title", e.target.value)}
-                  placeholder={messages.contentPage.placeholders.title}
-                  value={draft.title}
-                />
-              </BlogField>
-              <BlogField label={messages.contentPage.fields.slug}>
-                <input
-                  className="w-full rounded-[8px] border border-border bg-surface-subtle px-3 py-2 font-mono text-[12px] text-foreground outline-none transition focus:border-accent focus:shadow-[0_0_0_3px_var(--accent-glow)] placeholder:text-muted"
-                  onChange={(e) => updateDraft("slug", e.target.value)}
-                  placeholder={messages.contentPage.placeholders.slug}
-                  value={draft.slug}
-                />
-              </BlogField>
-              <BlogField label={messages.contentPage.fields.author}>
-                <input
-                  className="w-full rounded-[8px] border border-border bg-surface-subtle px-3 py-2 text-[13px] text-foreground outline-none transition focus:border-accent focus:shadow-[0_0_0_3px_var(--accent-glow)] placeholder:text-muted"
-                  onChange={(e) => updateDraft("author", e.target.value)}
-                  placeholder={messages.contentPage.placeholders.author}
-                  value={draft.author}
-                />
-              </BlogField>
-              <BlogField label={messages.contentPage.fields.status}>
-                <select
-                  className="rounded-[8px] border border-border bg-surface-subtle px-3 py-2 text-[13px] text-foreground outline-none transition focus:border-accent"
-                  onChange={(e) => updateDraft("status", e.target.value as BlogPostStatus)}
-                  value={draft.status}
-                >
-                  <option value="draft">{messages.contentPage.statusLabels.draft}</option>
-                  <option value="published">{messages.contentPage.statusLabels.published}</option>
-                </select>
-              </BlogField>
-              <BlogField label={messages.contentPage.fields.summary}>
-                <textarea
-                  className="w-full resize-none rounded-[8px] border border-border bg-surface-subtle px-3 py-2 text-[13px] leading-[1.6] text-foreground outline-none transition focus:border-accent focus:shadow-[0_0_0_3px_var(--accent-glow)] placeholder:text-muted"
-                  onChange={(e) => updateDraft("summary", e.target.value)}
-                  placeholder={messages.contentPage.placeholders.summary}
-                  rows={2}
-                  value={draft.summary}
-                />
-              </BlogField>
-              <BlogField label={messages.contentPage.fields.body}>
-                <textarea
-                  className="w-full resize-y rounded-[8px] border border-border bg-surface-subtle px-3 py-2 font-mono text-[12px] leading-[1.7] text-foreground outline-none transition focus:border-accent focus:shadow-[0_0_0_3px_var(--accent-glow)] placeholder:text-muted"
-                  onChange={(e) => updateDraft("body", e.target.value)}
-                  placeholder={messages.contentPage.placeholders.body}
-                  rows={10}
-                  value={draft.body}
-                />
-              </BlogField>
-            </div>
-          </DialogFrame>
-        </CatalogModalOverlay>
-      ) : null}
-
-      {/* Delete confirmation */}
+      {/* Delete confirmation dialog */}
       {pendingDeleteId !== null ? (
         <CatalogModalOverlay>
           <DialogFrame
@@ -412,20 +227,6 @@ export function BlogAdminPage({
           title={placeholderAction.title}
         />
       ) : null}
-    </div>
-  );
-}
-
-function BlogField({
-  children,
-  label,
-}: Readonly<{ children: React.ReactNode; label: string }>) {
-  return (
-    <div>
-      <label className="mb-1.5 block text-[11.5px] font-semibold uppercase tracking-[0.06em] text-muted">
-        {label}
-      </label>
-      {children}
     </div>
   );
 }

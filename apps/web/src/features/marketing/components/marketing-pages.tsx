@@ -381,6 +381,120 @@ export function AboutPage() {
   );
 }
 
+// ─── Dynamic Blog Page (API-driven) ──────────────────────────────────────────
+
+type DynamicBlogPost = Readonly<{
+  id: string;
+  title: string;
+  summary: string;
+  body: string;
+  author: string;
+  publishedAt: string | null;
+}>;
+
+type DynamicBlogPageProps = Readonly<{
+  posts: readonly DynamicBlogPost[];
+}>;
+
+function formatDate(iso: string): string {
+  return new Intl.DateTimeFormat("en-US", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(iso));
+}
+
+export function DynamicBlogPage({ posts }: DynamicBlogPageProps) {
+  const { messages } = useUiI18n();
+  const [featured, ...rest] = posts;
+
+  return renderShell(
+    "/blog",
+    <>
+      <MarketingPageHero
+        description="Practical thinking on cash flow, job margin, and running a tighter operation."
+        eyebrow="Blog"
+        title="Insights for field-service operators"
+      />
+      <MarketingSection
+        eyebrow={messages.marketing.shared.blogFeaturedEyebrow}
+        title="Latest from the team"
+        tone="white"
+      >
+        {posts.length === 0 ? (
+          <CatalogCard className="p-8 text-center shadow-none">
+            <p className="text-sm text-muted">No posts published yet — check back soon.</p>
+          </CatalogCard>
+        ) : (
+          <>
+            {featured ? (
+              <CatalogCard className="p-7">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent">
+                  Featured
+                </p>
+                <h2 className="mt-3 text-xl font-bold tracking-tight text-foreground">
+                  {featured.title}
+                </h2>
+                {featured.summary ? (
+                  <p className="mt-2 text-[13.5px] leading-[1.7] text-muted">{featured.summary}</p>
+                ) : null}
+                <div className="mt-3 flex items-center gap-2 text-xs text-muted">
+                  <span>{featured.author}</span>
+                  {featured.publishedAt ? (
+                    <>
+                      <span>·</span>
+                      <span>{formatDate(featured.publishedAt)}</span>
+                    </>
+                  ) : null}
+                </div>
+                {featured.body ? (
+                  <div className="mt-5 whitespace-pre-line text-[13.5px] leading-[1.8] text-foreground/80">
+                    {featured.body}
+                  </div>
+                ) : null}
+              </CatalogCard>
+            ) : null}
+
+            {rest.length > 0 ? (
+              <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {rest.map((post) => (
+                  <CatalogCard key={post.id} className="flex h-full flex-col p-6 shadow-none">
+                    <p className="text-[15px] font-semibold tracking-tight text-foreground">
+                      {post.title}
+                    </p>
+                    {post.summary ? (
+                      <p className="mt-2 flex-1 text-[13px] leading-[1.65] text-muted">
+                        {post.summary}
+                      </p>
+                    ) : null}
+                    <div className="mt-4 flex items-center gap-2 text-[11.5px] text-muted">
+                      <span>{post.author}</span>
+                      {post.publishedAt ? (
+                        <>
+                          <span>·</span>
+                          <span>{formatDate(post.publishedAt)}</span>
+                        </>
+                      ) : null}
+                    </div>
+                  </CatalogCard>
+                ))}
+              </div>
+            ) : null}
+          </>
+        )}
+
+        <div className="mt-8 border-t border-border pt-6 text-center">
+          <Link className="text-sm font-semibold text-accent hover:underline" href="/signup">
+            Get weekly cash &amp; margin insights →
+          </Link>
+        </div>
+      </MarketingSection>
+    </>,
+  );
+}
+
+// ─── Static Blog Page (legacy / fallback) ────────────────────────────────────
+
 export function BlogPage() {
   const { messages, resolveTree } = useUiI18n();
   const content = resolveTree("marketing.blog", blogPageContent);

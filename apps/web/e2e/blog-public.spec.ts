@@ -3,6 +3,22 @@ import { expect, test } from "@playwright/test";
 // The public blog at /blog is a React Server Component using the in-memory
 // blog repository directly. Seed posts include two published and one draft.
 
+const SEED_SLUGS = ["cash-flow-mistakes-field-service", "job-costing-hvac"];
+
+// Ensure seed posts are always published before each test, since the empty
+// state test patches them to draft and parallel runs can leave them in that state.
+test.beforeEach(async ({ request }) => {
+  const listRes = await request.get("/api/blog");
+  const { posts } = (await listRes.json()) as {
+    posts: Array<{ id: string; slug: string; status: string }>;
+  };
+  for (const post of posts) {
+    if (SEED_SLUGS.includes(post.slug) && post.status !== "published") {
+      await request.patch(`/api/blog/${post.id}`, { data: { status: "published" } });
+    }
+  }
+});
+
 test("GET /blog renders the page heading", async ({ page }) => {
   await page.goto("/blog");
   await expect(page.getByRole("heading", { name: /insights for field-service operators/i })).toBeVisible();
@@ -10,12 +26,12 @@ test("GET /blog renders the page heading", async ({ page }) => {
 
 test("/blog shows the 'Blog' section label", async ({ page }) => {
   await page.goto("/blog");
-  await expect(page.getByText("Blog")).toBeVisible();
+  await expect(page.getByText("Blog").first()).toBeVisible();
 });
 
 test("/blog displays the featured section", async ({ page }) => {
   await page.goto("/blog");
-  await expect(page.getByText("Featured")).toBeVisible();
+  await expect(page.getByText("Featured").first()).toBeVisible();
 });
 
 test("/blog shows published seed post titles", async ({ page }) => {

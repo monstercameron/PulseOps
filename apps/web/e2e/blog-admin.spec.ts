@@ -33,31 +33,28 @@ test("/content table shows column headers", async ({ page }) => {
   await expect(page.getByRole("columnheader", { name: "Status" })).toBeVisible();
 });
 
-// ─── New post modal ───────────────────────────────────────────────────────────
+// ─── New post editor ─────────────────────────────────────────────────────────
 
-test("clicking 'New post' opens the create modal", async ({ page }) => {
+test("clicking 'New post' navigates to the new post editor", async ({ page }) => {
   await page.goto("/content");
   await page.getByRole("button", { name: "New post" }).first().click();
-  await expect(page.getByRole("heading", { name: "New post" })).toBeVisible();
+  // Wait for the editor to appear (either URL change or editor UI visible)
+  await expect(page.getByRole("button", { name: "Save" })).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByLabel("Title")).toBeVisible();
 });
 
-test("create modal auto-generates slug from title", async ({ page }) => {
-  await page.goto("/content");
-  await page.getByRole("button", { name: "New post" }).first().click();
-
+test("new post editor auto-generates slug from title", async ({ page }) => {
+  await page.goto("/content/new");
   await page.getByLabel("Title").fill("Hello World Test Post");
   await expect(page.getByLabel("Slug")).toHaveValue("hello-world-test-post", {
     timeout: 3000,
   });
 });
 
-test("cancel button closes the create modal", async ({ page }) => {
-  await page.goto("/content");
-  await page.getByRole("button", { name: "New post" }).first().click();
-  await expect(page.getByRole("heading", { name: "New post" })).toBeVisible();
-
+test("cancel button returns to content list", async ({ page }) => {
+  await page.goto("/content/new");
   await page.getByRole("button", { name: "Cancel" }).click();
-  await expect(page.getByRole("heading", { name: "New post" })).not.toBeVisible();
+  await expect(page).toHaveURL("/content", { timeout: 5000 });
 });
 
 // ─── Create a post ───────────────────────────────────────────────────────────
@@ -66,19 +63,16 @@ test("creating a new post adds it to the table", async ({ page, request }) => {
   const slug = uniqueSlug(BASE_SLUG_PREFIX);
   const title = `UI Create Test ${slug}`;
 
-  await page.goto("/content");
-  await page.getByRole("button", { name: "New post" }).first().click();
+  await page.goto("/content/new");
 
   await page.getByLabel("Title").fill(title);
-  // Slug is auto-filled; override to our unique slug
   await page.getByLabel("Slug").fill(slug);
   await page.getByLabel("Summary").fill("A summary for the UI test post.");
-  await page.getByLabel("Body").fill("Body content for the UI test post.");
 
-  await page.getByRole("button", { name: "Create post" }).click();
+  await page.getByRole("button", { name: "Save" }).click();
 
-  // Modal closes, table updates
-  await expect(page.getByRole("heading", { name: "New post" })).not.toBeVisible();
+  // Should redirect back to /content and show the new post
+  await expect(page).toHaveURL("/content", { timeout: 10_000 });
   await expect(page.getByText(title)).toBeVisible({ timeout: 10_000 });
 
   // Cleanup via API
@@ -113,18 +107,22 @@ test("editing a post updates its title in the table", async ({ page, request }) 
   await page.goto("/content");
   await expect(page.getByText(originalTitle)).toBeVisible({ timeout: 10_000 });
 
-  // Find the row for our post and click Edit
+  // Find the row for our post and click Edit — navigates to full-page editor
   const row = page.getByRole("row").filter({ hasText: originalTitle });
   await row.getByRole("button", { name: "Edit" }).click();
 
-  // Modal should be pre-filled
-  await expect(page.getByRole("heading", { name: "Edit post" })).toBeVisible();
+  // Should navigate to the edit page
+  await expect(page).toHaveURL(`/content/${post.id}`, { timeout: 5000 });
 
-  // Update title
+  // Wait for the form to populate from the API load
+  await expect(page.getByLabel("Title")).toHaveValue(originalTitle, { timeout: 10_000 });
+
+  // Update title and save
   await page.getByLabel("Title").fill(updatedTitle);
-  await page.getByRole("button", { name: "Save changes" }).click();
+  await page.getByRole("button", { name: "Save" }).click();
 
-  await expect(page.getByRole("heading", { name: "Edit post" })).not.toBeVisible();
+  // Should redirect back to /content with the updated title visible
+  await expect(page).toHaveURL("/content", { timeout: 10_000 });
   await expect(page.getByText(updatedTitle)).toBeVisible({ timeout: 10_000 });
 
   // Cleanup
@@ -190,13 +188,13 @@ test("deleting a post removes it from the table", async ({ page, request }) => {
   await row.getByRole("button", { name: "Delete" }).click();
 
   // Delete confirmation dialog should appear
-  await expect(page.getByRole("button", { name: /confirm|delete/i }).last()).toBeVisible({
+  await expect(page.getByRole("button", { name: "Delete post" })).toBeVisible({
     timeout: 3000,
   });
-  await page.getByRole("button", { name: /confirm|delete/i }).last().click();
+  await page.getByRole("button", { name: "Delete post" }).click();
 
   // Row should be gone from table
-  await expect(page.getByText(titleText)).not.toBeVisible({ timeout: 10_000 });
+  await expect(page.getByRole("row").filter({ hasText: titleText })).not.toBeVisible({ timeout: 10_000 });
 
   // Cleanup guard — delete via API if still exists
   await request.delete(`/api/blog/${post.id}`);
