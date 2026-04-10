@@ -13,7 +13,9 @@
     "test:watch": "vitest",
     "coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
-    "typecheck:domain": "tsc --noEmit -p tsconfig.domain.json"
+    "typecheck:domain": "tsc --noEmit -p tsconfig.domain.json",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
     "@opentelemetry/api": "^1.9.1",

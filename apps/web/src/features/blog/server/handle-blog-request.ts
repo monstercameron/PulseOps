@@ -73,16 +73,16 @@ export async function handleBlogUpdateRequest(
   }
 
   const input = body as Record<string, unknown>;
-  const update: UpdateBlogPostInput = {};
-
-  if (typeof input["title"] === "string") update.title = input["title"];
-  if (typeof input["slug"] === "string") update.slug = input["slug"];
-  if (typeof input["summary"] === "string") update.summary = input["summary"];
-  if (typeof input["body"] === "string") update.body = input["body"];
-  if (typeof input["author"] === "string") update.author = input["author"];
-  if (input["status"] === "published" || input["status"] === "draft") {
-    update.status = input["status"];
-  }
+  const update: UpdateBlogPostInput = {
+    ...(typeof input["title"] === "string" ? { title: input["title"] } : {}),
+    ...(typeof input["slug"] === "string" ? { slug: input["slug"] } : {}),
+    ...(typeof input["summary"] === "string" ? { summary: input["summary"] } : {}),
+    ...(typeof input["body"] === "string" ? { body: input["body"] } : {}),
+    ...(typeof input["author"] === "string" ? { author: input["author"] } : {}),
+    ...(input["status"] === "published" || input["status"] === "draft"
+      ? { status: input["status"] }
+      : {}),
+  };
 
   const post = blogRepository.update(id, update);
   if (post === null) {

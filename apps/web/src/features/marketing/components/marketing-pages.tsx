@@ -500,17 +500,17 @@ export function ContactPage({
         eyebrow={content.hero.eyebrow}
         title={content.hero.title}
       />
-        <MarketingSection
-          eyebrow={messages.marketing.shared.contactReachEyebrow}
-          title={messages.marketing.shared.contactReachTitle}
-          tone="white"
-        >
-          <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
-            <div className="grid gap-4">
-              {content.channels.map((channel, index) => {
-                const route = contactRoutes[index];
+      <MarketingSection
+        eyebrow={messages.marketing.shared.contactReachEyebrow}
+        title={messages.marketing.shared.contactReachTitle}
+        tone="white"
+      >
+        <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
+          <div className="grid gap-4">
+            {content.channels.map((channel, index) => {
+              const route = contactRoutes[index] ?? contactRoutes[0];
 
-                return (
+              return (
                 <CatalogCard key={channel.title} className="p-6 shadow-none">
                   <p className="text-lg font-semibold tracking-tight text-foreground">
                     {channel.title}
@@ -531,13 +531,13 @@ export function ContactPage({
                     </a>
                   </div>
                 </CatalogCard>
-                );
-              })}
-            </div>
-            <CatalogCard className="p-7">
-              <p className="text-xl font-semibold tracking-tight text-foreground">
-                {messages.marketing.shared.contactSendTitle}
-              </p>
+              );
+            })}
+          </div>
+          <CatalogCard className="p-7">
+            <p className="text-xl font-semibold tracking-tight text-foreground">
+              {messages.marketing.shared.contactSendTitle}
+            </p>
             <div className="mt-6 space-y-4">
               {content.formFields.map((field) => (
                 <label key={field.label} className="block">
@@ -568,9 +568,9 @@ export function ContactPage({
             </div>
           </CatalogCard>
         </div>
-        </MarketingSection>
-      </>,
-      websiteDetails,
+      </MarketingSection>
+    </>,
+    websiteDetails,
   );
 }
 
