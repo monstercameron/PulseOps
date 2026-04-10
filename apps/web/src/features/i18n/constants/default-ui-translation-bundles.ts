@@ -1036,6 +1036,11 @@ const defaultUiMessagesEnUs = {
       "Pipeline diagnostics are planned, but the test-run orchestration is not implemented yet.",
   },
   settingsPage: {
+    actions: {
+      reset: "Reset",
+      saveProfile: "Save profile",
+      saving: "Saving...",
+    },
     actionDescriptions: {
       authentication:
         "Authentication and access-control settings for the workspace.",
@@ -1052,6 +1057,7 @@ const defaultUiMessagesEnUs = {
         "Defines what each role can see and do in your workspace.",
     },
     actionTitles: {
+      businessProfile: "Business profile",
       colorMode: "Color mode",
       connectedSources: "Connected sources",
       currentUsage: "Usage this billing period",
@@ -1114,6 +1120,15 @@ const defaultUiMessagesEnUs = {
       apiKey: "Paste your API key here",
       email: "jamie@browardhvac.com",
       name: "Jamie Reynolds",
+    },
+    formLabels: {
+      businessName: "Business name",
+      goals: "Goals (all that apply)",
+      industry: "Industry",
+      invoiceCycle: "Invoice cycle",
+      primaryLocation: "Primary location",
+      revenueModel: "Revenue model",
+      teamSize: "Team size",
     },
   },
   uploadModal: {
@@ -2492,6 +2507,11 @@ const defaultUiMessagesEs: UiMessages = {
   },
   settingsPage: {
     ...defaultUiMessagesEnUs.settingsPage,
+    actions: {
+      reset: "Restablecer",
+      saveProfile: "Guardar perfil",
+      saving: "Guardando...",
+    },
     actionDescriptions: {
       authentication:
         "Configuracion de autenticacion y control de acceso para el espacio de trabajo.",
@@ -2508,6 +2528,7 @@ const defaultUiMessagesEs: UiMessages = {
         "Define que puede ver y hacer cada rol dentro de tu espacio de trabajo.",
     },
     actionTitles: {
+      businessProfile: "Perfil del negocio",
       colorMode: "Modo de color",
       connectedSources: "Fuentes conectadas",
       currentUsage: "Uso en este periodo",
@@ -2582,6 +2603,15 @@ const defaultUiMessagesEs: UiMessages = {
       apiKey: "Pega aqui tu clave API",
       email: "jamie@browardhvac.com",
       name: "Jamie Reynolds",
+    },
+    formLabels: {
+      businessName: "Nombre del negocio",
+      goals: "Objetivos (todos los que apliquen)",
+      industry: "Industria",
+      invoiceCycle: "Ciclo de facturacion",
+      primaryLocation: "Ubicacion principal",
+      revenueModel: "Modelo de ingresos",
+      teamSize: "Tamano del equipo",
     },
   },
   uploadModal: {
