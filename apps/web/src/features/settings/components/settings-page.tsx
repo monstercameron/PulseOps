@@ -33,6 +33,7 @@ import {
   mergeSettingsMutationResponse,
   type SettingsMutationResponse,
 } from "@/features/settings/lib/settings-page-state";
+import { useUiI18n } from "@/features/i18n/components/ui-i18n-provider";
 import {
   type AppTheme,
 } from "@/features/shell/lib/theme-preference";
@@ -127,6 +128,13 @@ type SettingsRequestError = Readonly<{
 }>;
 
 export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
+  const { messages } = useUiI18n();
+  const industryOptions = messages.settingsPage.options.industry as readonly string[];
+  const revenueModelOptions = messages.settingsPage.options.revenueModel as readonly string[];
+  const invoiceCycleOptions = messages.settingsPage.options.invoiceCycle as readonly string[];
+  const teamSizeOptions = messages.settingsPage.options.teamSize as readonly string[];
+  const goalOptions = messages.settingsPage.options.goals as readonly string[];
+  const inviteRoleOptions = messages.settingsPage.options.inviteRoles as readonly InviteRoleLabel[];
   const [activeTab, setActiveTab] = useState<SettingsTabId>("organization");
   const [activeDialog, setActiveDialog] = useState<DialogId>(null);
   const [placeholderAction, setPlaceholderAction] = useState<PlaceholderAction>(null);
@@ -841,9 +849,9 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
     <div className="flex min-h-full flex-col">
       <WorkspaceHeader
         actions={[]}
-        breadcrumbs={settingsPageLabels.breadcrumbs}
-        description={settingsPageLabels.description}
-        title={settingsPageLabels.title}
+        breadcrumbs={messages.settingsPage.labels.breadcrumbs}
+        description={messages.settingsPage.labels.description}
+        title={messages.settingsPage.labels.title}
       />
 
       <div className="min-h-0 flex-1 overflow-y-auto px-[22px] py-[18px] pb-10">
@@ -865,61 +873,61 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
         <div className="min-w-0 flex-1">
           {activeTab === "organization" ? (
             <div className="space-y-5">
-              <PreferencePanel
-                description="This information shapes how PulseOps interprets your data and builds your Cash & Margin Brief."
-                title="Business profile"
-              >
-                <div className="grid gap-[14px] md:grid-cols-2">
-                  <FieldGroup label="Business name">
-                    <TextField
-                      onChange={(value) => updateOrganizationField("name", value)}
-                      value={organizationDraft.name}
-                    />
-                  </FieldGroup>
-                  <FieldGroup label="Primary location">
-                    <TextField
-                      onChange={(value) => updateOrganizationField("location", value)}
-                      value={organizationDraft.location}
-                    />
-                  </FieldGroup>
-                  <div className="md:col-span-2">
-                    <FieldGroup label="Industry">
-                      <PillGroup
-                        options={INDUSTRY_OPTIONS}
-                        selected={organizationDraft.industry}
-                        onChange={(value) => updateOrganizationField("industry", value)}
-                      />
-                    </FieldGroup>
-                  </div>
-                  <FieldGroup label="Revenue model">
+            <PreferencePanel
+              description={messages.settingsPage.actionDescriptions.businessProfile}
+              title={messages.settingsPage.actionTitles.businessProfile}
+            >
+              <div className="grid gap-[14px] md:grid-cols-2">
+                <FieldGroup label={messages.settingsPage.formLabels.businessName}>
+                  <TextField
+                    onChange={(value) => updateOrganizationField("name", value)}
+                    value={organizationDraft.name}
+                  />
+                </FieldGroup>
+                <FieldGroup label={messages.settingsPage.formLabels.primaryLocation}>
+                  <TextField
+                    onChange={(value) => updateOrganizationField("location", value)}
+                    value={organizationDraft.location}
+                  />
+                </FieldGroup>
+                <div className="md:col-span-2">
+                  <FieldGroup label={messages.settingsPage.formLabels.industry}>
                     <PillGroup
-                      options={REVENUE_MODEL_OPTIONS}
-                      selected={organizationDraft.revenueModel}
-                      onChange={(value) => updateOrganizationField("revenueModel", value)}
+                      options={industryOptions}
+                      selected={organizationDraft.industry}
+                      onChange={(value) => updateOrganizationField("industry", value)}
                     />
                   </FieldGroup>
-                  <FieldGroup label="Invoice cycle">
-                    <SelectField
-                      options={INVOICE_CYCLE_OPTIONS}
-                      onChange={(value) => updateOrganizationField("invoiceCycle", value)}
-                      value={organizationDraft.invoiceCycle}
-                    />
-                  </FieldGroup>
-                  <FieldGroup label="Team size">
-                    <SelectField
-                      options={TEAM_SIZE_OPTIONS}
-                      onChange={(value) => updateOrganizationField("teamSize", value)}
-                      value={organizationDraft.teamSize}
-                    />
-                  </FieldGroup>
-                  <div className="md:col-span-2">
-                    <FieldGroup label="Goals (all that apply)">
-                      <div className="mt-1 flex flex-col gap-1">
-                        {ALL_GOALS.map((goal) => (
-                          <label
-                            key={goal}
-                            className="flex cursor-pointer items-center gap-[10px] rounded-[6px] py-[5px] text-[13px] text-foreground transition-colors"
-                          >
+                </div>
+                <FieldGroup label={messages.settingsPage.formLabels.revenueModel}>
+                  <PillGroup
+                    options={revenueModelOptions}
+                    selected={organizationDraft.revenueModel}
+                    onChange={(value) => updateOrganizationField("revenueModel", value)}
+                  />
+                </FieldGroup>
+                <FieldGroup label={messages.settingsPage.formLabels.invoiceCycle}>
+                  <SelectField
+                    options={invoiceCycleOptions}
+                    onChange={(value) => updateOrganizationField("invoiceCycle", value)}
+                    value={organizationDraft.invoiceCycle}
+                  />
+                </FieldGroup>
+                <FieldGroup label={messages.settingsPage.formLabels.teamSize}>
+                  <SelectField
+                    options={teamSizeOptions}
+                    onChange={(value) => updateOrganizationField("teamSize", value)}
+                    value={organizationDraft.teamSize}
+                  />
+                </FieldGroup>
+                <div className="md:col-span-2">
+                  <FieldGroup label={messages.settingsPage.formLabels.goals}>
+                    <div className="mt-1 flex flex-col gap-1">
+                      {goalOptions.map((goal) => (
+                        <label
+                          key={goal}
+                          className="flex cursor-pointer items-center gap-[10px] rounded-[6px] py-[5px] text-[13px] text-foreground transition-colors"
+                        >
                             <input
                               checked={organizationDraft.goals.includes(goal)}
                               className="h-[14px] w-[14px] shrink-0 cursor-pointer rounded accent-accent"
@@ -933,12 +941,16 @@ export function SettingsPage({ initialData, orgId }: SettingsPageProps) {
                     </FieldGroup>
                   </div>
                 </div>
-                <SettingsActionRow
-                  onPrimaryAction={handleSaveProfile}
-                  onSecondaryAction={handleResetProfile}
-                  primaryLabel={isSavingProfile ? "Saving..." : "Save profile"}
-                  secondaryLabel="Reset"
-                />
+              <SettingsActionRow
+                onPrimaryAction={handleSaveProfile}
+                onSecondaryAction={handleResetProfile}
+                primaryLabel={
+                  isSavingProfile
+                    ? messages.settingsPage.actions.saving
+                    : messages.settingsPage.actions.saveProfile
+                }
+                secondaryLabel={messages.settingsPage.actions.reset}
+              />
               </PreferencePanel>
 
               <PreferencePanel
